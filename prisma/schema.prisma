@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../server/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Admin {
+  id           String        @id @default(uuid())
+  username     String        @unique
+  password     String
+  name         String
+  role         String
+  email        String?
+  phone        String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  activityLogs ActivityLog[]
+}
+
+model Resident {
+  id               String              @id @default(uuid())
+  name             String
+  birthDate        DateTime
+  gender           String
+  roomNumber       String
+  admissionDate    DateTime
+  status           String              @default("ACTIVE")
+  profileImage     String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  height           Float?
+  weight           Float?
+  mobilityLevel    Int                 @default(1)
+  cognitiveLevel   String              @default("NORMAL")
+
+  emergencyContacts EmergencyContact[]
+  healthRecords    HealthRecord[]
+  diseases         ResidentDisease[]
+  medications      Medication[]
+  allergies        Allergy[]
+  dietaryRestrictions DietaryRestriction[]
+  fallEvents       FallEvent[]
+  iotDevices       IotDevice[]
+  programEnrollments ProgramEnrollment[]
+  healthGuides     HealthGuide[]
+  recommendations  ProgramRecommendation[]
+}
+
+model EmergencyContact {
+  id           String   @id @default(uuid())
+  residentId   String
+  name         String
+  relationship String
+  phone        String
+  isPrimary    Boolean  @default(false)
+  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model Disease {
+  id        String            @id @default(uuid())
+  name      String            @unique
+  code      String?
+  residents ResidentDisease[]
+}
+
+model ResidentDisease {
+  id         String   @id @default(uuid())
+  residentId String
+  diseaseId  String
+  diagnosedAt DateTime?
+  notes      String?
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  disease    Disease  @relation(fields: [diseaseId], references: [id])
+
+  @@unique([residentId, diseaseId])
+}
+
+model Medication {
+  id           String   @id @default(uuid())
+  residentId   String
+  name         String
+  dosage       String
+  schedule     String
+  prescribedBy String?
+  startDate    DateTime?
+  endDate      DateTime?
+  isActive     Boolean  @default(true)
+  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model Allergy {
+  id         String   @id @default(uuid())
+  residentId String
+  type       String
+  name       String
+  severity   String?
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model DietaryRestriction {
+  id         String   @id @default(uuid())
+  residentId String
+  type       String
+  notes      String?
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model HealthRecord {
+  id              String   @id @default(uuid())
+  residentId      String
+  recordedAt      DateTime @default(now())
+  recordedBy      String?
+  systolicBP      Int?
+  diastolicBP     Int?
+  bloodSugarFasting Float?
+  bloodSugarPostMeal Float?
+  cholesterolTotal Float?
+  cholesterolHDL   Float?
+  cholesterolLDL   Float?
+  heartRate       Int?
+  temperature     Float?
+  weight          Float?
+  sleepHours      Float?
+  waterIntake     Float?
+  mealAmount      String?
+  bowelMovement   Boolean?
+  moodScore       Int?
+  notes           String?
+  resident        Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model FallEvent {
+  id           String        @id @default(uuid())
+  residentId   String
+  deviceId     String?
+  occurredAt   DateTime      @default(now())
+  location     String?
+  severity     String
+  sensorData   String?
+  status       String        @default("UNHANDLED")
+  isRead       Boolean       @default(false)
+  resident     Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  device       IotDevice?    @relation(fields: [deviceId], references: [id])
+  responses    FallResponse[]
+}
+
+model FallResponse {
+  id           String    @id @default(uuid())
+  fallEventId  String
+  respondedBy  String
+  respondedAt  DateTime  @default(now())
+  content      String
+  outcome      String
+  fallEvent    FallEvent @relation(fields: [fallEventId], references: [id], onDelete: Cascade)
+}
+
+model IotDevice {
+  id              String      @id @default(uuid())
+  deviceCode      String      @unique
+  residentId      String?
+  location        String
+  batteryLevel    Int?
+  lastCommunicated DateTime?
+  status          String      @default("NORMAL")
+  installedAt     DateTime    @default(now())
+  resident        Resident?   @relation(fields: [residentId], references: [id])
+  fallEvents      FallEvent[]
+}
+
+model Program {
+  id              String                  @id @default(uuid())
+  name            String
+  category        String
+  description     String?
+  instructor      String?
+  schedule        String
+  location        String?
+  capacity        Int?
+  enrolledCount   Int                     @default(0)
+  status          String                  @default("RECRUITING")
+  minMobilityLevel Int                    @default(1)
+  minCognitiveLevel String               @default("NORMAL")
+  excludedDiseases String?
+  createdAt       DateTime               @default(now())
+  enrollments     ProgramEnrollment[]
+  recommendations ProgramRecommendation[]
+  attendances     ProgramAttendance[]
+}
+
+model ProgramEnrollment {
+  id          String              @id @default(uuid())
+  residentId  String
+  programId   String
+  enrolledAt  DateTime            @default(now())
+  status      String              @default("ACTIVE")
+  resident    Resident            @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  program     Program             @relation(fields: [programId], references: [id], onDelete: Cascade)
+  attendances ProgramAttendance[]
+
+  @@unique([residentId, programId])
+}
+
+model ProgramAttendance {
+  id           String            @id @default(uuid())
+  enrollmentId String
+  programId    String
+  attendedAt   DateTime          @default(now())
+  isPresent    Boolean           @default(true)
+  notes        String?
+  enrollment   ProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  program      Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model ProgramRecommendation {
+  id           String   @id @default(uuid())
+  residentId   String
+  programId    String
+  score        Float
+  reason       String?
+  createdAt    DateTime @default(now())
+  isApplied    Boolean  @default(false)
+  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model HealthGuide {
+  id           String   @id @default(uuid())
+  residentId   String
+  type         String
+  content      String
+  generatedAt  DateTime @default(now())
+  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  adminId     String
+  action      String
+  targetType  String?
+  targetId    String?
+  details     String?
+  createdAt   DateTime @default(now())
+  admin       Admin    @relation(fields: [adminId], references: [id])
+}

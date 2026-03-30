@@ -1,0 +1,907 @@
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('시드 데이터 생성 시작...');
+
+  // 관리자 생성
+  const hashedAdmin = await bcrypt.hash('admin123', 10);
+  const hashedNurse = await bcrypt.hash('nurse123', 10);
+  const hashedSocial = await bcrypt.hash('social123', 10);
+
+  const director = await prisma.admin.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: {
+      username: 'admin',
+      password: hashedAdmin,
+      name: '김시설',
+      role: 'DIRECTOR',
+      email: 'admin@seniorcare.kr',
+      phone: '010-1234-5678',
+    },
+  });
+
+  const nurse = await prisma.admin.upsert({
+    where: { username: 'nurse' },
+    update: {},
+    create: {
+      username: 'nurse',
+      password: hashedNurse,
+      name: '이간호',
+      role: 'NURSE',
+      email: 'nurse@seniorcare.kr',
+      phone: '010-2345-6789',
+    },
+  });
+
+  const social = await prisma.admin.upsert({
+    where: { username: 'social' },
+    update: {},
+    create: {
+      username: 'social',
+      password: hashedSocial,
+      name: '박생활',
+      role: 'SOCIAL_WORKER',
+      email: 'social@seniorcare.kr',
+      phone: '010-3456-7890',
+    },
+  });
+
+  console.log('관리자 생성 완료');
+
+  // 질병 생성
+  const diseases = await Promise.all([
+    prisma.disease.upsert({ where: { name: '고혈압' }, update: {}, create: { name: '고혈압', code: 'I10' } }),
+    prisma.disease.upsert({ where: { name: '당뇨병' }, update: {}, create: { name: '당뇨병', code: 'E11' } }),
+    prisma.disease.upsert({ where: { name: '심부전' }, update: {}, create: { name: '심부전', code: 'I50' } }),
+    prisma.disease.upsert({ where: { name: '치매' }, update: {}, create: { name: '치매', code: 'F03' } }),
+    prisma.disease.upsert({ where: { name: '골다공증' }, update: {}, create: { name: '골다공증', code: 'M81' } }),
+    prisma.disease.upsert({ where: { name: '관절염' }, update: {}, create: { name: '관절염', code: 'M19' } }),
+    prisma.disease.upsert({ where: { name: '뇌졸중' }, update: {}, create: { name: '뇌졸중', code: 'I64' } }),
+    prisma.disease.upsert({ where: { name: '파킨슨병' }, update: {}, create: { name: '파킨슨병', code: 'G20' } }),
+    prisma.disease.upsert({ where: { name: '만성폐쇄성폐질환' }, update: {}, create: { name: '만성폐쇄성폐질환', code: 'J44' } }),
+    prisma.disease.upsert({ where: { name: '우울증' }, update: {}, create: { name: '우울증', code: 'F32' } }),
+  ]);
+
+  console.log('질병 데이터 생성 완료');
+
+  // 입주자 생성
+  const resident1 = await prisma.resident.create({
+    data: {
+      name: '김영순',
+      birthDate: new Date('1942-03-15'),
+      gender: 'FEMALE',
+      roomNumber: '101',
+      admissionDate: new Date('2022-01-10'),
+      status: 'ACTIVE',
+      height: 155,
+      weight: 52,
+      mobilityLevel: 2,
+      cognitiveLevel: 'MILD',
+      emergencyContacts: {
+        create: [
+          { name: '김철수', relationship: '아들', phone: '010-9876-5432', isPrimary: true },
+          { name: '이민지', relationship: '며느리', phone: '010-8765-4321', isPrimary: false },
+        ],
+      },
+      allergies: {
+        create: [
+          { type: 'DRUG', name: '페니실린', severity: '심각' },
+          { type: 'FOOD', name: '새우', severity: '경미' },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'LOW_SALT', notes: '고혈압으로 인한 저염식 필요' },
+          { type: 'LOW_SUGAR', notes: '당뇨 관리를 위한 저당식' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident1.id, diseaseId: diseases[0].id, diagnosedAt: new Date('2018-05-20'), notes: '혈압약 복용 중' },
+      { residentId: resident1.id, diseaseId: diseases[1].id, diagnosedAt: new Date('2019-11-10'), notes: '인슐린 투여' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident1.id, name: '암로디핀', dosage: '5mg', schedule: '아침', prescribedBy: '박내과', isActive: true },
+      { residentId: resident1.id, name: '메트포르민', dosage: '500mg', schedule: '아침,저녁', prescribedBy: '박내과', isActive: true },
+      { residentId: resident1.id, name: '아스피린', dosage: '100mg', schedule: '아침', prescribedBy: '박내과', isActive: true },
+    ],
+  });
+
+  const resident2 = await prisma.resident.create({
+    data: {
+      name: '이복자',
+      birthDate: new Date('1938-07-22'),
+      gender: 'FEMALE',
+      roomNumber: '102',
+      admissionDate: new Date('2021-06-15'),
+      status: 'ACTIVE',
+      height: 150,
+      weight: 48,
+      mobilityLevel: 3,
+      cognitiveLevel: 'MODERATE',
+      emergencyContacts: {
+        create: [
+          { name: '이상훈', relationship: '아들', phone: '010-7654-3210', isPrimary: true },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'DYSPHAGIA', notes: '연하 곤란으로 다진식 필요' },
+          { type: 'LOW_SALT', notes: '심부전 관리' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident2.id, diseaseId: diseases[3].id, diagnosedAt: new Date('2020-03-15'), notes: '중등도 치매' },
+      { residentId: resident2.id, diseaseId: diseases[2].id, diagnosedAt: new Date('2019-08-20'), notes: '심부전 관리 중' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident2.id, name: '도네페질', dosage: '10mg', schedule: '취침전', prescribedBy: '신경과', isActive: true },
+      { residentId: resident2.id, name: '푸로세미드', dosage: '40mg', schedule: '아침', prescribedBy: '심장내과', isActive: true },
+    ],
+  });
+
+  const resident3 = await prisma.resident.create({
+    data: {
+      name: '박정호',
+      birthDate: new Date('1945-11-08'),
+      gender: 'MALE',
+      roomNumber: '201',
+      admissionDate: new Date('2023-02-20'),
+      status: 'ACTIVE',
+      height: 168,
+      weight: 65,
+      mobilityLevel: 1,
+      cognitiveLevel: 'NORMAL',
+      emergencyContacts: {
+        create: [
+          { name: '박미선', relationship: '딸', phone: '010-6543-2109', isPrimary: true },
+          { name: '최재원', relationship: '사위', phone: '010-5432-1098', isPrimary: false },
+        ],
+      },
+      allergies: {
+        create: [
+          { type: 'DRUG', name: '설폰아미드', severity: '심각' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident3.id, diseaseId: diseases[5].id, diagnosedAt: new Date('2015-04-10'), notes: '무릎 관절염' },
+      { residentId: resident3.id, diseaseId: diseases[4].id, diagnosedAt: new Date('2016-09-05'), notes: '골다공증 치료 중' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident3.id, name: '셀레콕시브', dosage: '200mg', schedule: '아침,저녁', prescribedBy: '정형외과', isActive: true },
+      { residentId: resident3.id, name: '알렌드론산', dosage: '70mg', schedule: '아침', prescribedBy: '정형외과', isActive: true },
+    ],
+  });
+
+  const resident4 = await prisma.resident.create({
+    data: {
+      name: '최순남',
+      birthDate: new Date('1940-05-30'),
+      gender: 'FEMALE',
+      roomNumber: '202',
+      admissionDate: new Date('2022-09-05'),
+      status: 'ACTIVE',
+      height: 158,
+      weight: 55,
+      mobilityLevel: 3,
+      cognitiveLevel: 'NORMAL',
+      emergencyContacts: {
+        create: [
+          { name: '최민호', relationship: '아들', phone: '010-4321-0987', isPrimary: true },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'LOW_FAT', notes: '고지혈증 관리' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident4.id, diseaseId: diseases[6].id, diagnosedAt: new Date('2021-07-20'), notes: '좌측 편마비' },
+      { residentId: resident4.id, diseaseId: diseases[0].id, diagnosedAt: new Date('2015-02-15'), notes: '뇌졸중 관련 고혈압' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident4.id, name: '클로피도그렐', dosage: '75mg', schedule: '아침', prescribedBy: '신경과', isActive: true },
+      { residentId: resident4.id, name: '아토르바스타틴', dosage: '20mg', schedule: '취침전', prescribedBy: '신경과', isActive: true },
+    ],
+  });
+
+  const resident5 = await prisma.resident.create({
+    data: {
+      name: '정기원',
+      birthDate: new Date('1948-09-12'),
+      gender: 'MALE',
+      roomNumber: '203',
+      admissionDate: new Date('2023-07-01'),
+      status: 'ACTIVE',
+      height: 172,
+      weight: 70,
+      mobilityLevel: 2,
+      cognitiveLevel: 'MILD',
+      emergencyContacts: {
+        create: [
+          { name: '정수진', relationship: '딸', phone: '010-3210-9876', isPrimary: true },
+          { name: '김민준', relationship: '사위', phone: '010-2109-8765', isPrimary: false },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident5.id, diseaseId: diseases[7].id, diagnosedAt: new Date('2022-01-10'), notes: '파킨슨병 초기' },
+      { residentId: resident5.id, diseaseId: diseases[9].id, diagnosedAt: new Date('2022-06-15'), notes: '우울증 치료 중' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident5.id, name: '레보도파/카르비도파', dosage: '100/25mg', schedule: '아침,점심,저녁', prescribedBy: '신경과', isActive: true },
+      { residentId: resident5.id, name: '에스시탈로프람', dosage: '10mg', schedule: '아침', prescribedBy: '정신건강의학과', isActive: true },
+    ],
+  });
+
+  // 추가 입주자 6~10
+  const resident6 = await prisma.resident.create({
+    data: {
+      name: '한말순',
+      birthDate: new Date('1936-01-20'),
+      gender: 'FEMALE',
+      roomNumber: '301',
+      admissionDate: new Date('2021-03-10'),
+      status: 'ACTIVE',
+      height: 148,
+      weight: 45,
+      mobilityLevel: 4,
+      cognitiveLevel: 'SEVERE',
+      emergencyContacts: {
+        create: [
+          { name: '한지훈', relationship: '손자', phone: '010-1111-2222', isPrimary: true },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'DYSPHAGIA', notes: '중증 연하곤란, 미음식 필요' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident6.id, diseaseId: diseases[3].id, diagnosedAt: new Date('2017-04-10'), notes: '중증 치매' },
+      { residentId: resident6.id, diseaseId: diseases[4].id, diagnosedAt: new Date('2018-08-01'), notes: '골다공증 심화' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident6.id, name: '메만틴', dosage: '20mg', schedule: '아침', prescribedBy: '신경과', isActive: true },
+    ],
+  });
+
+  const resident7 = await prisma.resident.create({
+    data: {
+      name: '오세진',
+      birthDate: new Date('1950-06-05'),
+      gender: 'MALE',
+      roomNumber: '302',
+      admissionDate: new Date('2024-01-15'),
+      status: 'ACTIVE',
+      height: 175,
+      weight: 80,
+      mobilityLevel: 1,
+      cognitiveLevel: 'NORMAL',
+      emergencyContacts: {
+        create: [
+          { name: '오수빈', relationship: '딸', phone: '010-3333-4444', isPrimary: true },
+          { name: '오민재', relationship: '아들', phone: '010-4444-5555', isPrimary: false },
+        ],
+      },
+      allergies: {
+        create: [
+          { type: 'FOOD', name: '땅콩', severity: '심각' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident7.id, diseaseId: diseases[8].id, diagnosedAt: new Date('2020-11-20'), notes: '만성폐쇄성폐질환 관리 중' },
+      { residentId: resident7.id, diseaseId: diseases[0].id, diagnosedAt: new Date('2016-03-10'), notes: '경도 고혈압' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident7.id, name: '티오트로피움', dosage: '18mcg', schedule: '아침', prescribedBy: '호흡기내과', isActive: true },
+      { residentId: resident7.id, name: '발사르탄', dosage: '80mg', schedule: '아침', prescribedBy: '내과', isActive: true },
+    ],
+  });
+
+  const resident8 = await prisma.resident.create({
+    data: {
+      name: '송미경',
+      birthDate: new Date('1944-12-18'),
+      gender: 'FEMALE',
+      roomNumber: '303',
+      admissionDate: new Date('2023-05-20'),
+      status: 'HOSPITALIZED',
+      height: 160,
+      weight: 58,
+      mobilityLevel: 2,
+      cognitiveLevel: 'MILD',
+      emergencyContacts: {
+        create: [
+          { name: '송현우', relationship: '아들', phone: '010-5555-6666', isPrimary: true },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'LOW_PROTEIN', notes: '신장질환으로 저단백식 필요' },
+          { type: 'LOW_SALT', notes: '부종 관리' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident8.id, diseaseId: diseases[2].id, diagnosedAt: new Date('2022-09-15'), notes: '만성 심부전' },
+      { residentId: resident8.id, diseaseId: diseases[1].id, diagnosedAt: new Date('2017-06-20'), notes: '2형 당뇨병' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident8.id, name: '엔알라프릴', dosage: '5mg', schedule: '아침', prescribedBy: '심장내과', isActive: true },
+      { residentId: resident8.id, name: '글리메피리드', dosage: '2mg', schedule: '아침', prescribedBy: '내분비내과', isActive: true },
+      { residentId: resident8.id, name: '스피로놀락톤', dosage: '25mg', schedule: '아침', prescribedBy: '심장내과', isActive: true },
+    ],
+  });
+
+  const resident9 = await prisma.resident.create({
+    data: {
+      name: '윤태식',
+      birthDate: new Date('1947-08-25'),
+      gender: 'MALE',
+      roomNumber: '304',
+      admissionDate: new Date('2022-11-01'),
+      status: 'ACTIVE',
+      height: 165,
+      weight: 58,
+      mobilityLevel: 3,
+      cognitiveLevel: 'MODERATE',
+      emergencyContacts: {
+        create: [
+          { name: '윤지영', relationship: '딸', phone: '010-6666-7777', isPrimary: true },
+          { name: '윤석민', relationship: '아들', phone: '010-7777-8888', isPrimary: false },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'DYSPHAGIA', notes: '다진식 필요' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident9.id, diseaseId: diseases[6].id, diagnosedAt: new Date('2020-05-30'), notes: '뇌졸중 후유증, 우측 편마비' },
+      { residentId: resident9.id, diseaseId: diseases[3].id, diagnosedAt: new Date('2023-02-10'), notes: '혈관성 치매' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident9.id, name: '와파린', dosage: '3mg', schedule: '저녁', prescribedBy: '신경과', isActive: true },
+      { residentId: resident9.id, name: '리바스티그민', dosage: '6mg', schedule: '아침,저녁', prescribedBy: '신경과', isActive: true },
+    ],
+  });
+
+  const resident10 = await prisma.resident.create({
+    data: {
+      name: '강옥희',
+      birthDate: new Date('1943-04-02'),
+      gender: 'FEMALE',
+      roomNumber: '305',
+      admissionDate: new Date('2024-06-10'),
+      status: 'ACTIVE',
+      height: 153,
+      weight: 50,
+      mobilityLevel: 2,
+      cognitiveLevel: 'NORMAL',
+      emergencyContacts: {
+        create: [
+          { name: '강준호', relationship: '아들', phone: '010-8888-9999', isPrimary: true },
+          { name: '이은정', relationship: '며느리', phone: '010-9999-0000', isPrimary: false },
+        ],
+      },
+      allergies: {
+        create: [
+          { type: 'DRUG', name: '아스피린', severity: '경미' },
+          { type: 'FOOD', name: '복숭아', severity: '경미' },
+        ],
+      },
+      dietaryRestrictions: {
+        create: [
+          { type: 'LOW_FAT', notes: '고지혈증 관리' },
+          { type: 'LOW_SUGAR', notes: '경계성 당뇨' },
+        ],
+      },
+    },
+  });
+
+  await prisma.residentDisease.createMany({
+    data: [
+      { residentId: resident10.id, diseaseId: diseases[5].id, diagnosedAt: new Date('2019-07-10'), notes: '양측 무릎 관절염' },
+      { residentId: resident10.id, diseaseId: diseases[9].id, diagnosedAt: new Date('2023-12-01'), notes: '배우자 사별 후 우울증' },
+    ],
+  });
+
+  await prisma.medication.createMany({
+    data: [
+      { residentId: resident10.id, name: '트라마돌', dosage: '50mg', schedule: '아침,저녁', prescribedBy: '정형외과', isActive: true },
+      { residentId: resident10.id, name: '세르트랄린', dosage: '50mg', schedule: '아침', prescribedBy: '정신건강의학과', isActive: true },
+    ],
+  });
+
+  const residents = [resident1, resident2, resident3, resident4, resident5, resident6, resident7, resident8, resident9, resident10];
+  console.log('입주자 생성 완료');
+
+  // IoT 기기 생성
+  const iotDevices = await Promise.all([
+    prisma.iotDevice.create({
+      data: {
+        deviceCode: 'DEV-001',
+        residentId: resident1.id,
+        location: '101호 침실',
+        batteryLevel: 85,
+        lastCommunicated: new Date(),
+        status: 'NORMAL',
+      },
+    }),
+    prisma.iotDevice.create({
+      data: {
+        deviceCode: 'DEV-002',
+        residentId: resident2.id,
+        location: '102호 침실',
+        batteryLevel: 20,
+        lastCommunicated: new Date(),
+        status: 'LOW_BATTERY',
+      },
+    }),
+    prisma.iotDevice.create({
+      data: {
+        deviceCode: 'DEV-003',
+        residentId: resident3.id,
+        location: '201호 침실',
+        batteryLevel: 92,
+        lastCommunicated: new Date(),
+        status: 'NORMAL',
+      },
+    }),
+    prisma.iotDevice.create({
+      data: {
+        deviceCode: 'DEV-004',
+        residentId: resident4.id,
+        location: '202호 침실',
+        batteryLevel: 60,
+        lastCommunicated: new Date(),
+        status: 'NORMAL',
+      },
+    }),
+    prisma.iotDevice.create({
+      data: {
+        deviceCode: 'DEV-005',
+        residentId: resident5.id,
+        location: '203호 침실',
+        batteryLevel: 45,
+        lastCommunicated: new Date(),
+        status: 'NORMAL',
+      },
+    }),
+  ]);
+
+  console.log('IoT 기기 생성 완료');
+
+  // 낙상 이벤트 생성
+  const fall1 = await prisma.fallEvent.create({
+    data: {
+      residentId: resident1.id,
+      deviceId: iotDevices[0].id,
+      occurredAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      location: '101호 화장실',
+      severity: 'WARNING',
+      sensorData: JSON.stringify({ acceleration: 2.5, angle: 45, impact: 'medium' }),
+      status: 'RESOLVED',
+      isRead: true,
+    },
+  });
+
+  await prisma.fallResponse.create({
+    data: {
+      fallEventId: fall1.id,
+      respondedBy: '이간호',
+      content: '화장실에서 미끄러짐. 외상 없음. 활력징후 정상. 안전 매트 추가 설치 권고.',
+      outcome: 'NO_INJURY',
+    },
+  });
+
+  const fall2 = await prisma.fallEvent.create({
+    data: {
+      residentId: resident2.id,
+      deviceId: iotDevices[1].id,
+      occurredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      location: '102호 침실',
+      severity: 'CRITICAL',
+      sensorData: JSON.stringify({ acceleration: 4.2, angle: 78, impact: 'high' }),
+      status: 'RESOLVED',
+      isRead: true,
+    },
+  });
+
+  await prisma.fallResponse.create({
+    data: {
+      fallEventId: fall2.id,
+      respondedBy: '이간호',
+      content: '침대에서 낙상. 오른쪽 팔 타박상. 의사 확인 후 경과 관찰 중.',
+      outcome: 'MINOR_INJURY',
+    },
+  });
+
+  const fall3 = await prisma.fallEvent.create({
+    data: {
+      residentId: resident5.id,
+      deviceId: iotDevices[4].id,
+      occurredAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      location: '203호 복도',
+      severity: 'WARNING',
+      sensorData: JSON.stringify({ acceleration: 2.1, angle: 35, impact: 'light' }),
+      status: 'UNHANDLED',
+      isRead: false,
+    },
+  });
+
+  console.log('낙상 이벤트 생성 완료');
+
+  // 건강 기록 생성 (30일)
+  for (const resident of residents) {
+    const baseWeight = resident.weight || 60;
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const variation = () => (Math.random() - 0.5) * 4;
+      const intVariation = () => Math.floor((Math.random() - 0.5) * 6);
+
+      let systolicBase = 130, diastolicBase = 85;
+      let sugarBase = 110;
+
+      if (resident.id === resident1.id) {
+        systolicBase = 145; diastolicBase = 90; sugarBase = 135;
+      } else if (resident.id === resident2.id) {
+        systolicBase = 150; diastolicBase = 95; sugarBase = 120;
+      }
+
+      await prisma.healthRecord.create({
+        data: {
+          residentId: resident.id,
+          recordedAt: date,
+          recordedBy: nurse.name,
+          systolicBP: systolicBase + intVariation(),
+          diastolicBP: diastolicBase + intVariation(),
+          bloodSugarFasting: sugarBase + variation(),
+          heartRate: 72 + intVariation(),
+          temperature: 36.5 + (Math.random() - 0.5) * 0.6,
+          weight: baseWeight + (Math.random() - 0.5) * 0.5,
+          sleepHours: 6 + Math.random() * 3,
+          waterIntake: 1200 + Math.random() * 600,
+          mealAmount: ['HIGH', 'MEDIUM', 'LOW'][Math.floor(Math.random() * 3)],
+          bowelMovement: Math.random() > 0.3,
+          moodScore: Math.floor(Math.random() * 3) + 2,
+          notes: i === 0 ? '오늘 컨디션 양호' : undefined,
+        },
+      });
+    }
+  }
+
+  console.log('건강 기록 생성 완료');
+
+  // 프로그램 생성
+  const programs = await Promise.all([
+    prisma.program.create({
+      data: {
+        name: '치료 체조',
+        category: 'HEALTH_REHAB',
+        description: '전문 치료사 지도 하에 진행되는 관절 강화 체조 프로그램',
+        instructor: '물리치료사 강민준',
+        schedule: JSON.stringify([
+          { dayOfWeek: 1, startTime: '10:00', endTime: '11:00' },
+          { dayOfWeek: 3, startTime: '10:00', endTime: '11:00' },
+          { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' },
+        ]),
+        location: '1층 치료실',
+        capacity: 10,
+        enrolledCount: 3,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'NORMAL',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '원예 치료',
+        category: 'COGNITIVE',
+        description: '화분 가꾸기와 꽃꽂이를 통한 인지 기능 향상 프로그램',
+        instructor: '원예치료사 윤서연',
+        schedule: JSON.stringify([
+          { dayOfWeek: 2, startTime: '14:00', endTime: '15:30' },
+          { dayOfWeek: 4, startTime: '14:00', endTime: '15:30' },
+        ]),
+        location: '옥상 정원',
+        capacity: 8,
+        enrolledCount: 5,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'NORMAL',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '노래 교실',
+        category: 'CULTURE',
+        description: '동요, 가요를 함께 부르는 음악 활동 프로그램',
+        instructor: '음악치료사 서지현',
+        schedule: JSON.stringify([
+          { dayOfWeek: 1, startTime: '14:00', endTime: '15:00' },
+          { dayOfWeek: 3, startTime: '14:00', endTime: '15:00' },
+        ]),
+        location: '2층 다목적실',
+        capacity: 20,
+        enrolledCount: 12,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'MILD',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '인지 재활 훈련',
+        category: 'COGNITIVE',
+        description: '퍼즐, 기억력 게임을 통한 인지 기능 유지 및 향상',
+        instructor: '작업치료사 임채원',
+        schedule: JSON.stringify([
+          { dayOfWeek: 2, startTime: '10:00', endTime: '11:00' },
+          { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' },
+        ]),
+        location: '1층 인지치료실',
+        capacity: 6,
+        enrolledCount: 4,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'NORMAL',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '요가 & 명상',
+        category: 'EXERCISE',
+        description: '심신 안정과 유연성 향상을 위한 요가 및 명상 프로그램',
+        instructor: '요가 강사 최유진',
+        schedule: JSON.stringify([
+          { dayOfWeek: 1, startTime: '08:00', endTime: '09:00' },
+          { dayOfWeek: 4, startTime: '08:00', endTime: '09:00' },
+        ]),
+        location: '1층 운동실',
+        capacity: 12,
+        enrolledCount: 8,
+        status: 'ONGOING',
+        minMobilityLevel: 2,
+        minCognitiveLevel: 'NORMAL',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '생활 공예',
+        category: 'CULTURE',
+        description: '도자기, 뜨개질, 그림 그리기 등 다양한 공예 활동',
+        instructor: '공예 강사 한수진',
+        schedule: JSON.stringify([
+          { dayOfWeek: 3, startTime: '14:00', endTime: '16:00' },
+        ]),
+        location: '2층 공예실',
+        capacity: 10,
+        enrolledCount: 6,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'MILD',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '영화 감상',
+        category: 'SOCIAL',
+        description: '매주 다양한 장르의 영화를 함께 감상하는 문화 프로그램',
+        instructor: '생활지도사 박생활',
+        schedule: JSON.stringify([
+          { dayOfWeek: 5, startTime: '15:00', endTime: '17:00' },
+        ]),
+        location: '2층 영상실',
+        capacity: 25,
+        enrolledCount: 18,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'MODERATE',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '야외 산책',
+        category: 'EXERCISE',
+        description: '시설 주변 산책로를 이용한 야외 활동 프로그램',
+        instructor: '생활지도사 박생활',
+        schedule: JSON.stringify([
+          { dayOfWeek: 2, startTime: '09:00', endTime: '10:00' },
+          { dayOfWeek: 4, startTime: '09:00', endTime: '10:00' },
+        ]),
+        location: '시설 외부 산책로',
+        capacity: 15,
+        enrolledCount: 10,
+        status: 'ONGOING',
+        minMobilityLevel: 2,
+        minCognitiveLevel: 'MILD',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '어르신 토크쇼',
+        category: 'SOCIAL',
+        description: '다양한 주제로 어르신들이 함께 이야기 나누는 소통 프로그램',
+        instructor: '사회복지사 최민정',
+        schedule: JSON.stringify([
+          { dayOfWeek: 1, startTime: '15:00', endTime: '16:00' },
+        ]),
+        location: '1층 모임실',
+        capacity: 15,
+        enrolledCount: 9,
+        status: 'ONGOING',
+        minMobilityLevel: 1,
+        minCognitiveLevel: 'MILD',
+      },
+    }),
+    prisma.program.create({
+      data: {
+        name: '재활 수영',
+        category: 'HEALTH_REHAB',
+        description: '수중 재활 운동을 통한 근력 강화 프로그램 (외부 시설 이용)',
+        instructor: '수중치료사 권민성',
+        schedule: JSON.stringify([
+          { dayOfWeek: 3, startTime: '10:00', endTime: '12:00' },
+        ]),
+        location: '인근 수영장',
+        capacity: 5,
+        enrolledCount: 3,
+        status: 'RECRUITING',
+        minMobilityLevel: 2,
+        minCognitiveLevel: 'NORMAL',
+      },
+    }),
+  ]);
+
+  console.log('프로그램 생성 완료');
+
+  // 프로그램 등록
+  await prisma.programEnrollment.createMany({
+    data: [
+      { residentId: resident1.id, programId: programs[0].id },
+      { residentId: resident1.id, programId: programs[1].id },
+      { residentId: resident1.id, programId: programs[2].id },
+      { residentId: resident2.id, programId: programs[2].id },
+      { residentId: resident2.id, programId: programs[6].id },
+      { residentId: resident3.id, programId: programs[0].id },
+      { residentId: resident3.id, programId: programs[4].id },
+      { residentId: resident3.id, programId: programs[7].id },
+      { residentId: resident4.id, programId: programs[0].id },
+      { residentId: resident4.id, programId: programs[5].id },
+      { residentId: resident5.id, programId: programs[3].id },
+      { residentId: resident5.id, programId: programs[8].id },
+    ],
+  });
+
+  console.log('프로그램 등록 완료');
+
+  // 건강 가이드 생성
+  await prisma.healthGuide.createMany({
+    data: [
+      {
+        residentId: resident1.id,
+        type: 'DIET',
+        content: JSON.stringify({
+          title: '고혈압·당뇨 맞춤 식이 가이드',
+          recommendations: [
+            { priority: 'HIGH', category: '나트륨 제한', detail: '하루 나트륨 섭취량을 2,000mg 이하로 제한하세요. 국물 음식은 반드시 싱겁게 드세요.' },
+            { priority: 'HIGH', category: '혈당 관리', detail: '정제 탄수화물(흰밥, 흰빵)을 줄이고 잡곡밥으로 대체하세요. 식후 혈당 급상승을 방지하기 위해 소량씩 자주 드세요.' },
+            { priority: 'MEDIUM', category: '칼륨 섭취', detail: '바나나, 고구마, 시금치 등 칼륨이 풍부한 식품을 통해 혈압 조절을 도우세요.' },
+            { priority: 'LOW', category: '수분 섭취', detail: '하루 1,500~2,000ml의 수분을 규칙적으로 섭취하세요.' },
+          ],
+          avoidFoods: ['소금에 절인 음식', '가공육', '패스트푸드', '단음료', '알코올'],
+          recommendFoods: ['현미밥', '잡곡밥', '채소', '두부', '생선'],
+        }),
+      },
+      {
+        residentId: resident3.id,
+        type: 'EXERCISE',
+        content: JSON.stringify({
+          title: '관절 건강 맞춤 운동 가이드',
+          recommendations: [
+            { priority: 'HIGH', category: '저충격 운동', detail: '수영, 아쿠아 에어로빅 등 관절에 부담이 적은 수중 운동을 주 3회 이상 권장합니다.' },
+            { priority: 'HIGH', category: '스트레칭', detail: '아침 기상 후 10-15분 전신 스트레칭으로 관절 유연성을 유지하세요.' },
+            { priority: 'MEDIUM', category: '근력 강화', detail: '탄성 밴드를 이용한 가벼운 근력 운동으로 관절 주변 근육을 강화하세요.' },
+          ],
+          avoidExercises: ['달리기', '점프 운동', '계단 오르기'],
+          schedule: '주 5회, 하루 30분 목표',
+        }),
+      },
+    ],
+  });
+
+  console.log('건강 가이드 생성 완료');
+
+  // 활동 로그 생성
+  await prisma.activityLog.createMany({
+    data: [
+      { adminId: director.id, action: 'LOGIN', details: '관리자 로그인' },
+      { adminId: nurse.id, action: 'HEALTH_RECORD_CREATE', targetType: 'Resident', targetId: resident1.id, details: `${resident1.name} 건강 기록 입력` },
+      { adminId: nurse.id, action: 'FALL_RESPONSE', targetType: 'FallEvent', targetId: fall1.id, details: '낙상 사고 처리 완료' },
+      { adminId: social.id, action: 'PROGRAM_ENROLL', targetType: 'Program', targetId: programs[2].id, details: `${resident2.name} 노래교실 등록` },
+    ],
+  });
+
+  console.log('활동 로그 생성 완료');
+  console.log('시드 데이터 생성 완료!');
+  console.log('');
+  console.log('=== 로그인 계정 ===');
+  console.log('시설장: admin / admin123');
+  console.log('간호사: nurse / nurse123');
+  console.log('생활지도사: social / social123');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
