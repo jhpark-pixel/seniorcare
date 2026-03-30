@@ -113,4 +113,18 @@ export const reportsApi = {
     api.get('/reports/facility', { responseType: 'blob' }),
 };
 
+// Daily Tasks
+export const dailyTasksApi = {
+  list: (date?: string) => api.get('/daily-tasks', { params: { date } }),
+  create: (data: any) => api.post('/daily-tasks', data),
+  complete: (id: string) => api.patch(`/daily-tasks/${id}/complete`),
+  reopen: (id: string) => api.patch(`/daily-tasks/${id}/reopen`),
+  delete: (id: string) => api.delete(`/daily-tasks/${id}`),
+};
+
+// Management
+export const managementApi = {
+  getStats: () => api.get('/management/stats'),
+};
+
 export default api;

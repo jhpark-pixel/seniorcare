@@ -247,3 +247,18 @@ model ActivityLog {
   createdAt   DateTime @default(now())
   admin       Admin    @relation(fields: [adminId], references: [id])
 }
+
+model DailyTask {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  category    String    @default("GENERAL")
+  assignedTo  String?
+  status      String    @default("PENDING")
+  dueDate     DateTime  @default(now())
+  completedAt DateTime?
+  completedBy String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

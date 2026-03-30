@@ -183,3 +183,48 @@ export interface DashboardStats {
   devices: { lowBattery: number };
   programs: { total: number; active: number };
 }
+
+export interface DailyTask {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  assignedTo?: string;
+  status: 'PENDING' | 'COMPLETED';
+  dueDate: string;
+  completedAt?: string;
+  completedBy?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ManagementStats {
+  kpi: {
+    totalResidents: number;
+    activeResidents: number;
+    averageHealthScore: number;
+    fallEventsThisMonth: number;
+    programParticipationRate: number;
+    occupancyRate: number;
+    averageAge: number;
+  };
+  monthlyTrends: {
+    month: string;
+    residents: number;
+    falls: number;
+    admissions: number;
+  }[];
+  residentBreakdown: {
+    byStatus: Record<string, number>;
+    byMobility: Record<string, number>;
+    byCognitive: Record<string, number>;
+    byGender: Record<string, number>;
+  };
+  financial: {
+    monthlyRevenue: number;
+    operatingCosts: number;
+    staffCosts: number;
+    profitMargin: number;
+    monthlyData: { month: string; revenue: number; costs: number; profit: number }[];
+  };
+}

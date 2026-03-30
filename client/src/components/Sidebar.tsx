@@ -2,7 +2,13 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthContext, useSocketContext } from '../App';
 
-const navItems = [
+const navItems: {
+  path: string;
+  icon: string;
+  label: string;
+  badge?: boolean;
+  directorOnly?: boolean;
+}[] = [
   { path: '/dashboard', icon: '📊', label: '대시보드' },
   { path: '/residents', icon: '👥', label: '입주자 관리' },
   { path: '/health-records', icon: '🩺', label: '건강 기록' },
@@ -10,6 +16,8 @@ const navItems = [
   { path: '/programs', icon: '🎯', label: '프로그램 관리' },
   { path: '/guides', icon: '📋', label: '건강 가이드' },
   { path: '/iot-devices', icon: '📡', label: 'IoT 기기 관리' },
+  { path: '/daily-tasks', icon: '✅', label: '일일 업무' },
+  { path: '/management', icon: '📈', label: '경영통계', directorOnly: true },
 ];
 
 export default function Sidebar() {
@@ -55,7 +63,7 @@ export default function Sidebar() {
 
       {/* 네비게이션 */}
       <nav className="flex-1 p-3 mt-2 space-y-1 overflow-y-auto">
-        {navItems.map(item => (
+        {navItems.filter(item => !item.directorOnly || admin?.role === 'DIRECTOR').map(item => (
           <NavLink
             key={item.path}
             to={item.path}

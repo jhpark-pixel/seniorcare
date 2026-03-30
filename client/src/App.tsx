@@ -13,6 +13,8 @@ import FallEvents from './pages/FallEvents';
 import Programs from './pages/Programs';
 import HealthGuide from './pages/HealthGuide';
 import IoTDevices from './pages/IoTDevices';
+import DailyTasks from './pages/DailyTasks';
+import ManagementStats from './pages/ManagementStats';
 
 export const AuthContext = createContext<ReturnType<typeof useAuth> | null>(null);
 export const SocketContext = createContext<ReturnType<typeof useSocket> | null>(null);
@@ -63,6 +65,8 @@ function App() {
               <Route path="programs" element={<Programs />} />
               <Route path="guides" element={<HealthGuide />} />
               <Route path="iot-devices" element={<IoTDevices />} />
+              <Route path="daily-tasks" element={<DailyTasks />} />
+              <Route path="management" element={<ManagementStats />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

@@ -13,6 +13,8 @@ import programsRouter from './routes/programs';
 import guidesRouter from './routes/guides';
 import dashboardRouter from './routes/dashboard';
 import reportsRouter from './routes/reports';
+import dailyTasksRouter from './routes/dailyTasks';
+import managementRouter from './routes/management';
 
 const app = express();
 const httpServer = createServer(app);
@@ -59,6 +61,8 @@ app.use('/api/programs', programsRouter);
 app.use('/api/guides', guidesRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/daily-tasks', dailyTasksRouter);
+app.use('/api/management', managementRouter);
 
 // Health check
 app.get('/health', (req, res) => {
