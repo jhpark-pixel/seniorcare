@@ -8,80 +8,285 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+// ============================================================
+// 시설/조직 관리
+// ============================================================
+
+/// 시설 정보 (최상위 조직 단위)
+model Facility {
+  id             String  @id @default(uuid())
+  name           String
+  address        String
+  phone          String
+  ceoName        String
+  businessNumber String
+  logo           String?
+
+  buildings Building[]
+}
+
+/// 건물 (시설 내 동/건물)
+model Building {
+  id         String @id @default(uuid())
+  facilityId String
+  name       String
+  floors     Int
+
+  facility Facility @relation(fields: [facilityId], references: [id])
+  rooms    Room[]
+}
+
+/// 호실 (건물 내 개별 방)
+model Room {
+  id         String @id @default(uuid())
+  buildingId String
+  roomNumber String
+  roomType   String // SPECIAL / SINGLE / DOUBLE
+  floor      Int
+  status     String @default("AVAILABLE") // AVAILABLE / OCCUPIED / MAINTENANCE
+  capacity   Int    @default(1)
+
+  building            Building             @relation(fields: [buildingId], references: [id])
+  contracts           Contract[]
+  maintenanceRequests MaintenanceRequest[]
+}
+
+// ============================================================
+// 인사/관리자
+// ============================================================
+
+/// 관리자/직원 계정
 model Admin {
-  id           String        @id @default(uuid())
-  username     String        @unique
-  password     String
-  name         String
-  role         String
-  email        String?
-  phone        String?
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  activityLogs ActivityLog[]
+  id         String   @id @default(uuid())
+  username   String   @unique
+  password   String
+  name       String
+  role       String // DIRECTOR / MANAGER / NURSE / SOCIAL_WORKER / CARE_WORKER
+  email      String?
+  phone      String?
+  department String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  activityLogs        ActivityLog[]
+  counselings         Counseling[]
+  healthCounselings   HealthCounseling[]
+  notices             Notice[]
+  maintenanceRequests MaintenanceRequest[]
 }
 
+/// 활동 로그 (관리자 행동 기록)
+model ActivityLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String?
+  targetId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  admin Admin @relation(fields: [adminId], references: [id])
+}
+
+// ============================================================
+// 상담/청약/계약
+// ============================================================
+
+/// 상담 기록 (입주 전 상담)
+model Counseling {
+  id              String    @id @default(uuid())
+  counselorId     String
+  clientName      String
+  clientPhone     String
+  clientEmail     String?
+  counselType     String // PHONE / VISIT / ONLINE
+  date            DateTime
+  content         String
+  result          String?
+  nextSchedule    DateTime?
+  status          String    @default("PENDING") // PENDING / COMPLETED / CANCELLED
+  desiredRoomType String?
+  createdAt       DateTime  @default(now())
+
+  counselor     Admin          @relation(fields: [counselorId], references: [id])
+  subscriptions Subscription[]
+}
+
+/// 청약 (입주 예약/신청)
+model Subscription {
+  id              String    @id @default(uuid())
+  counselingId    String?
+  clientName      String
+  phone           String
+  desiredRoomType String?
+  desiredMoveIn   DateTime?
+  depositAmount   Int?
+  depositDate     DateTime?
+  depositStatus   String    @default("UNPAID") // UNPAID / PAID / REFUNDED
+  status          String    @default("RECEIVED") // RECEIVED / APPROVED / CANCELLED
+  createdAt       DateTime  @default(now())
+
+  counseling Counseling? @relation(fields: [counselingId], references: [id])
+  contracts  Contract[]
+}
+
+/// 계약 (입주 계약 관리)
+model Contract {
+  id                String   @id @default(uuid())
+  subscriptionId    String?
+  residentId        String
+  roomId            String
+  firstContractDate DateTime
+  contractStartDate DateTime
+  contractEndDate   DateTime
+  contractType      String // NEW / RENEWAL / TERMINATION
+  baseMonthlyFee    Int
+  baseRevenue       Int
+  promotionDiscount Int      @default(0)
+  dailyRate         Int?
+  depositAmount     Int
+  depositPaidAmount Int      @default(0)
+  depositStatus     String   @default("UNPAID") // FULL / PARTIAL / UNPAID
+  paymentMethod     String?
+  paymentDay        Int?
+  bankName          String?
+  accountNumber     String?
+  contractStatus    String   @default("ACTIVE") // ACTIVE / EXPIRED / TERMINATED
+  specialTerms      String?
+  createdAt         DateTime @default(now())
+
+  subscription    Subscription?    @relation(fields: [subscriptionId], references: [id])
+  resident        Resident         @relation(fields: [residentId], references: [id])
+  room            Room             @relation(fields: [roomId], references: [id])
+  monthlyBillings MonthlyBilling[]
+}
+
+// ============================================================
+// 입주자
+// ============================================================
+
+/// 입주자 (핵심 모델)
 model Resident {
-  id               String              @id @default(uuid())
-  name             String
-  birthDate        DateTime
-  gender           String
-  roomNumber       String
-  admissionDate    DateTime
-  status           String              @default("ACTIVE")
-  profileImage     String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  height           Float?
-  weight           Float?
-  mobilityLevel    Int                 @default(1)
-  cognitiveLevel   String              @default("NORMAL")
+  id                String    @id @default(uuid())
+  name              String
+  residentNumber    String? // 주민등록번호 (암호화 저장)
+  birthDate         DateTime
+  gender            String
+  phone             String?
+  address           String?
+  profileImage      String?
+  moveInDate        DateTime
+  moveOutDate       DateTime?
+  status            String    @default("ACTIVE") // ACTIVE / OUTING / HOSPITALIZED / DISCHARGED
+  roomNumber        String
+  buildingDong      String?
+  roomType          String?
+  longTermCareGrade String?
+  height            Float?
+  weight            Float?
+  bloodType         String?
+  mobilityLevel     Int       @default(1)
+  cognitiveLevel    String    @default("NORMAL")
+  fallRiskLevel     String?
+  disabilityType    String?
+  disabilityGrade   String?
 
-  emergencyContacts EmergencyContact[]
-  healthRecords    HealthRecord[]
-  diseases         ResidentDisease[]
-  medications      Medication[]
-  allergies        Allergy[]
-  dietaryRestrictions DietaryRestriction[]
-  fallEvents       FallEvent[]
-  iotDevices       IotDevice[]
-  programEnrollments ProgramEnrollment[]
-  healthGuides     HealthGuide[]
-  recommendations  ProgramRecommendation[]
+  // 성격/생활 정보
+  personality         String?
+  temperament         String?
+  communicationStyle  String?
+  socialPreference    String?
+  hobbies             String?
+  likes               String?
+  dislikes            String?
+  dailyRoutine        String?
+  sleepPattern        String?
+  specialNotes        String?
+  religiousPreference String?
+  dietaryPreference   String?
+
+  // 보호자/입주 경로
+  primaryGuardianName     String?
+  primaryGuardianRelation String?
+  primaryGuardianPhone    String?
+  guardianVisitFrequency  String?
+  familyNotes             String?
+  previousFacility        String?
+  admissionRoute          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 관계 배열
+  emergencyContacts      EmergencyContact[]
+  contracts              Contract[]
+  diseases               ResidentDisease[]
+  medications            Medication[]
+  allergies              Allergy[]
+  dietaryRestrictions    DietaryRestriction[]
+  healthRecords          HealthRecord[]
+  healthCounselings      HealthCounseling[]
+  medicalCheckups        MedicalCheckup[]
+  intensiveCares         IntensiveCare[]
+  fallEvents             FallEvent[]
+  iotDevices             IotDevice[]
+  serviceRequests        ServiceRequest[]
+  hospitalVisits         HospitalVisit[]
+  complaints             Complaint[]
+  programEnrollments     ProgramEnrollment[]
+  programRecommendations ProgramRecommendation[]
+  specialDiets           SpecialDiet[]
+  mealAttendances        MealAttendance[]
+  monthlyBillings        MonthlyBilling[]
+  healthGuides           HealthGuide[]
 }
 
+/// 비상 연락처 (입주자 보호자/긴급 연락처)
 model EmergencyContact {
-  id           String   @id @default(uuid())
-  residentId   String
-  name         String
-  relationship String
-  phone        String
-  isPrimary    Boolean  @default(false)
-  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  id               String  @id @default(uuid())
+  residentId       String
+  name             String
+  relationship     String
+  phone            String
+  isPrimary        Boolean @default(false)
+  address          String?
+  email            String?
+  canMakeDecisions Boolean @default(false)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+// ============================================================
+// 건강 관리
+// ============================================================
+
+/// 질환 마스터 데이터
 model Disease {
-  id        String            @id @default(uuid())
-  name      String            @unique
-  code      String?
+  id   String  @id @default(uuid())
+  name String  @unique
+  code String?
+
   residents ResidentDisease[]
 }
 
+/// 입주자-질환 매핑 (입주자별 진단 이력)
 model ResidentDisease {
-  id         String   @id @default(uuid())
-  residentId String
-  diseaseId  String
+  id          String    @id @default(uuid())
+  residentId  String
+  diseaseId   String
   diagnosedAt DateTime?
-  notes      String?
-  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
-  disease    Disease  @relation(fields: [diseaseId], references: [id])
+  notes       String?
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  disease  Disease  @relation(fields: [diseaseId], references: [id])
 
   @@unique([residentId, diseaseId])
 }
 
+/// 투약 정보 (입주자별 복용 약물)
 model Medication {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   residentId   String
   name         String
   dosage       String
@@ -89,115 +294,249 @@ model Medication {
   prescribedBy String?
   startDate    DateTime?
   endDate      DateTime?
-  isActive     Boolean  @default(true)
-  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  isActive     Boolean   @default(true)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+/// 알레르기 정보
 model Allergy {
-  id         String   @id @default(uuid())
+  id         String  @id @default(uuid())
   residentId String
   type       String
   name       String
   severity   String?
-  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+/// 식이 제한 사항
 model DietaryRestriction {
-  id         String   @id @default(uuid())
+  id         String  @id @default(uuid())
   residentId String
   type       String
   notes      String?
-  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+/// 건강 기록 (일일 바이탈 사인)
 model HealthRecord {
-  id              String   @id @default(uuid())
-  residentId      String
-  recordedAt      DateTime @default(now())
-  recordedBy      String?
-  systolicBP      Int?
-  diastolicBP     Int?
-  bloodSugarFasting Float?
+  id                 String   @id @default(uuid())
+  residentId         String
+  recordedAt         DateTime @default(now())
+  recordedBy         String?
+  systolicBP         Int?
+  diastolicBP        Int?
+  bloodSugarFasting  Float?
   bloodSugarPostMeal Float?
-  cholesterolTotal Float?
-  cholesterolHDL   Float?
-  cholesterolLDL   Float?
-  heartRate       Int?
-  temperature     Float?
-  weight          Float?
-  sleepHours      Float?
-  waterIntake     Float?
-  mealAmount      String?
-  bowelMovement   Boolean?
-  moodScore       Int?
+  cholesterolTotal   Float?
+  cholesterolHDL     Float?
+  cholesterolLDL     Float?
+  heartRate          Int?
+  temperature        Float?
+  weight             Float?
+  sleepHours         Float?
+  waterIntake        Float?
+  mealAmount         String?
+  bowelMovement      Boolean?
+  moodScore          Int?
+  oxygenSaturation   Float?
+  notes              String?
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+/// 건강 상담 (의료진 상담 기록)
+model HealthCounseling {
+  id            String   @id @default(uuid())
+  residentId    String
+  counselorId   String
+  scheduledDate DateTime
+  counselType   String // GENERAL / OUTPATIENT / CHECKUP / EXERCISE / MEDICATION
+  content       String?
+  result        String?
+  status        String   @default("SCHEDULED") // SCHEDULED / COMPLETED / CANCELLED
+  createdAt     DateTime @default(now())
+
+  resident  Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  counselor Admin    @relation(fields: [counselorId], references: [id])
+}
+
+/// 건강 검진 기록
+model MedicalCheckup {
+  id              String    @id @default(uuid())
+  residentId      String
+  checkupDate     DateTime
+  checkupType     String
+  results         String?
+  doctorName      String?
+  hospitalName    String?
+  nextCheckupDate DateTime?
   notes           String?
-  resident        Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+/// 집중 관리 (고위험 입주자 관리)
+model IntensiveCare {
+  id         String    @id @default(uuid())
+  residentId String
+  reason     String
+  startDate  DateTime
+  endDate    DateTime?
+  grade      String // HIGH / MEDIUM / LOW
+  deviceId   String?
+  notes      String?
+  status     String    @default("ACTIVE") // ACTIVE / COMPLETED
+  createdAt  DateTime  @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// 낙상/IoT 관리
+// ============================================================
+
+/// 낙상 이벤트 (IoT 감지 및 수동 보고)
 model FallEvent {
-  id           String        @id @default(uuid())
-  residentId   String
-  deviceId     String?
-  occurredAt   DateTime      @default(now())
-  location     String?
-  severity     String
-  sensorData   String?
-  status       String        @default("UNHANDLED")
-  isRead       Boolean       @default(false)
-  resident     Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
-  device       IotDevice?    @relation(fields: [deviceId], references: [id])
-  responses    FallResponse[]
+  id               String   @id @default(uuid())
+  residentId       String
+  deviceId         String?
+  occurredAt       DateTime @default(now())
+  location         String?
+  severity         String
+  sensorData       String?
+  status           String   @default("UNHANDLED") // UNHANDLED / HANDLING / RESOLVED
+  isRead           Boolean  @default(false)
+  actionTaken      String?
+  actionResult     String?
+  guardianNotified Boolean  @default(false)
+  handledBy        String?
+  createdAt        DateTime @default(now())
+
+  resident  Resident       @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  device    IotDevice?     @relation(fields: [deviceId], references: [id])
+  responses FallResponse[]
 }
 
+/// 낙상 대응 기록 (낙상 이벤트에 대한 조치 이력)
 model FallResponse {
-  id           String    @id @default(uuid())
-  fallEventId  String
-  respondedBy  String
-  respondedAt  DateTime  @default(now())
-  content      String
-  outcome      String
-  fallEvent    FallEvent @relation(fields: [fallEventId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  fallEventId String
+  respondedBy String
+  respondedAt DateTime @default(now())
+  content     String
+  outcome     String
+
+  fallEvent FallEvent @relation(fields: [fallEventId], references: [id], onDelete: Cascade)
 }
 
+/// IoT 디바이스 (낙상 감지 센서 등)
 model IotDevice {
-  id              String      @id @default(uuid())
-  deviceCode      String      @unique
-  residentId      String?
-  location        String
-  batteryLevel    Int?
+  id               String    @id @default(uuid())
+  deviceCode       String    @unique
+  residentId       String?
+  location         String
+  batteryLevel     Int?
   lastCommunicated DateTime?
-  status          String      @default("NORMAL")
-  installedAt     DateTime    @default(now())
-  resident        Resident?   @relation(fields: [residentId], references: [id])
-  fallEvents      FallEvent[]
+  status           String    @default("NORMAL") // NORMAL / LOW_BATTERY / DISCONNECTED
+  deviceType       String?
+  installedAt      DateTime  @default(now())
+
+  resident   Resident?   @relation(fields: [residentId], references: [id])
+  fallEvents FallEvent[]
 }
 
+// ============================================================
+// 서비스/컨시어지
+// ============================================================
+
+/// 서비스 요청 (입주자 서비스 신청)
+model ServiceRequest {
+  id            String    @id @default(uuid())
+  residentId    String
+  requestType   String
+  description   String
+  requestedBy   String?
+  requestedAt   DateTime  @default(now())
+  scheduledDate DateTime?
+  status        String    @default("PENDING") // PENDING / IN_PROGRESS / COMPLETED / CANCELLED
+  completedAt   DateTime?
+  completedBy   String?
+  notes         String?
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+/// 외래 진료/병원 방문 일정
+model HospitalVisit {
+  id            String   @id @default(uuid())
+  residentId    String
+  hospitalName  String
+  department    String?
+  scheduledDate DateTime
+  companionName String?
+  status        String   @default("SCHEDULED") // SCHEDULED / COMPLETED / CANCELLED
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+/// 민원/불만 접수
+model Complaint {
+  id               String    @id @default(uuid())
+  residentId       String?
+  complainantName  String
+  complainantPhone String?
+  type             String
+  content          String
+  receivedAt       DateTime  @default(now())
+  status           String    @default("RECEIVED") // RECEIVED / IN_PROGRESS / RESOLVED
+  resolvedAt       DateTime?
+  resolvedBy       String?
+  resolution       String?
+  satisfaction     Int?
+
+  resident Resident? @relation(fields: [residentId], references: [id])
+}
+
+// ============================================================
+// 프로그램/커뮤니티
+// ============================================================
+
+/// 시설 프로그램 (여가/운동/교육 프로그램)
 model Program {
-  id              String                  @id @default(uuid())
-  name            String
-  category        String
-  description     String?
-  instructor      String?
-  schedule        String
-  location        String?
-  capacity        Int?
-  enrolledCount   Int                     @default(0)
-  status          String                  @default("RECRUITING")
-  minMobilityLevel Int                    @default(1)
-  minCognitiveLevel String               @default("NORMAL")
-  excludedDiseases String?
-  createdAt       DateTime               @default(now())
+  id                String   @id @default(uuid())
+  name              String
+  category          String
+  description       String?
+  instructor        String?
+  schedule          String
+  location          String?
+  capacity          Int?
+  enrolledCount     Int      @default(0)
+  status            String   @default("RECRUITING") // RECRUITING / ONGOING / ENDED / SUSPENDED
+  minMobilityLevel  Int      @default(1)
+  minCognitiveLevel String   @default("NORMAL")
+  excludedDiseases  String?
+  createdAt         DateTime @default(now())
+
   enrollments     ProgramEnrollment[]
-  recommendations ProgramRecommendation[]
   attendances     ProgramAttendance[]
+  recommendations ProgramRecommendation[]
 }
 
+/// 프로그램 등록 (입주자-프로그램 연결)
 model ProgramEnrollment {
-  id          String              @id @default(uuid())
-  residentId  String
-  programId   String
-  enrolledAt  DateTime            @default(now())
-  status      String              @default("ACTIVE")
+  id         String   @id @default(uuid())
+  residentId String
+  programId  String
+  enrolledAt DateTime @default(now())
+  status     String   @default("ACTIVE") // ACTIVE / WITHDRAWN / COMPLETED
+
   resident    Resident            @relation(fields: [residentId], references: [id], onDelete: Cascade)
   program     Program             @relation(fields: [programId], references: [id], onDelete: Cascade)
   attendances ProgramAttendance[]
@@ -205,56 +544,191 @@ model ProgramEnrollment {
   @@unique([residentId, programId])
 }
 
+/// 프로그램 출석 기록
 model ProgramAttendance {
-  id           String            @id @default(uuid())
+  id           String   @id @default(uuid())
   enrollmentId String
   programId    String
-  attendedAt   DateTime          @default(now())
-  isPresent    Boolean           @default(true)
+  attendedAt   DateTime @default(now())
+  isPresent    Boolean  @default(true)
   notes        String?
-  enrollment   ProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  program      Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  enrollment ProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  program    Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
 }
 
+/// 프로그램 추천 (AI/규칙 기반 추천)
 model ProgramRecommendation {
-  id           String   @id @default(uuid())
-  residentId   String
-  programId    String
-  score        Float
-  reason       String?
-  createdAt    DateTime @default(now())
-  isApplied    Boolean  @default(false)
-  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
-  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  residentId String
+  programId  String
+  score      Float
+  reason     String?
+  createdAt  DateTime @default(now())
+  isApplied  Boolean  @default(false)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  program  Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
 }
 
+/// 공지사항
+model Notice {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  category  String // GENERAL / EVENT / HEALTH / FACILITY
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author Admin @relation(fields: [authorId], references: [id])
+}
+
+/// 행사/이벤트
+model Event {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?
+  targetAudience String?
+  eventDate      DateTime
+  location       String?
+  organizer      String?
+  status         String   @default("PLANNED") // PLANNED / ONGOING / COMPLETED / CANCELLED
+  createdAt      DateTime @default(now())
+}
+
+// ============================================================
+// 식사 관리
+// ============================================================
+
+/// 식단 계획 (주간 식단표)
+model MealPlan {
+  id            String   @id @default(uuid())
+  weekStartDate DateTime
+  mealType      String // BREAKFAST / LUNCH / DINNER / SNACK
+  dayOfWeek     Int
+  menu          String
+  calories      Int?
+  notes         String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+}
+
+/// 특별 식이 (입주자별 특수 식단)
+model SpecialDiet {
+  id         String    @id @default(uuid())
+  residentId String
+  dietType   String
+  reason     String?
+  startDate  DateTime
+  endDate    DateTime?
+  notes      String?
+  isActive   Boolean   @default(true)
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+/// 식사 참석 기록
+model MealAttendance {
+  id         String   @id @default(uuid())
+  residentId String
+  date       DateTime
+  mealType   String // BREAKFAST / LUNCH / DINNER
+  attended   Boolean  @default(true)
+  notes      String?
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// 시설 관리
+// ============================================================
+
+/// 유지보수 요청
+model MaintenanceRequest {
+  id          String    @id @default(uuid())
+  requestedBy String
+  roomId      String?
+  location    String?
+  description String
+  priority    String    @default("MEDIUM") // LOW / MEDIUM / HIGH / URGENT
+  status      String    @default("REQUESTED") // REQUESTED / IN_PROGRESS / COMPLETED
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  completedBy String?
+  cost        Int?
+  notes       String?
+
+  requestedByAdmin Admin @relation(fields: [requestedBy], references: [id])
+  room             Room? @relation(fields: [roomId], references: [id])
+}
+
+/// 자산 관리
+model Asset {
+  id            String    @id @default(uuid())
+  name          String
+  category      String
+  location      String?
+  purchaseDate  DateTime?
+  purchasePrice Int?
+  status        String    @default("IN_USE") // IN_USE / IN_STORAGE / DISPOSED
+  notes         String?
+}
+
+// ============================================================
+// 청구/정산
+// ============================================================
+
+/// 월별 청구 (입주자별 월 청구서)
+model MonthlyBilling {
+  id             String    @id @default(uuid())
+  residentId     String
+  contractId     String
+  billingMonth   String
+  managementFee  Int
+  mealFee        Int
+  utilityFee     Int
+  serviceFee     Int       @default(0)
+  totalAmount    Int
+  discountAmount Int       @default(0)
+  finalAmount    Int
+  paidAmount     Int       @default(0)
+  paidDate       DateTime?
+  status         String    @default("PENDING") // PENDING / PARTIAL / PAID / OVERDUE
+  createdAt      DateTime  @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  contract Contract @relation(fields: [contractId], references: [id])
+}
+
+// ============================================================
+// 건강 가이드
+// ============================================================
+
+/// 맞춤 건강 가이드 (규칙 기반 자동 생성)
 model HealthGuide {
-  id           String   @id @default(uuid())
-  residentId   String
-  type         String
-  content      String
-  generatedAt  DateTime @default(now())
-  resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
-}
-
-model ActivityLog {
   id          String   @id @default(uuid())
-  adminId     String
-  action      String
-  targetType  String?
-  targetId    String?
-  details     String?
-  createdAt   DateTime @default(now())
-  admin       Admin    @relation(fields: [adminId], references: [id])
+  residentId  String
+  type        String
+  content     String
+  generatedAt DateTime @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 }
 
+// ============================================================
+// 일일 업무
+// ============================================================
+
+/// 일일 업무 (직원 태스크 관리)
 model DailyTask {
   id          String    @id @default(uuid())
   title       String
   description String?
   category    String    @default("GENERAL")
   assignedTo  String?
-  status      String    @default("PENDING")
+  status      String    @default("PENDING") // PENDING / COMPLETED
   dueDate     DateTime  @default(now())
   completedAt DateTime?
   completedBy String?

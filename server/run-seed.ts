@@ -60,9 +60,8 @@ async function main() {
   const resident1 = await prisma.resident.create({
     data: {
       name: '김영순', birthDate: new Date('1942-03-15'), gender: 'FEMALE', roomNumber: '101',
-      admissionDate: new Date('2022-01-10'), status: 'ACTIVE', height: 155, weight: 52,
-      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [
+      moveInDate: new Date('2022-01-10'), status: 'ACTIVE', height: 155, weight: 52,
+      mobilityLevel: 2, cognitiveLevel: 'MILD',      emergencyContacts: { create: [
         { name: '김철수', relationship: '아들', phone: '010-9876-5432', isPrimary: true },
         { name: '이민지', relationship: '며느리', phone: '010-8765-4321' },
       ]},
@@ -84,9 +83,8 @@ async function main() {
   const resident2 = await prisma.resident.create({
     data: {
       name: '이복자', birthDate: new Date('1938-07-22'), gender: 'FEMALE', roomNumber: '103',
-      admissionDate: new Date('2021-06-15'), status: 'ACTIVE', height: 150, weight: 48,
-      mobilityLevel: 3, cognitiveLevel: 'MODERATE', monthlyFee: 2200000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '이상훈', relationship: '아들', phone: '010-7654-3210', isPrimary: true }]},
+      moveInDate: new Date('2021-06-15'), status: 'ACTIVE', height: 150, weight: 48,
+      mobilityLevel: 3, cognitiveLevel: 'MODERATE',      emergencyContacts: { create: [{ name: '이상훈', relationship: '아들', phone: '010-7654-3210', isPrimary: true }]},
       dietaryRestrictions: { create: [{ type: 'DYSPHAGIA', notes: '연하 곤란으로 다진식 필요' }, { type: 'LOW_SALT', notes: '심부전 관리' }]},
     },
   });
@@ -102,9 +100,8 @@ async function main() {
   const resident3 = await prisma.resident.create({
     data: {
       name: '박정호', birthDate: new Date('1945-11-08'), gender: 'MALE', roomNumber: '105',
-      admissionDate: new Date('2023-02-20'), status: 'ACTIVE', height: 168, weight: 65,
-      mobilityLevel: 1, cognitiveLevel: 'NORMAL', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '박미선', relationship: '딸', phone: '010-6543-2109', isPrimary: true }]},
+      moveInDate: new Date('2023-02-20'), status: 'ACTIVE', height: 168, weight: 65,
+      mobilityLevel: 1, cognitiveLevel: 'NORMAL',      emergencyContacts: { create: [{ name: '박미선', relationship: '딸', phone: '010-6543-2109', isPrimary: true }]},
       allergies: { create: [{ type: 'DRUG', name: '설폰아미드', severity: '심각' }]},
     },
   });
@@ -120,9 +117,8 @@ async function main() {
   const resident4 = await prisma.resident.create({
     data: {
       name: '최순남', birthDate: new Date('1940-05-30'), gender: 'FEMALE', roomNumber: '107',
-      admissionDate: new Date('2022-09-05'), status: 'ACTIVE', height: 158, weight: 55,
-      mobilityLevel: 3, cognitiveLevel: 'NORMAL', monthlyFee: 2200000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '최민호', relationship: '아들', phone: '010-4321-0987', isPrimary: true }]},
+      moveInDate: new Date('2022-09-05'), status: 'ACTIVE', height: 158, weight: 55,
+      mobilityLevel: 3, cognitiveLevel: 'NORMAL',      emergencyContacts: { create: [{ name: '최민호', relationship: '아들', phone: '010-4321-0987', isPrimary: true }]},
       dietaryRestrictions: { create: [{ type: 'LOW_FAT', notes: '고지혈증 관리' }]},
     },
   });
@@ -138,9 +134,8 @@ async function main() {
   const resident5 = await prisma.resident.create({
     data: {
       name: '정기원', birthDate: new Date('1948-09-12'), gender: 'MALE', roomNumber: '109',
-      admissionDate: new Date('2023-07-01'), status: 'ACTIVE', height: 172, weight: 70,
-      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '정수진', relationship: '딸', phone: '010-3210-9876', isPrimary: true }]},
+      moveInDate: new Date('2023-07-01'), status: 'ACTIVE', height: 172, weight: 70,
+      mobilityLevel: 2, cognitiveLevel: 'MILD',      emergencyContacts: { create: [{ name: '정수진', relationship: '딸', phone: '010-3210-9876', isPrimary: true }]},
     },
   });
   await prisma.residentDisease.createMany({ data: [
@@ -156,9 +151,8 @@ async function main() {
   const resident6 = await prisma.resident.create({
     data: {
       name: '한말순', birthDate: new Date('1936-01-20'), gender: 'FEMALE', roomNumber: '201',
-      admissionDate: new Date('2021-03-10'), status: 'ACTIVE', height: 148, weight: 45,
-      mobilityLevel: 4, cognitiveLevel: 'SEVERE', monthlyFee: 2800000, deposit: 15000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '한지훈', relationship: '손자', phone: '010-1111-2222', isPrimary: true }] },
+      moveInDate: new Date('2021-03-10'), status: 'ACTIVE', height: 148, weight: 45,
+      mobilityLevel: 4, cognitiveLevel: 'SEVERE',      emergencyContacts: { create: [{ name: '한지훈', relationship: '손자', phone: '010-1111-2222', isPrimary: true }] },
       dietaryRestrictions: { create: [{ type: 'DYSPHAGIA', notes: '중증 연하곤란, 미음식 필요' }] },
     },
   });
@@ -173,9 +167,8 @@ async function main() {
   const resident7 = await prisma.resident.create({
     data: {
       name: '오세진', birthDate: new Date('1950-06-05'), gender: 'MALE', roomNumber: '203',
-      admissionDate: new Date('2024-01-15'), status: 'ACTIVE', height: 175, weight: 80,
-      mobilityLevel: 1, cognitiveLevel: 'NORMAL', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [
+      moveInDate: new Date('2024-01-15'), status: 'ACTIVE', height: 175, weight: 80,
+      mobilityLevel: 1, cognitiveLevel: 'NORMAL',      emergencyContacts: { create: [
         { name: '오수빈', relationship: '딸', phone: '010-3333-4444', isPrimary: true },
         { name: '오민재', relationship: '아들', phone: '010-4444-5555' },
       ]},
@@ -194,9 +187,8 @@ async function main() {
   const resident8 = await prisma.resident.create({
     data: {
       name: '송미경', birthDate: new Date('1944-12-18'), gender: 'FEMALE', roomNumber: '205',
-      admissionDate: new Date('2023-05-20'), status: 'HOSPITALIZED', height: 160, weight: 58,
-      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [{ name: '송현우', relationship: '아들', phone: '010-5555-6666', isPrimary: true }] },
+      moveInDate: new Date('2023-05-20'), status: 'HOSPITALIZED', height: 160, weight: 58,
+      mobilityLevel: 2, cognitiveLevel: 'MILD',      emergencyContacts: { create: [{ name: '송현우', relationship: '아들', phone: '010-5555-6666', isPrimary: true }] },
       dietaryRestrictions: { create: [
         { type: 'LOW_PROTEIN', notes: '신장질환으로 저단백식 필요' },
         { type: 'LOW_SALT', notes: '부종 관리' },
@@ -216,9 +208,8 @@ async function main() {
   const resident9 = await prisma.resident.create({
     data: {
       name: '윤태식', birthDate: new Date('1947-08-25'), gender: 'MALE', roomNumber: '207',
-      admissionDate: new Date('2022-11-01'), status: 'ACTIVE', height: 165, weight: 58,
-      mobilityLevel: 3, cognitiveLevel: 'MODERATE', monthlyFee: 2500000, deposit: 12000000, depositPaid: false,
-      emergencyContacts: { create: [
+      moveInDate: new Date('2022-11-01'), status: 'ACTIVE', height: 165, weight: 58,
+      mobilityLevel: 3, cognitiveLevel: 'MODERATE',      emergencyContacts: { create: [
         { name: '윤지영', relationship: '딸', phone: '010-6666-7777', isPrimary: true },
         { name: '윤석민', relationship: '아들', phone: '010-7777-8888' },
       ]},
@@ -237,9 +228,8 @@ async function main() {
   const resident10 = await prisma.resident.create({
     data: {
       name: '강옥희', birthDate: new Date('1943-04-02'), gender: 'FEMALE', roomNumber: '209',
-      admissionDate: new Date('2024-06-10'), status: 'ACTIVE', height: 153, weight: 50,
-      mobilityLevel: 2, cognitiveLevel: 'NORMAL', monthlyFee: 2100000, deposit: 10000000, depositPaid: true,
-      emergencyContacts: { create: [
+      moveInDate: new Date('2024-06-10'), status: 'ACTIVE', height: 153, weight: 50,
+      mobilityLevel: 2, cognitiveLevel: 'NORMAL',      emergencyContacts: { create: [
         { name: '강준호', relationship: '아들', phone: '010-8888-9999', isPrimary: true },
         { name: '이은정', relationship: '며느리', phone: '010-9999-0000' },
       ]},
