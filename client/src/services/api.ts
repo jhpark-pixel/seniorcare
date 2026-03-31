@@ -120,6 +120,7 @@ export const dailyTasksApi = {
   complete: (id: string) => api.patch(`/daily-tasks/${id}/complete`),
   reopen: (id: string) => api.patch(`/daily-tasks/${id}/reopen`),
   delete: (id: string) => api.delete(`/daily-tasks/${id}`),
+  recommendations: () => api.get('/daily-tasks/recommendations'),
 };
 
 // Management
