@@ -87,6 +87,13 @@ export default function ResidentDetail() {
                 {resident.height && <span>키: <strong className="text-gray-800">{resident.height}cm</strong></span>}
                 {resident.weight && <span>체중: <strong className="text-gray-800">{resident.weight}kg</strong></span>}
               </div>
+              {resident.monthlyFee && (
+                <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                  <span>월 생활비: <strong className="text-gray-800">{resident.monthlyFee?.toLocaleString('ko-KR')}원</strong></span>
+                  <span>보증금: <strong className="text-gray-800">{resident.deposit?.toLocaleString('ko-KR')}원</strong></span>
+                  <span>보증금 납부: <strong className={resident.depositPaid ? 'text-green-600' : 'text-red-500'}>{resident.depositPaid ? '완료' : '미납'}</strong></span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-2">

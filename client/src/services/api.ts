@@ -128,4 +128,13 @@ export const managementApi = {
   getStats: () => api.get('/management/stats'),
 };
 
+// Admin Management
+export const adminManagementApi = {
+  list: () => api.get('/admin-management'),
+  create: (data: any) => api.post('/admin-management', data),
+  update: (id: string, data: any) => api.patch(`/admin-management/${id}`, data),
+  resetPassword: (id: string, password: string) => api.patch(`/admin-management/${id}/reset-password`, { password }),
+  delete: (id: string) => api.delete(`/admin-management/${id}`),
+};
+
 export default api;

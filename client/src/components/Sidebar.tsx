@@ -18,6 +18,7 @@ const navItems: {
   { path: '/iot-devices', icon: '📡', label: 'IoT 기기 관리' },
   { path: '/daily-tasks', icon: '✅', label: '일일 업무' },
   { path: '/management', icon: '📈', label: '경영통계', directorOnly: true },
+  { path: '/admin-management', icon: '👤', label: '직원 관리', directorOnly: true },
 ];
 
 export default function Sidebar() {
@@ -38,12 +39,12 @@ export default function Sidebar() {
       {/* 로고 */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-xl">
-            🏥
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: '#F0835A' }}>
+            C
           </div>
           <div>
-            <h1 className="font-bold text-sm leading-tight">시니어 케어</h1>
-            <p className="text-xs text-slate-400">입주자 통합 관리</p>
+            <h1 className="font-bold text-sm leading-tight">케어닥 케어홈</h1>
+            <p className="text-xs text-slate-400">배곧신도시점</p>
           </div>
         </div>
       </div>

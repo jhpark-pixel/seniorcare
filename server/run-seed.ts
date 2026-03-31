@@ -5,28 +5,38 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('시드 데이터 생성 시작...');
+  console.log('케어닥 케어홈 배곧신도시점 시드 데이터 생성 시작...');
 
-  const hashedAdmin = await bcrypt.hash('admin123', 10);
-  const hashedNurse = await bcrypt.hash('nurse123', 10);
-  const hashedSocial = await bcrypt.hash('social123', 10);
+  const hashedPassword = await bcrypt.hash('caredoc2024!', 10);
 
   const director = await prisma.admin.upsert({
-    where: { username: 'admin' },
+    where: { username: 'director' },
     update: {},
-    create: { username: 'admin', password: hashedAdmin, name: '김시설', role: 'DIRECTOR', email: 'admin@seniorcare.kr', phone: '010-1234-5678' },
+    create: { username: 'director', password: hashedPassword, name: '박준혁', role: 'DIRECTOR', email: 'director@caredochome.co.kr', phone: '031-431-7700' },
   });
 
-  const nurse = await prisma.admin.upsert({
-    where: { username: 'nurse' },
+  const nurseKim = await prisma.admin.upsert({
+    where: { username: 'nurse_kim' },
     update: {},
-    create: { username: 'nurse', password: hashedNurse, name: '이간호', role: 'NURSE', email: 'nurse@seniorcare.kr', phone: '010-2345-6789' },
+    create: { username: 'nurse_kim', password: hashedPassword, name: '김서연', role: 'NURSE', email: 'nurse.kim@caredochome.co.kr', phone: '031-431-7701' },
   });
 
-  const social = await prisma.admin.upsert({
-    where: { username: 'social' },
+  const nurseLee = await prisma.admin.upsert({
+    where: { username: 'nurse_lee' },
     update: {},
-    create: { username: 'social', password: hashedSocial, name: '박생활', role: 'SOCIAL_WORKER', email: 'social@seniorcare.kr', phone: '010-3456-7890' },
+    create: { username: 'nurse_lee', password: hashedPassword, name: '이하은', role: 'NURSE', email: 'nurse.lee@caredochome.co.kr', phone: '031-431-7702' },
+  });
+
+  const socialChoi = await prisma.admin.upsert({
+    where: { username: 'social_choi' },
+    update: {},
+    create: { username: 'social_choi', password: hashedPassword, name: '최민정', role: 'SOCIAL_WORKER', email: 'social.choi@caredochome.co.kr', phone: '031-431-7703' },
+  });
+
+  const socialPark = await prisma.admin.upsert({
+    where: { username: 'social_park' },
+    update: {},
+    create: { username: 'social_park', password: hashedPassword, name: '박은지', role: 'SOCIAL_WORKER', email: 'social.park@caredochome.co.kr', phone: '031-431-7704' },
   });
 
   console.log('관리자 생성 완료');
@@ -46,11 +56,12 @@ async function main() {
 
   console.log('질병 데이터 생성 완료');
 
+  // 1관 입주자 (101, 103, 105, 107, 109)
   const resident1 = await prisma.resident.create({
     data: {
       name: '김영순', birthDate: new Date('1942-03-15'), gender: 'FEMALE', roomNumber: '101',
       admissionDate: new Date('2022-01-10'), status: 'ACTIVE', height: 155, weight: 52,
-      mobilityLevel: 2, cognitiveLevel: 'MILD',
+      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [
         { name: '김철수', relationship: '아들', phone: '010-9876-5432', isPrimary: true },
         { name: '이민지', relationship: '며느리', phone: '010-8765-4321' },
@@ -72,9 +83,9 @@ async function main() {
 
   const resident2 = await prisma.resident.create({
     data: {
-      name: '이복자', birthDate: new Date('1938-07-22'), gender: 'FEMALE', roomNumber: '102',
+      name: '이복자', birthDate: new Date('1938-07-22'), gender: 'FEMALE', roomNumber: '103',
       admissionDate: new Date('2021-06-15'), status: 'ACTIVE', height: 150, weight: 48,
-      mobilityLevel: 3, cognitiveLevel: 'MODERATE',
+      mobilityLevel: 3, cognitiveLevel: 'MODERATE', monthlyFee: 2200000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '이상훈', relationship: '아들', phone: '010-7654-3210', isPrimary: true }]},
       dietaryRestrictions: { create: [{ type: 'DYSPHAGIA', notes: '연하 곤란으로 다진식 필요' }, { type: 'LOW_SALT', notes: '심부전 관리' }]},
     },
@@ -90,9 +101,9 @@ async function main() {
 
   const resident3 = await prisma.resident.create({
     data: {
-      name: '박정호', birthDate: new Date('1945-11-08'), gender: 'MALE', roomNumber: '201',
+      name: '박정호', birthDate: new Date('1945-11-08'), gender: 'MALE', roomNumber: '105',
       admissionDate: new Date('2023-02-20'), status: 'ACTIVE', height: 168, weight: 65,
-      mobilityLevel: 1, cognitiveLevel: 'NORMAL',
+      mobilityLevel: 1, cognitiveLevel: 'NORMAL', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '박미선', relationship: '딸', phone: '010-6543-2109', isPrimary: true }]},
       allergies: { create: [{ type: 'DRUG', name: '설폰아미드', severity: '심각' }]},
     },
@@ -108,9 +119,9 @@ async function main() {
 
   const resident4 = await prisma.resident.create({
     data: {
-      name: '최순남', birthDate: new Date('1940-05-30'), gender: 'FEMALE', roomNumber: '202',
+      name: '최순남', birthDate: new Date('1940-05-30'), gender: 'FEMALE', roomNumber: '107',
       admissionDate: new Date('2022-09-05'), status: 'ACTIVE', height: 158, weight: 55,
-      mobilityLevel: 3, cognitiveLevel: 'NORMAL',
+      mobilityLevel: 3, cognitiveLevel: 'NORMAL', monthlyFee: 2200000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '최민호', relationship: '아들', phone: '010-4321-0987', isPrimary: true }]},
       dietaryRestrictions: { create: [{ type: 'LOW_FAT', notes: '고지혈증 관리' }]},
     },
@@ -126,9 +137,9 @@ async function main() {
 
   const resident5 = await prisma.resident.create({
     data: {
-      name: '정기원', birthDate: new Date('1948-09-12'), gender: 'MALE', roomNumber: '203',
+      name: '정기원', birthDate: new Date('1948-09-12'), gender: 'MALE', roomNumber: '109',
       admissionDate: new Date('2023-07-01'), status: 'ACTIVE', height: 172, weight: 70,
-      mobilityLevel: 2, cognitiveLevel: 'MILD',
+      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '정수진', relationship: '딸', phone: '010-3210-9876', isPrimary: true }]},
     },
   });
@@ -141,12 +152,12 @@ async function main() {
     { residentId: resident5.id, name: '에스시탈로프람', dosage: '10mg', schedule: '아침', prescribedBy: '정신건강의학과', isActive: true },
   ]});
 
-  // 추가 입주자 6~10
+  // 2관 입주자 (201, 203, 205, 207, 209)
   const resident6 = await prisma.resident.create({
     data: {
-      name: '한말순', birthDate: new Date('1936-01-20'), gender: 'FEMALE', roomNumber: '301',
+      name: '한말순', birthDate: new Date('1936-01-20'), gender: 'FEMALE', roomNumber: '201',
       admissionDate: new Date('2021-03-10'), status: 'ACTIVE', height: 148, weight: 45,
-      mobilityLevel: 4, cognitiveLevel: 'SEVERE',
+      mobilityLevel: 4, cognitiveLevel: 'SEVERE', monthlyFee: 2800000, deposit: 15000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '한지훈', relationship: '손자', phone: '010-1111-2222', isPrimary: true }] },
       dietaryRestrictions: { create: [{ type: 'DYSPHAGIA', notes: '중증 연하곤란, 미음식 필요' }] },
     },
@@ -161,9 +172,9 @@ async function main() {
 
   const resident7 = await prisma.resident.create({
     data: {
-      name: '오세진', birthDate: new Date('1950-06-05'), gender: 'MALE', roomNumber: '302',
+      name: '오세진', birthDate: new Date('1950-06-05'), gender: 'MALE', roomNumber: '203',
       admissionDate: new Date('2024-01-15'), status: 'ACTIVE', height: 175, weight: 80,
-      mobilityLevel: 1, cognitiveLevel: 'NORMAL',
+      mobilityLevel: 1, cognitiveLevel: 'NORMAL', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [
         { name: '오수빈', relationship: '딸', phone: '010-3333-4444', isPrimary: true },
         { name: '오민재', relationship: '아들', phone: '010-4444-5555' },
@@ -182,9 +193,9 @@ async function main() {
 
   const resident8 = await prisma.resident.create({
     data: {
-      name: '송미경', birthDate: new Date('1944-12-18'), gender: 'FEMALE', roomNumber: '303',
+      name: '송미경', birthDate: new Date('1944-12-18'), gender: 'FEMALE', roomNumber: '205',
       admissionDate: new Date('2023-05-20'), status: 'HOSPITALIZED', height: 160, weight: 58,
-      mobilityLevel: 2, cognitiveLevel: 'MILD',
+      mobilityLevel: 2, cognitiveLevel: 'MILD', monthlyFee: 1900000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [{ name: '송현우', relationship: '아들', phone: '010-5555-6666', isPrimary: true }] },
       dietaryRestrictions: { create: [
         { type: 'LOW_PROTEIN', notes: '신장질환으로 저단백식 필요' },
@@ -204,9 +215,9 @@ async function main() {
 
   const resident9 = await prisma.resident.create({
     data: {
-      name: '윤태식', birthDate: new Date('1947-08-25'), gender: 'MALE', roomNumber: '304',
+      name: '윤태식', birthDate: new Date('1947-08-25'), gender: 'MALE', roomNumber: '207',
       admissionDate: new Date('2022-11-01'), status: 'ACTIVE', height: 165, weight: 58,
-      mobilityLevel: 3, cognitiveLevel: 'MODERATE',
+      mobilityLevel: 3, cognitiveLevel: 'MODERATE', monthlyFee: 2500000, deposit: 12000000, depositPaid: false,
       emergencyContacts: { create: [
         { name: '윤지영', relationship: '딸', phone: '010-6666-7777', isPrimary: true },
         { name: '윤석민', relationship: '아들', phone: '010-7777-8888' },
@@ -225,9 +236,9 @@ async function main() {
 
   const resident10 = await prisma.resident.create({
     data: {
-      name: '강옥희', birthDate: new Date('1943-04-02'), gender: 'FEMALE', roomNumber: '305',
+      name: '강옥희', birthDate: new Date('1943-04-02'), gender: 'FEMALE', roomNumber: '209',
       admissionDate: new Date('2024-06-10'), status: 'ACTIVE', height: 153, weight: 50,
-      mobilityLevel: 2, cognitiveLevel: 'NORMAL',
+      mobilityLevel: 2, cognitiveLevel: 'NORMAL', monthlyFee: 2100000, deposit: 10000000, depositPaid: true,
       emergencyContacts: { create: [
         { name: '강준호', relationship: '아들', phone: '010-8888-9999', isPrimary: true },
         { name: '이은정', relationship: '며느리', phone: '010-9999-0000' },
@@ -249,27 +260,32 @@ async function main() {
   console.log('입주자 생성 완료');
 
   const iotDevices = await Promise.all([
-    prisma.iotDevice.create({ data: { deviceCode: 'DEV-001', residentId: resident1.id, location: '101호 침실', batteryLevel: 85, lastCommunicated: new Date(), status: 'NORMAL' } }),
-    prisma.iotDevice.create({ data: { deviceCode: 'DEV-002', residentId: resident2.id, location: '102호 침실', batteryLevel: 20, lastCommunicated: new Date(), status: 'LOW_BATTERY' } }),
-    prisma.iotDevice.create({ data: { deviceCode: 'DEV-003', residentId: resident3.id, location: '201호 침실', batteryLevel: 92, lastCommunicated: new Date(), status: 'NORMAL' } }),
-    prisma.iotDevice.create({ data: { deviceCode: 'DEV-004', residentId: resident4.id, location: '202호 침실', batteryLevel: 60, lastCommunicated: new Date(), status: 'NORMAL' } }),
-    prisma.iotDevice.create({ data: { deviceCode: 'DEV-005', residentId: resident5.id, location: '203호 침실', batteryLevel: 45, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-001', residentId: resident1.id, location: '1관 101호 침실', batteryLevel: 85, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-002', residentId: resident2.id, location: '1관 103호 침실', batteryLevel: 20, lastCommunicated: new Date(), status: 'LOW_BATTERY' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-003', residentId: resident3.id, location: '1관 105호 침실', batteryLevel: 92, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-004', residentId: resident4.id, location: '1관 107호 침실', batteryLevel: 60, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-005', residentId: resident5.id, location: '1관 109호 침실', batteryLevel: 45, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-006', residentId: resident6.id, location: '2관 201호 침실', batteryLevel: 78, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-007', residentId: resident7.id, location: '2관 203호 침실', batteryLevel: 55, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-008', residentId: resident8.id, location: '2관 205호 침실', batteryLevel: 90, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-009', residentId: resident9.id, location: '2관 207호 침실', batteryLevel: 33, lastCommunicated: new Date(), status: 'NORMAL' } }),
+    prisma.iotDevice.create({ data: { deviceCode: 'DEV-010', residentId: resident10.id, location: '2관 209호 침실', batteryLevel: 67, lastCommunicated: new Date(), status: 'NORMAL' } }),
   ]);
 
   console.log('IoT 기기 생성 완료');
 
   const fall1 = await prisma.fallEvent.create({
-    data: { residentId: resident1.id, deviceId: iotDevices[0].id, occurredAt: new Date(Date.now() - 7 * 86400000), location: '101호 화장실', severity: 'WARNING', sensorData: JSON.stringify({ acceleration: 2.5, angle: 45, impact: 'medium' }), status: 'RESOLVED', isRead: true },
+    data: { residentId: resident1.id, deviceId: iotDevices[0].id, occurredAt: new Date(Date.now() - 7 * 86400000), location: '1관 101호 화장실', severity: 'WARNING', sensorData: JSON.stringify({ acceleration: 2.5, angle: 45, impact: 'medium' }), status: 'RESOLVED', isRead: true },
   });
-  await prisma.fallResponse.create({ data: { fallEventId: fall1.id, respondedBy: '이간호', content: '화장실에서 미끄러짐. 외상 없음. 활력징후 정상.', outcome: 'NO_INJURY' } });
+  await prisma.fallResponse.create({ data: { fallEventId: fall1.id, respondedBy: '김서연', content: '화장실에서 미끄러짐. 외상 없음. 활력징후 정상.', outcome: 'NO_INJURY' } });
 
   const fall2 = await prisma.fallEvent.create({
-    data: { residentId: resident2.id, deviceId: iotDevices[1].id, occurredAt: new Date(Date.now() - 3 * 86400000), location: '102호 침실', severity: 'CRITICAL', sensorData: JSON.stringify({ acceleration: 4.2, angle: 78, impact: 'high' }), status: 'RESOLVED', isRead: true },
+    data: { residentId: resident2.id, deviceId: iotDevices[1].id, occurredAt: new Date(Date.now() - 3 * 86400000), location: '1관 103호 침실', severity: 'CRITICAL', sensorData: JSON.stringify({ acceleration: 4.2, angle: 78, impact: 'high' }), status: 'RESOLVED', isRead: true },
   });
-  await prisma.fallResponse.create({ data: { fallEventId: fall2.id, respondedBy: '이간호', content: '침대에서 낙상. 오른쪽 팔 타박상. 경과 관찰 중.', outcome: 'MINOR_INJURY' } });
+  await prisma.fallResponse.create({ data: { fallEventId: fall2.id, respondedBy: '김서연', content: '침대에서 낙상. 오른쪽 팔 타박상. 경과 관찰 중.', outcome: 'MINOR_INJURY' } });
 
   await prisma.fallEvent.create({
-    data: { residentId: resident5.id, deviceId: iotDevices[4].id, occurredAt: new Date(Date.now() - 3600000), location: '203호 복도', severity: 'WARNING', sensorData: JSON.stringify({ acceleration: 2.1, angle: 35, impact: 'light' }), status: 'UNHANDLED', isRead: false },
+    data: { residentId: resident5.id, deviceId: iotDevices[4].id, occurredAt: new Date(Date.now() - 3600000), location: '1관 109호 복도', severity: 'WARNING', sensorData: JSON.stringify({ acceleration: 2.1, angle: 35, impact: 'light' }), status: 'UNHANDLED', isRead: false },
   });
 
   console.log('낙상 이벤트 생성 완료');
@@ -286,7 +302,7 @@ async function main() {
       const iv = () => Math.floor((Math.random() - 0.5) * 6);
       await prisma.healthRecord.create({
         data: {
-          residentId: resident.id, recordedAt: date, recordedBy: nurse.name,
+          residentId: resident.id, recordedAt: date, recordedBy: nurseKim.name,
           systolicBP: systolicBase + iv(), diastolicBP: diastolicBase + iv(),
           bloodSugarFasting: sugarBase + v(), heartRate: 72 + iv(),
           temperature: 36.5 + (Math.random() - 0.5) * 0.6,
@@ -301,32 +317,32 @@ async function main() {
   console.log('건강 기록 생성 완료 (30일 x 10명)');
 
   const programs = await Promise.all([
-    prisma.program.create({ data: { name: '치료 체조', category: 'HEALTH_REHAB', description: '전문 치료사 지도 하에 진행되는 관절 강화 체조', instructor: '물리치료사 강민준', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 3, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' }]), location: '1층 치료실', capacity: 10, enrolledCount: 3, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
-    prisma.program.create({ data: { name: '원예 치료', category: 'COGNITIVE', description: '화분 가꾸기와 꽃꽂이를 통한 인지 기능 향상', instructor: '원예치료사 윤서연', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '14:00', endTime: '15:30' }, { dayOfWeek: 4, startTime: '14:00', endTime: '15:30' }]), location: '옥상 정원', capacity: 8, enrolledCount: 5, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
-    prisma.program.create({ data: { name: '노래 교실', category: 'CULTURE', description: '동요, 가요를 함께 부르는 음악 활동', instructor: '음악치료사 서지현', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '14:00', endTime: '15:00' }, { dayOfWeek: 3, startTime: '14:00', endTime: '15:00' }]), location: '2층 다목적실', capacity: 20, enrolledCount: 12, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
-    prisma.program.create({ data: { name: '인지 재활 훈련', category: 'COGNITIVE', description: '퍼즐, 기억력 게임을 통한 인지 기능 유지', instructor: '작업치료사 임채원', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' }]), location: '1층 인지치료실', capacity: 6, enrolledCount: 4, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
-    prisma.program.create({ data: { name: '요가 & 명상', category: 'EXERCISE', description: '심신 안정과 유연성 향상을 위한 요가 및 명상', instructor: '요가 강사 최유진', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '08:00', endTime: '09:00' }, { dayOfWeek: 4, startTime: '08:00', endTime: '09:00' }]), location: '1층 운동실', capacity: 12, enrolledCount: 8, status: 'ONGOING', minMobilityLevel: 2, minCognitiveLevel: 'NORMAL' } }),
-    prisma.program.create({ data: { name: '생활 공예', category: 'CULTURE', description: '도자기, 뜨개질, 그림 그리기 등 공예 활동', instructor: '공예 강사 한수진', schedule: JSON.stringify([{ dayOfWeek: 3, startTime: '14:00', endTime: '16:00' }]), location: '2층 공예실', capacity: 10, enrolledCount: 6, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
-    prisma.program.create({ data: { name: '영화 감상', category: 'SOCIAL', description: '매주 다양한 장르의 영화를 함께 감상', instructor: '생활지도사 박생활', schedule: JSON.stringify([{ dayOfWeek: 5, startTime: '15:00', endTime: '17:00' }]), location: '2층 영상실', capacity: 25, enrolledCount: 18, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MODERATE' } }),
-    prisma.program.create({ data: { name: '야외 산책', category: 'EXERCISE', description: '시설 주변 산책로를 이용한 야외 활동', instructor: '생활지도사 박생활', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '09:00', endTime: '10:00' }, { dayOfWeek: 4, startTime: '09:00', endTime: '10:00' }]), location: '시설 외부 산책로', capacity: 15, enrolledCount: 10, status: 'ONGOING', minMobilityLevel: 2, minCognitiveLevel: 'MILD' } }),
-    prisma.program.create({ data: { name: '어르신 토크쇼', category: 'SOCIAL', description: '다양한 주제로 함께 이야기 나누는 소통 프로그램', instructor: '사회복지사 최민정', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '15:00', endTime: '16:00' }]), location: '1층 모임실', capacity: 15, enrolledCount: 9, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
-    prisma.program.create({ data: { name: '재활 수영', category: 'HEALTH_REHAB', description: '수중 재활 운동을 통한 근력 강화 프로그램', instructor: '수중치료사 권민성', schedule: JSON.stringify([{ dayOfWeek: 3, startTime: '10:00', endTime: '12:00' }]), location: '인근 수영장', capacity: 5, enrolledCount: 3, status: 'RECRUITING', minMobilityLevel: 2, minCognitiveLevel: 'NORMAL' } }),
+    prisma.program.create({ data: { name: '실버요가', category: 'EXERCISE', description: '시니어 맞춤 요가로 유연성과 균형감각을 향상시키는 프로그램', instructor: '요가 강사', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '09:00', endTime: '10:00' }, { dayOfWeek: 3, startTime: '09:00', endTime: '10:00' }, { dayOfWeek: 5, startTime: '09:00', endTime: '10:00' }]), location: '1층 운동실', capacity: 15, enrolledCount: 8, status: 'ONGOING', minMobilityLevel: 2, minCognitiveLevel: 'NORMAL' } }),
+    prisma.program.create({ data: { name: '호흡과 명상', category: 'EXERCISE', description: '호흡법과 명상을 통한 심신 안정 및 스트레스 해소 프로그램', instructor: '명상 지도사', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 4, startTime: '10:00', endTime: '11:00' }]), location: '2층 힐링룸', capacity: 20, enrolledCount: 12, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
+    prisma.program.create({ data: { name: '미술공예', category: 'CULTURE', description: '다양한 미술 재료를 활용한 창작 활동으로 소근육 운동 및 정서 안정', instructor: '공예 강사', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '14:00', endTime: '15:30' }, { dayOfWeek: 4, startTime: '14:00', endTime: '15:30' }]), location: '3층 문화실', capacity: 12, enrolledCount: 7, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
+    prisma.program.create({ data: { name: '노래교실', category: 'CULTURE', description: '동요, 가요를 함께 부르는 음악치료 프로그램', instructor: '음악치료사', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '14:00', endTime: '15:00' }, { dayOfWeek: 3, startTime: '14:00', endTime: '15:00' }]), location: '2층 다목적홀', capacity: 25, enrolledCount: 15, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MODERATE' } }),
+    prisma.program.create({ data: { name: '맞춤재활운동', category: 'HEALTH_REHAB', description: '개인별 신체 상태에 맞춘 재활 운동 프로그램', instructor: '물리치료사', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 2, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 3, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 4, startTime: '10:00', endTime: '11:00' }, { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' }]), location: '1층 재활센터', capacity: 8, enrolledCount: 5, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
+    prisma.program.create({ data: { name: '인지훈련프로그램', category: 'COGNITIVE', description: '퍼즐, 기억력 게임을 통한 인지 기능 유지 및 향상 프로그램', instructor: '작업치료사', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '11:00', endTime: '12:00' }, { dayOfWeek: 3, startTime: '11:00', endTime: '12:00' }, { dayOfWeek: 5, startTime: '11:00', endTime: '12:00' }]), location: '3층 인지치료실', capacity: 6, enrolledCount: 4, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
+    prisma.program.create({ data: { name: '원예치료', category: 'COGNITIVE', description: '화분 가꾸기와 텃밭 활동을 통한 인지 기능 향상 및 정서 안정', instructor: '원예치료사', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '14:00', endTime: '15:30' }, { dayOfWeek: 4, startTime: '14:00', endTime: '15:30' }]), location: '옥상정원', capacity: 10, enrolledCount: 6, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'NORMAL' } }),
+    prisma.program.create({ data: { name: '영화감상회', category: 'SOCIAL', description: '매주 다양한 장르의 영화를 함께 감상하는 여가 프로그램', instructor: '생활지도사', schedule: JSON.stringify([{ dayOfWeek: 5, startTime: '15:00', endTime: '17:00' }]), location: '2층 영상실', capacity: 30, enrolledCount: 20, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MODERATE' } }),
+    prisma.program.create({ data: { name: '건강강좌', category: 'SOCIAL', description: '외부 전문가를 초청하여 건강 관련 주제로 진행하는 교육 프로그램', instructor: '외부강사', schedule: JSON.stringify([{ dayOfWeek: 2, startTime: '15:00', endTime: '16:00' }, { dayOfWeek: 4, startTime: '15:00', endTime: '16:00' }]), location: '2층 다목적홀', capacity: 40, enrolledCount: 25, status: 'ONGOING', minMobilityLevel: 1, minCognitiveLevel: 'MILD' } }),
+    prisma.program.create({ data: { name: '산책모임', category: 'EXERCISE', description: '시설 주변 산책로를 이용한 야외 걷기 활동', instructor: '생활지도사', schedule: JSON.stringify([{ dayOfWeek: 1, startTime: '09:00', endTime: '10:00' }, { dayOfWeek: 3, startTime: '09:00', endTime: '10:00' }, { dayOfWeek: 5, startTime: '09:00', endTime: '10:00' }]), location: '외부산책로', capacity: 15, enrolledCount: 10, status: 'ONGOING', minMobilityLevel: 2, minCognitiveLevel: 'MILD' } }),
   ]);
 
   console.log('프로그램 생성 완료');
 
   await prisma.programEnrollment.createMany({ data: [
     { residentId: resident1.id, programId: programs[0].id },
-    { residentId: resident1.id, programId: programs[1].id },
-    { residentId: resident1.id, programId: programs[2].id },
-    { residentId: resident2.id, programId: programs[2].id },
-    { residentId: resident2.id, programId: programs[6].id },
-    { residentId: resident3.id, programId: programs[0].id },
+    { residentId: resident1.id, programId: programs[6].id },
+    { residentId: resident1.id, programId: programs[3].id },
+    { residentId: resident2.id, programId: programs[3].id },
+    { residentId: resident2.id, programId: programs[7].id },
     { residentId: resident3.id, programId: programs[4].id },
-    { residentId: resident3.id, programId: programs[7].id },
-    { residentId: resident4.id, programId: programs[0].id },
-    { residentId: resident4.id, programId: programs[5].id },
-    { residentId: resident5.id, programId: programs[3].id },
+    { residentId: resident3.id, programId: programs[0].id },
+    { residentId: resident3.id, programId: programs[9].id },
+    { residentId: resident4.id, programId: programs[4].id },
+    { residentId: resident4.id, programId: programs[2].id },
+    { residentId: resident5.id, programId: programs[5].id },
     { residentId: resident5.id, programId: programs[8].id },
   ]});
   console.log('프로그램 등록 완료');
@@ -337,16 +353,18 @@ async function main() {
   ]});
 
   await prisma.activityLog.createMany({ data: [
-    { adminId: director.id, action: 'LOGIN', details: '관리자 로그인' },
-    { adminId: nurse.id, action: 'HEALTH_RECORD_CREATE', targetType: 'Resident', targetId: resident1.id, details: `${resident1.name} 건강 기록 입력` },
+    { adminId: director.id, action: 'LOGIN', details: '시설장 로그인' },
+    { adminId: nurseKim.id, action: 'HEALTH_RECORD_CREATE', targetType: 'Resident', targetId: resident1.id, details: `${resident1.name} 건강 기록 입력` },
   ]});
 
   console.log('');
-  console.log('=== 시드 데이터 생성 완료! ===');
+  console.log('=== 케어닥 케어홈 배곧신도시점 시드 데이터 생성 완료! ===');
   console.log('로그인 계정:');
-  console.log('  시설장: admin / admin123');
-  console.log('  간호사: nurse / nurse123');
-  console.log('  생활지도사: social / social123');
+  console.log('  시설장: director / caredoc2024!');
+  console.log('  간호사: nurse_kim / caredoc2024!');
+  console.log('  간호사: nurse_lee / caredoc2024!');
+  console.log('  생활지도사: social_choi / caredoc2024!');
+  console.log('  생활지도사: social_park / caredoc2024!');
 }
 
 main()

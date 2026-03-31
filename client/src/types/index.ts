@@ -65,6 +65,9 @@ export interface Resident {
   weight?: number;
   mobilityLevel: number;
   cognitiveLevel: 'NORMAL' | 'MILD' | 'MODERATE' | 'SEVERE';
+  monthlyFee?: number;
+  deposit?: number;
+  depositPaid?: boolean;
   profileImage?: string;
   createdAt: string;
   emergencyContacts?: EmergencyContact[];

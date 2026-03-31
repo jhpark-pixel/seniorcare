@@ -88,9 +88,11 @@ IoT 장치/시뮬레이터 → Socket.IO → `server/src/routes/fallEvents.ts` (
 - 입주자 상태: `ACTIVE`(입주중), `OUTING`(외출중), `HOSPITALIZED`(입원중), `DISCHARGED`(퇴소).
 - 프로그램 상태: `RECRUITING`(모집중), `ONGOING`(진행중), `ENDED`(종료), `SUSPENDED`(일시중단).
 
-## 시드 데이터 로그인 정보
+## 시드 데이터 로그인 정보 (케어닥 케어홈 배곧신도시점)
 
-- 시설장: `admin` / `admin123`
-- 간호사: `nurse` / `nurse123`
-- 생활지도사: `social` / `social123`
+- 시설장: `director` / `caredoc2024!`
+- 간호사: `nurse_kim` / `caredoc2024!`
+- 간호사: `nurse_lee` / `caredoc2024!`
+- 생활지도사: `social_choi` / `caredoc2024!`
+- 생활지도사: `social_park` / `caredoc2024!`
 - 기본 JWT 시크릿: `senior-care-secret-key-2024`

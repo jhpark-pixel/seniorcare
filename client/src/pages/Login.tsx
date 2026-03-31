@@ -32,17 +32,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #F0835A 0%, #e06030 50%, #c04820 100%)' }}>
       <div className="w-full max-w-md">
         {/* 카드 */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* 로고 */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-4">
-              🏥
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4" style={{ backgroundColor: '#F0835A' }}>
+              C
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">시니어 케어</h1>
-            <p className="text-gray-500 text-sm mt-1">입주자 통합 관리 시스템</p>
+            <h1 className="text-2xl font-bold text-gray-900">케어닥 케어홈</h1>
+            <p className="text-gray-500 text-sm mt-1">배곧신도시점 · 입주자 통합 관리</p>
           </div>
 
           {/* 폼 */}
