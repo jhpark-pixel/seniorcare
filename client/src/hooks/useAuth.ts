@@ -12,7 +12,7 @@ export function useAuth() {
   // 토큰이 없으면 자동 로그인
   useEffect(() => {
     if (!token || !admin) {
-      authApi.login('admin', 'admin123').then(res => {
+      authApi.login('director', 'caredoc2024!').then(res => {
         login(res.data.token, res.data.admin);
       }).catch(() => {});
     }
