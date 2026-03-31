@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface MaintenanceRequest {
   id: string;
@@ -12,7 +12,7 @@ interface MaintenanceRequest {
   cost: number | null;
 }
 
-const requests: MaintenanceRequest[] = [
+const initialRequests: MaintenanceRequest[] = [
   { id: '1', requestDate: '2026-03-28', requester: '김간호사', location: '1관 204호 화장실', description: '온수 배관 누수 발생, 바닥 물 고임', priority: '긴급', status: '진행중', completionDate: null, cost: null },
   { id: '2', requestDate: '2026-03-27', requester: '최생활지도사', location: '2관 202호', description: '에어컨 작동 불량 (냉방 안됨)', priority: '높음', status: '진행중', completionDate: null, cost: null },
   { id: '3', requestDate: '2026-03-26', requester: '이간호사', location: '1관 3층 복도', description: '형광등 3개 깜빡임 현상', priority: '보통', status: '요청', completionDate: null, cost: null },
@@ -36,16 +36,62 @@ const statusColors: Record<string, string> = {
   '완료': 'bg-green-100 text-green-800',
 };
 
+const emptyForm = { location: '', description: '', priority: '보통' as MaintenanceRequest['priority'] };
+
 export default function MaintenancePage() {
+  const [requests, setRequests] = useState<MaintenanceRequest[]>(initialRequests);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
+  const [completeId, setCompleteId] = useState<string | null>(null);
+  const [completeCost, setCompleteCost] = useState('');
+
   const totalCost = requests.reduce((sum, r) => sum + (r.cost || 0), 0);
   const pending = requests.filter(r => r.status !== '완료').length;
   const completed = requests.filter(r => r.status === '완료').length;
 
+  const handleSave = () => {
+    const newReq: MaintenanceRequest = {
+      id: crypto.randomUUID(),
+      requestDate: new Date().toISOString().slice(0, 10),
+      requester: '관리자',
+      location: formData.location,
+      description: formData.description,
+      priority: formData.priority,
+      status: '요청',
+      completionDate: null,
+      cost: null,
+    };
+    setRequests(prev => [newReq, ...prev]);
+    setFormData(emptyForm);
+    setShowModal(false);
+  };
+
+  const handleProgress = (id: string) => {
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: '진행중' as const } : r));
+  };
+
+  const openComplete = (id: string) => {
+    setCompleteId(id);
+    setCompleteCost('');
+  };
+
+  const handleComplete = () => {
+    if (!completeId) return;
+    const cost = parseInt(completeCost) || 0;
+    setRequests(prev => prev.map(r => r.id === completeId ? { ...r, status: '완료' as const, completionDate: new Date().toISOString().slice(0, 10), cost } : r));
+    setCompleteId(null);
+    setCompleteCost('');
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">유지보수</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">유지보수</h1>
+        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">
+          + 요청 등록
+        </button>
+      </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
           <p className="text-sm text-gray-500">전체 요청</p>
@@ -65,7 +111,6 @@ export default function MaintenancePage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -79,6 +124,7 @@ export default function MaintenancePage() {
                 <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">상태</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">완료일</th>
                 <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">비용</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -102,12 +148,71 @@ export default function MaintenancePage() {
                   <td className="px-4 py-3 text-sm text-gray-700 text-right font-medium">
                     {req.cost ? `${req.cost.toLocaleString()}원` : '-'}
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex justify-center gap-1">
+                      {req.status === '요청' && (
+                        <button onClick={() => handleProgress(req.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">진행</button>
+                      )}
+                      {req.status === '진행중' && (
+                        <button onClick={() => openComplete(req.id)} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* New request modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">요청 등록</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">위치</label>
+                <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">우선순위</label>
+                <select value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value as MaintenanceRequest['priority'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option>긴급</option>
+                  <option>높음</option>
+                  <option>보통</option>
+                  <option>낮음</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete modal with cost */}
+      {completeId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">작업 완료 처리</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">비용 (원)</label>
+              <input type="number" value={completeCost} onChange={e => setCompleteCost(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0" />
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setCompleteId(null)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleComplete} className="px-4 py-2 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600">완료 처리</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,8 +17,6 @@ import DailyTasks from './pages/DailyTasks';
 import ManagementStats from './pages/ManagementStats';
 import AdminManagement from './pages/AdminManagement';
 import ERPHome from './pages/ERPHome';
-import PlaceholderPage from './pages/PlaceholderPage';
-
 // ERP Pages
 import CounselingPage from './pages/erp/CounselingPage';
 import SubscriptionPage from './pages/erp/SubscriptionPage';
@@ -49,6 +47,20 @@ import StaffManagementPage from './pages/erp/StaffManagementPage';
 import SystemSettingsPage from './pages/erp/SystemSettingsPage';
 import ResidentComparisonPage from './pages/erp/ResidentComparisonPage';
 import ReportPage from './pages/erp/ReportPage';
+import AdmissionStatusPage from './pages/erp/AdmissionStatusPage';
+import RenewalPage from './pages/erp/RenewalPage';
+import DischargePage from './pages/erp/DischargePage';
+import HealthRecordHistoryPage from './pages/erp/HealthRecordHistoryPage';
+import HealthRecordBatchPage from './pages/erp/HealthRecordBatchPage';
+import PersonalHealthAnalysisPage from './pages/erp/PersonalHealthAnalysisPage';
+import HealthDashboardPage from './pages/erp/HealthDashboardPage';
+import ProgramAttendancePage from './pages/erp/ProgramAttendancePage';
+import ProgramRecommendPage from './pages/erp/ProgramRecommendPage';
+import IoTMonitorPage from './pages/erp/IoTMonitorPage';
+import IoTAlertSettingsPage from './pages/erp/IoTAlertSettingsPage';
+import ResidentDataPage from './pages/erp/ResidentDataPage';
+import ExcelExportPage from './pages/erp/ExcelExportPage';
+import PermissionsPage from './pages/erp/PermissionsPage';
 
 export const AuthContext = createContext<ReturnType<typeof useAuth> | null>(null);
 export const SocketContext = createContext<ReturnType<typeof useSocket> | null>(null);
@@ -98,7 +110,7 @@ function App() {
                 <Route path="contract/deposit" element={<ContractPage />} />
                 <Route path="contract/status" element={<ContractPage />} />
                 <Route path="admission/register" element={<ResidentForm />} />
-                <Route path="admission/status" element={<PlaceholderPage title="입퇴소자현황" />} />
+                <Route path="admission/status" element={<AdmissionStatusPage />} />
                 <Route path="admission/list" element={<ResidentList />} />
                 <Route path="admission/:id" element={<ResidentDetail />} />
                 <Route path="admission/:id/edit" element={<ResidentForm />} />
@@ -110,8 +122,8 @@ function App() {
                 <Route path="leave/register" element={<LeavePage />} />
                 <Route path="asset/list" element={<MaintenancePage />} />
                 <Route path="asset/maintenance" element={<MaintenancePage />} />
-                <Route path="renewal/search" element={<PlaceholderPage title="재계약대상자조회" />} />
-                <Route path="discharge/apply" element={<PlaceholderPage title="퇴소신청" />} />
+                <Route path="renewal/search" element={<RenewalPage />} />
+                <Route path="discharge/apply" element={<DischargePage />} />
                 <Route path="settlement/deposit" element={<SettlementPage />} />
                 <Route path="settlement/payment" element={<SettlementPage />} />
               </Route>
@@ -119,8 +131,8 @@ function App() {
               {/* 건강관리 */}
               <Route path="health">
                 <Route path="records/daily" element={<HealthRecords />} />
-                <Route path="records/history" element={<PlaceholderPage title="건강기록 이력조회" />} />
-                <Route path="records/batch" element={<PlaceholderPage title="건강기록 일괄입력" />} />
+                <Route path="records/history" element={<HealthRecordHistoryPage />} />
+                <Route path="records/batch" element={<HealthRecordBatchPage />} />
                 <Route path="counseling/register" element={<HealthCounselingPage />} />
                 <Route path="counseling/schedule" element={<HealthCounselingPage />} />
                 <Route path="counseling/history" element={<HealthCounselingPage />} />
@@ -133,8 +145,8 @@ function App() {
                 <Route path="intensive/register" element={<IntensiveCarePage />} />
                 <Route path="intensive/status" element={<IntensiveCarePage />} />
                 <Route path="intensive/device" element={<IntensiveCarePage />} />
-                <Route path="analysis/personal" element={<PlaceholderPage title="개인 건강분석표" />} />
-                <Route path="analysis/dashboard" element={<PlaceholderPage title="전체 건강 대시보드" />} />
+                <Route path="analysis/personal" element={<PersonalHealthAnalysisPage />} />
+                <Route path="analysis/dashboard" element={<HealthDashboardPage />} />
                 <Route path="analysis/guide" element={<HealthGuidePage />} />
               </Route>
 
@@ -155,8 +167,8 @@ function App() {
               <Route path="community">
                 <Route path="program/manage" element={<Programs />} />
                 <Route path="program/calendar" element={<ProgramCalendarPage />} />
-                <Route path="program/attendance" element={<PlaceholderPage title="참여자 관리 및 출석" />} />
-                <Route path="program/recommend" element={<PlaceholderPage title="AI 프로그램 추천" />} />
+                <Route path="program/attendance" element={<ProgramAttendancePage />} />
+                <Route path="program/recommend" element={<ProgramRecommendPage />} />
                 <Route path="notice/register" element={<NoticePage />} />
                 <Route path="notice/list" element={<NoticePage />} />
                 <Route path="event/register" element={<EventPage />} />
@@ -184,8 +196,8 @@ function App() {
                 <Route path="maintenance/status" element={<MaintenancePage />} />
                 <Route path="maintenance/history" element={<MaintenancePage />} />
                 <Route path="iot/register" element={<IoTDevices />} />
-                <Route path="iot/monitor" element={<PlaceholderPage title="장치상태 모니터링" />} />
-                <Route path="iot/alert" element={<PlaceholderPage title="장치알림 설정" />} />
+                <Route path="iot/monitor" element={<IoTMonitorPage />} />
+                <Route path="iot/alert" element={<IoTAlertSettingsPage />} />
               </Route>
 
               {/* 경영통계 */}
@@ -211,10 +223,10 @@ function App() {
                 <Route path="health/risk" element={<HealthStatsPage />} />
                 <Route path="health/medication" element={<HealthStatsPage />} />
                 <Route path="health/iot" element={<HealthStatsPage />} />
-                <Route path="resident/all" element={<PlaceholderPage title="입주자 전체 데이터" />} />
+                <Route path="resident/all" element={<ResidentDataPage />} />
                 <Route path="resident/compare" element={<ResidentComparisonPage />} />
                 <Route path="resident/risk" element={<HealthStatsPage />} />
-                <Route path="resident/export" element={<PlaceholderPage title="엑셀 일괄 다운로드" />} />
+                <Route path="resident/export" element={<ExcelExportPage />} />
                 <Route path="report/monthly" element={<ReportPage />} />
                 <Route path="report/quarterly" element={<ReportPage />} />
                 <Route path="report/annual" element={<ReportPage />} />
@@ -225,7 +237,7 @@ function App() {
               <Route path="admin">
                 <Route path="staff/list" element={<AdminManagement />} />
                 <Route path="staff/schedule" element={<StaffManagementPage />} />
-                <Route path="staff/permissions" element={<PlaceholderPage title="권한관리" />} />
+                <Route path="staff/permissions" element={<PermissionsPage />} />
                 <Route path="settings/facility" element={<SystemSettingsPage />} />
                 <Route path="settings/codes" element={<SystemSettingsPage />} />
                 <Route path="settings/fees" element={<SystemSettingsPage />} />

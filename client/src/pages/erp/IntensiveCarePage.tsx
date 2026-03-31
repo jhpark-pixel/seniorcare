@@ -1,36 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const mockData = [
-  {
-    id: 1, name: '김영순', room: '1관 301호', reason: '고혈압 + 당뇨 복합 관리', grade: '상',
-    period: '2026-01-15 ~ 현재', manager: '간호사 김미영',
-    vitals: { bp: '148/92', hr: '78', temp: '36.4', sugar: '165' },
-  },
-  {
-    id: 2, name: '이순자', room: '2관 205호', reason: '당뇨 인슐린 집중 관리', grade: '상',
-    period: '2026-02-01 ~ 현재', manager: '간호사 이정은',
-    vitals: { bp: '132/84', hr: '72', temp: '36.6', sugar: '198' },
-  },
-  {
-    id: 3, name: '박정희', room: '1관 402호', reason: '치매 진행 관찰 및 안전 관리', grade: '상',
-    period: '2025-11-10 ~ 현재', manager: '간호사 김미영',
-    vitals: { bp: '126/78', hr: '68', temp: '36.5', sugar: '102' },
-  },
-  {
-    id: 4, name: '한순이', room: '2관 302호', reason: '심장질환 와파린 복용 모니터링', grade: '중',
-    period: '2026-02-15 ~ 현재', manager: '간호사 이정은',
-    vitals: { bp: '118/74', hr: '64', temp: '36.3', sugar: '95' },
-  },
-  {
-    id: 5, name: '정미숙', room: '1관 201호', reason: '낙상 고위험 + 수면장애', grade: '중',
-    period: '2026-03-01 ~ 현재', manager: '간호사 김미영',
-    vitals: { bp: '122/76', hr: '70', temp: '36.5', sugar: '108' },
-  },
-  {
-    id: 6, name: '강순덕', room: '2관 401호', reason: '퇴원 후 회복기 관찰', grade: '하',
-    period: '2026-03-20 ~ 현재', manager: '간호사 이정은',
-    vitals: { bp: '120/78', hr: '74', temp: '36.7', sugar: '100' },
-  },
+interface IntensiveCareRecord {
+  id: string;
+  name: string;
+  room: string;
+  reason: string;
+  grade: '상' | '중' | '하';
+  period: string;
+  manager: string;
+  active: boolean;
+  vitals: { bp: string; hr: string; temp: string; sugar: string };
+}
+
+const initialData: IntensiveCareRecord[] = [
+  { id: '1', name: '김영순', room: '1관 301호', reason: '고혈압 + 당뇨 복합 관리', grade: '상', period: '2026-01-15 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '148/92', hr: '78', temp: '36.4', sugar: '165' } },
+  { id: '2', name: '이순자', room: '2관 205호', reason: '당뇨 인슐린 집중 관리', grade: '상', period: '2026-02-01 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '132/84', hr: '72', temp: '36.6', sugar: '198' } },
+  { id: '3', name: '박정희', room: '1관 402호', reason: '치매 진행 관찰 및 안전 관리', grade: '상', period: '2025-11-10 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '126/78', hr: '68', temp: '36.5', sugar: '102' } },
+  { id: '4', name: '한순이', room: '2관 302호', reason: '심장질환 와파린 복용 모니터링', grade: '중', period: '2026-02-15 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '118/74', hr: '64', temp: '36.3', sugar: '95' } },
+  { id: '5', name: '정미숙', room: '1관 201호', reason: '낙상 고위험 + 수면장애', grade: '중', period: '2026-03-01 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '122/76', hr: '70', temp: '36.5', sugar: '108' } },
+  { id: '6', name: '강순덕', room: '2관 401호', reason: '퇴원 후 회복기 관찰', grade: '하', period: '2026-03-20 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '120/78', hr: '74', temp: '36.7', sugar: '100' } },
 ];
 
 const gradeStyle = (grade: string) => {
@@ -42,22 +30,54 @@ const gradeStyle = (grade: string) => {
   return map[grade] || { border: 'border-gray-300', bg: 'bg-gray-50', badge: 'bg-gray-500 text-white' };
 };
 
+const emptyForm = { name: '', room: '', reason: '', grade: '상' as const, manager: '' };
+
 export default function IntensiveCarePage() {
+  const [data, setData] = useState<IntensiveCareRecord[]>(initialData);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
+
+  const activeData = data.filter(d => d.active);
   const gradeCount = { '상': 0, '중': 0, '하': 0 };
-  mockData.forEach(d => { gradeCount[d.grade as keyof typeof gradeCount]++; });
+  activeData.forEach(d => { gradeCount[d.grade as keyof typeof gradeCount]++; });
+
+  const handleSave = () => {
+    const newRecord: IntensiveCareRecord = {
+      id: crypto.randomUUID(),
+      name: formData.name,
+      room: formData.room,
+      reason: formData.reason,
+      grade: formData.grade,
+      period: `${new Date().toISOString().slice(0, 10)} ~ 현재`,
+      manager: formData.manager,
+      active: true,
+      vitals: { bp: '-', hr: '-', temp: '-', sugar: '-' },
+    };
+    setData(prev => [...prev, newRecord]);
+    setFormData(emptyForm);
+    setShowModal(false);
+  };
+
+  const handleComplete = (id: string) => {
+    const today = new Date().toISOString().slice(0, 10);
+    setData(prev => prev.map(r => {
+      if (r.id !== id) return r;
+      return { ...r, active: false, period: r.period.replace('현재', today) };
+    }));
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">집중케어</h1>
-        <button className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#e0734a]">
+        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#e0734a]">
           + 대상자 등록
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow border p-4 text-center">
-          <div className="text-2xl font-bold text-gray-800">{mockData.length}</div>
+          <div className="text-2xl font-bold text-gray-800">{activeData.length}</div>
           <div className="text-xs text-gray-500 mt-1">전체 대상자</div>
         </div>
         <div className="bg-white rounded-lg shadow border p-4 text-center">
@@ -75,7 +95,7 @@ export default function IntensiveCarePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockData.map((resident) => {
+        {activeData.map((resident) => {
           const style = gradeStyle(resident.grade);
           return (
             <div key={resident.id} className={`rounded-lg border-2 ${style.border} ${style.bg} p-4 shadow-sm`}>
@@ -127,10 +147,52 @@ export default function IntensiveCarePage() {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-3 pt-2 border-t">
+                <button onClick={() => handleComplete(resident.id)} className="w-full px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 font-medium">완료</button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">대상자 등록</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
+                <input type="text" value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">관리사유</label>
+                <input type="text" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">관리등급</label>
+                <select value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value as '상' | '중' | '하' })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="상">상 (긴급)</option>
+                  <option value="중">중 (주의)</option>
+                  <option value="하">하 (관찰)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
+                <input type="text" value={formData.manager} onChange={e => setFormData({ ...formData, manager: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

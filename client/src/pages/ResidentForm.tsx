@@ -14,6 +14,7 @@ export default function ResidentForm() {
     moveInDate: new Date().toISOString().split('T')[0],
     status: 'ACTIVE', height: '', weight: '',
     mobilityLevel: 1, cognitiveLevel: 'NORMAL',
+    roomType: 'SINGLE', deposit: '', monthlyFee: '',
   });
 
   useEffect(() => {
@@ -31,6 +32,8 @@ export default function ResidentForm() {
         moveInDate: r.moveInDate.split('T')[0],
         height: r.height?.toString() || '', weight: r.weight?.toString() || '',
         mobilityLevel: r.mobilityLevel, cognitiveLevel: r.cognitiveLevel,
+        roomType: r.roomType || 'SINGLE',
+        deposit: r.deposit?.toString() || '', monthlyFee: r.monthlyFee?.toString() || '',
       });
     } catch {}
     setLoading(false);
@@ -44,6 +47,8 @@ export default function ResidentForm() {
         ...form,
         height: form.height ? parseFloat(form.height) : undefined,
         weight: form.weight ? parseFloat(form.weight) : undefined,
+        deposit: form.deposit ? parseInt(form.deposit) : undefined,
+        monthlyFee: form.monthlyFee ? parseInt(form.monthlyFee) : undefined,
       };
       if (isEdit) {
         await residentsApi.update(id!, data);
@@ -124,6 +129,35 @@ export default function ResidentForm() {
                 <option value="HOSPITALIZED">입원</option>
                 <option value="DISCHARGED">퇴소</option>
               </select>
+            </div>
+            <div>
+              <label className="label">호실 유형</label>
+              <select
+                value={form.roomType} onChange={e => setForm(f => ({ ...f, roomType: e.target.value }))}
+                className="input-field"
+              >
+                <option value="SINGLE">1인실</option>
+                <option value="DOUBLE">2인실</option>
+                <option value="SPECIAL">특실</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">보증금 (원)</label>
+              <input
+                type="number"
+                value={form.deposit} onChange={e => setForm(f => ({ ...f, deposit: e.target.value }))}
+                className="input-field" placeholder="10,000,000"
+              />
+              {form.deposit && <p className="text-xs text-gray-500 mt-1">{parseInt(form.deposit).toLocaleString('ko-KR')}원</p>}
+            </div>
+            <div className="col-span-2">
+              <label className="label">월 생활비 (원)</label>
+              <input
+                type="number"
+                value={form.monthlyFee} onChange={e => setForm(f => ({ ...f, monthlyFee: e.target.value }))}
+                className="input-field" placeholder="1,900,000"
+              />
+              {form.monthlyFee && <p className="text-xs text-gray-500 mt-1">{parseInt(form.monthlyFee).toLocaleString('ko-KR')}원 / 월</p>}
             </div>
             <div>
               <label className="label">키 (cm)</label>

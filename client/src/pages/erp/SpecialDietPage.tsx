@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface SpecialDiet {
   id: string;
@@ -11,7 +11,7 @@ interface SpecialDiet {
   status: '활성' | '종료';
 }
 
-const specialDiets: SpecialDiet[] = [
+const initialDiets: SpecialDiet[] = [
   { id: '1', residentName: '김영숙', room: '101호', dietType: '저염식', reason: '고혈압 (150/95mmHg)', startDate: '2025-06-15', note: '국물류 염분 50% 감량', status: '활성' },
   { id: '2', residentName: '이순자', room: '203호', dietType: '저당식', reason: '제2형 당뇨 (HbA1c 7.2%)', startDate: '2025-08-20', note: '밥 2/3 배식, 과일 1회/일 제한', status: '활성' },
   { id: '3', residentName: '박정희', room: '105호', dietType: '연하곤란식', reason: '뇌졸중 후유증 삼킴장애', startDate: '2025-11-03', note: '다진식 또는 죽식, 물 토로미 첨가', status: '활성' },
@@ -35,18 +35,48 @@ const statusColors: Record<string, string> = {
   '종료': 'bg-gray-100 text-gray-500',
 };
 
+const emptyForm = { residentName: '', room: '', dietType: '저염식' as SpecialDiet['dietType'], reason: '', startDate: '' };
+
 export default function SpecialDietPage() {
-  const activeDiets = specialDiets.filter(d => d.status === '활성');
+  const [diets, setDiets] = useState<SpecialDiet[]>(initialDiets);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
+
+  const activeDiets = diets.filter(d => d.status === '활성');
   const typeCounts: Record<string, number> = {};
   activeDiets.forEach(d => {
     typeCounts[d.dietType] = (typeCounts[d.dietType] || 0) + 1;
   });
 
+  const handleSave = () => {
+    const newDiet: SpecialDiet = {
+      id: crypto.randomUUID(),
+      residentName: formData.residentName,
+      room: formData.room,
+      dietType: formData.dietType,
+      reason: formData.reason,
+      startDate: formData.startDate,
+      note: '',
+      status: '활성',
+    };
+    setDiets(prev => [newDiet, ...prev]);
+    setFormData(emptyForm);
+    setShowModal(false);
+  };
+
+  const handleEnd = (id: string) => {
+    setDiets(prev => prev.map(d => d.id === id ? { ...d, status: '종료' as const, note: `${new Date().toISOString().slice(0, 10)} 종료` } : d));
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">특별식 관리</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">특별식 관리</h1>
+        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">
+          + 특별식 등록
+        </button>
+      </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {Object.entries(dietTypeColors).map(([type, color]) => (
           <div key={type} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
@@ -56,13 +86,11 @@ export default function SpecialDietPage() {
         ))}
       </div>
 
-      {/* Total active */}
       <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-center gap-3">
         <span className="text-2xl font-bold text-orange-700">{activeDiets.length}</span>
         <span className="text-sm text-orange-700">명의 입소자가 현재 특별식을 제공받고 있습니다.</span>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -75,10 +103,11 @@ export default function SpecialDietPage() {
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">시작일</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">비고</th>
                 <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">상태</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">관리</th>
               </tr>
             </thead>
             <tbody>
-              {specialDiets.map(diet => (
+              {diets.map(diet => (
                 <tr key={diet.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{diet.residentName}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{diet.room}</td>
@@ -95,12 +124,57 @@ export default function SpecialDietPage() {
                       {diet.status}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    {diet.status === '활성' && (
+                      <button onClick={() => handleEnd(diet.id)} className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">종료</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">특별식 등록</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
+                <input type="text" value={formData.residentName} onChange={e => setFormData({ ...formData, residentName: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
+                <input type="text" value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">특별식 유형</label>
+                <select value={formData.dietType} onChange={e => setFormData({ ...formData, dietType: e.target.value as SpecialDiet['dietType'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option>저염식</option>
+                  <option>저당식</option>
+                  <option>연하곤란식</option>
+                  <option>저단백식</option>
+                  <option>채식</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">사유</label>
+                <input type="text" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
+                <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
