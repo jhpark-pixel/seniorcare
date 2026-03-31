@@ -35,7 +35,10 @@ router.post('/', authenticate, requireRole('DIRECTOR'), async (req: AuthRequest,
   try {
     const { username, password, name, role, email, phone } = req.body;
 
-    if (!username || !password || !name || !role) {
+    const trimmedUsername = username?.trim();
+    const trimmedName = name?.trim();
+
+    if (!trimmedUsername || !password || !trimmedName || !role) {
       return res.status(400).json({ message: '필수 항목을 모두 입력해주세요.' });
     }
 
@@ -45,7 +48,7 @@ router.post('/', authenticate, requireRole('DIRECTOR'), async (req: AuthRequest,
     }
 
     // 아이디 중복 확인
-    const existing = await prisma.admin.findUnique({ where: { username } });
+    const existing = await prisma.admin.findUnique({ where: { username: trimmedUsername } });
     if (existing) {
       return res.status(409).json({ message: '이미 사용 중인 아이디입니다.' });
     }
@@ -54,9 +57,9 @@ router.post('/', authenticate, requireRole('DIRECTOR'), async (req: AuthRequest,
 
     const admin = await prisma.admin.create({
       data: {
-        username,
+        username: trimmedUsername,
         password: hashedPassword,
-        name,
+        name: trimmedName,
         role,
         email: email || null,
         phone: phone || null,
