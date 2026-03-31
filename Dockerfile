@@ -2,17 +2,21 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy source
+# Copy all source files
 COPY . .
 
-# Prepare for production
+# Install root deps
+RUN npm install --ignore-scripts 2>/dev/null || true
+
+# Prepare for production (sqlite -> postgresql)
 RUN node scripts/prepare-prod.js
 
-# Install and build client
-RUN cd client && npm install && npm run build
+# Build client
+RUN cd client && npm install && npm run build && ls -la dist/
 
-# Install and build server
+# Build server
 RUN cd server && npm install && npx prisma generate && npm run build
 
-# Start
+EXPOSE 4000
+
 CMD ["sh", "-c", "node scripts/prepare-prod.js && cd server && npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]
