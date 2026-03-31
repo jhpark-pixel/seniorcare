@@ -86,15 +86,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* 계정 안내 */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-            <p className="text-xs text-gray-500 font-medium mb-2">테스트 계정</p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>시설장: <span className="font-mono bg-white px-1 rounded">admin / admin123</span></p>
-              <p>간호사: <span className="font-mono bg-white px-1 rounded">nurse / nurse123</span></p>
-              <p>생활지도사: <span className="font-mono bg-white px-1 rounded">social / social123</span></p>
-            </div>
-          </div>
         </div>
 
         <p className="text-center text-blue-200 text-xs mt-4">© 2024 시니어 케어 시스템</p>
