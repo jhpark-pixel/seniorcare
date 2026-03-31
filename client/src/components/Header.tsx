@@ -51,7 +51,7 @@ export default function Header() {
             </p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => { logout(); window.location.href = '/login'; }}
             className="ml-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
           >
             로그아웃
