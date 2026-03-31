@@ -49,7 +49,7 @@ router.get('/health/:residentId', authenticate, async (req: AuthRequest, res: Re
     doc.text(`생년월일: ${new Date(resident.birthDate).toLocaleDateString('ko-KR')}`);
     doc.text(`성별: ${resident.gender === 'MALE' ? '남' : '여'}`);
     doc.text(`호실: ${resident.roomNumber}`);
-    doc.text(`입소일: ${new Date(resident.admissionDate).toLocaleDateString('ko-KR')}`);
+    doc.text(`입소일: ${new Date(resident.moveInDate).toLocaleDateString('ko-KR')}`);
     doc.text(`이동 능력: ${resident.mobilityLevel}등급`);
     doc.text(`인지 수준: ${resident.cognitiveLevel}`);
     doc.moveDown();

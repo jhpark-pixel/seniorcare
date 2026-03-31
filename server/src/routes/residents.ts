@@ -92,7 +92,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const {
-      name, birthDate, gender, roomNumber, admissionDate,
+      name, birthDate, gender, roomNumber, moveInDate,
       height, weight, mobilityLevel, cognitiveLevel,
       emergencyContacts, diseases, medications, allergies, dietaryRestrictions,
     } = req.body;
@@ -100,7 +100,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const resident = await prisma.resident.create({
       data: {
         name, birthDate: new Date(birthDate), gender, roomNumber,
-        admissionDate: new Date(admissionDate), height, weight,
+        moveInDate: new Date(moveInDate), height, weight,
         mobilityLevel: mobilityLevel || 1, cognitiveLevel: cognitiveLevel || 'NORMAL',
         emergencyContacts: emergencyContacts ? { create: emergencyContacts } : undefined,
         allergies: allergies ? { create: allergies } : undefined,
@@ -153,7 +153,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const {
-      name, birthDate, gender, roomNumber, admissionDate, status,
+      name, birthDate, gender, roomNumber, moveInDate, status,
       height, weight, mobilityLevel, cognitiveLevel,
     } = req.body;
 
@@ -161,7 +161,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       where: { id },
       data: {
         name, birthDate: birthDate ? new Date(birthDate) : undefined,
-        gender, roomNumber, admissionDate: admissionDate ? new Date(admissionDate) : undefined,
+        gender, roomNumber, moveInDate: moveInDate ? new Date(moveInDate) : undefined,
         status, height, weight, mobilityLevel, cognitiveLevel,
       },
     });

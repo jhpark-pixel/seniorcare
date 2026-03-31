@@ -11,7 +11,7 @@ export default function ResidentForm() {
 
   const [form, setForm] = useState({
     name: '', birthDate: '', gender: 'FEMALE', roomNumber: '',
-    admissionDate: new Date().toISOString().split('T')[0],
+    moveInDate: new Date().toISOString().split('T')[0],
     status: 'ACTIVE', height: '', weight: '',
     mobilityLevel: 1, cognitiveLevel: 'NORMAL',
   });
@@ -28,7 +28,7 @@ export default function ResidentForm() {
       setForm({
         name: r.name, gender: r.gender, roomNumber: r.roomNumber, status: r.status,
         birthDate: r.birthDate.split('T')[0],
-        admissionDate: r.admissionDate.split('T')[0],
+        moveInDate: r.moveInDate.split('T')[0],
         height: r.height?.toString() || '', weight: r.weight?.toString() || '',
         mobilityLevel: r.mobilityLevel, cognitiveLevel: r.cognitiveLevel,
       });
@@ -109,7 +109,7 @@ export default function ResidentForm() {
               <label className="label">입소일 *</label>
               <input
                 type="date" required
-                value={form.admissionDate} onChange={e => setForm(f => ({ ...f, admissionDate: e.target.value }))}
+                value={form.moveInDate} onChange={e => setForm(f => ({ ...f, moveInDate: e.target.value }))}
                 className="input-field"
               />
             </div>

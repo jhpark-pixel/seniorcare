@@ -78,7 +78,7 @@ router.get('/stats', authenticate, requireRole('DIRECTOR'), async (req: AuthRequ
       // 해당 월 입주자 수 (해당 월 이전 입소 + 퇴소 안 했거나 해당 월 이후 퇴소)
       const residentCount = await prisma.resident.count({
         where: {
-          admissionDate: { lte: monthEnd },
+          moveInDate: { lte: monthEnd },
           OR: [
             { status: { not: 'DISCHARGED' } },
             { updatedAt: { gte: monthStart } },
@@ -96,7 +96,7 @@ router.get('/stats', authenticate, requireRole('DIRECTOR'), async (req: AuthRequ
       // 해당 월 신규 입소자
       const newAdmissions = await prisma.resident.count({
         where: {
-          admissionDate: { gte: monthStart, lte: monthEnd },
+          moveInDate: { gte: monthStart, lte: monthEnd },
         },
       });
 

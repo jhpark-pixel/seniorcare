@@ -79,7 +79,7 @@ export default function ResidentDetail() {
               </div>
               <p className="text-gray-500 mt-1">
                 {resident.roomNumber}호 · {new Date().getFullYear() - new Date(resident.birthDate).getFullYear()}세 · {genderLabel[resident.gender]} ·
-                입소일: {new Date(resident.admissionDate).toLocaleDateString('ko-KR')}
+                입소일: {new Date(resident.moveInDate).toLocaleDateString('ko-KR')}
               </p>
               <div className="flex gap-4 mt-2 text-sm text-gray-500">
                 <span>이동 능력: <strong className="text-gray-800">Lv.{resident.mobilityLevel}</strong></span>

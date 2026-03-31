@@ -59,7 +59,7 @@ export interface Resident {
   birthDate: string;
   gender: 'MALE' | 'FEMALE';
   roomNumber: string;
-  admissionDate: string;
+  moveInDate: string;
   status: 'ACTIVE' | 'OUT' | 'HOSPITALIZED' | 'DISCHARGED';
   height?: number;
   weight?: number;
