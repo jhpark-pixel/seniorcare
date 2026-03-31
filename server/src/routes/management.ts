@@ -143,6 +143,25 @@ router.get('/stats', authenticate, requireRole('DIRECTOR'), async (req: AuthRequ
       ? Math.round(((monthlyRevenue - operatingCosts - staffCosts) / monthlyRevenue) * 100)
       : 0;
 
+    // 월별 재무 데이터 (최근 6개월, 모의)
+    const monthlyFinancialData = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthLabel = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+      // 월별 입주자 수에 따른 변동 시뮬레이션
+      const baseResidents = Math.max(5, activeCount - Math.floor(i * 0.8) + Math.floor(Math.random() * 2));
+      const mRevenue = baseResidents * 3500000;
+      const mOperating = Math.round(mRevenue * (0.65 + Math.random() * 0.1));
+      const mStaff = Math.round(mRevenue * (0.18 + Math.random() * 0.04));
+      const mProfit = mRevenue - mOperating - mStaff;
+      monthlyFinancialData.push({
+        month: monthLabel,
+        revenue: mRevenue,
+        costs: mOperating + mStaff,
+        profit: mProfit,
+      });
+    }
+
     res.json({
       kpi: {
         totalResidents,
@@ -165,6 +184,7 @@ router.get('/stats', authenticate, requireRole('DIRECTOR'), async (req: AuthRequ
         operatingCosts,
         staffCosts,
         profitMargin,
+        monthlyData: monthlyFinancialData,
       },
     });
   } catch (error) {
