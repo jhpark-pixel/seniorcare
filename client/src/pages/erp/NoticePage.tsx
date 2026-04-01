@@ -56,6 +56,7 @@ export default function NoticePage() {
   const [activeCategory, setActiveCategory] = useState('전체');
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
   const filtered = notices
     .filter(n => activeCategory === '전체' || n.category === activeCategory)
@@ -87,6 +88,11 @@ export default function NoticePage() {
 
   const handleTogglePin = (id: string) => {
     setNotices(prev => prev.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n));
+  };
+
+  const handleView = (notice: Notice) => {
+    setNotices(prev => prev.map(n => n.id === notice.id ? { ...n, views: n.views + 1 } : n));
+    setSelectedNotice({ ...notice, views: notice.views + 1 });
   };
 
   return (
@@ -205,7 +211,7 @@ export default function NoticePage() {
                   <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
                 </div>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">{notice.title}</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2 cursor-pointer hover:text-[#F0835A] transition-colors" onClick={() => handleView(notice)}>{notice.title}</h2>
               <div className="flex gap-4 text-sm text-gray-500">
                 <span>작성자: {notice.author}</span>
                 <span>작성일: {notice.date}</span>
@@ -236,7 +242,7 @@ export default function NoticePage() {
                         {notice.category}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-900 font-medium">{notice.title}</td>
+                    <td className="px-5 py-3 text-sm text-gray-900 font-medium cursor-pointer hover:text-[#F0835A] transition-colors" onClick={() => handleView(notice)}>{notice.title}</td>
                     <td className="px-5 py-3 text-sm text-gray-600">{notice.author}</td>
                     <td className="px-5 py-3 text-sm text-gray-500">{notice.date}</td>
                     <td className="px-5 py-3 text-sm text-gray-500 text-right">{notice.views}</td>
@@ -255,6 +261,54 @@ export default function NoticePage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {/* 상세보기 모달 */}
+      {selectedNotice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${categoryColors[selectedNotice.category]}`}>
+                    {selectedNotice.category}
+                  </span>
+                  {selectedNotice.pinned && (
+                    <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">중요</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSelectedNotice(null)}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">{selectedNotice.title}</h2>
+              <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                <span>작성자: {selectedNotice.author}</span>
+                <span>작성일: {selectedNotice.date}</span>
+                <span>조회수: {selectedNotice.views}</span>
+              </div>
+            </div>
+            <div className="px-6 py-5 overflow-y-auto flex-1">
+              {selectedNotice.content ? (
+                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {selectedNotice.content}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">등록된 내용이 없습니다.</p>
+              )}
+            </div>
+            <div className="px-6 py-3 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setSelectedNotice(null)}
+                className="px-5 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d] font-medium"
+              >
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       )}
