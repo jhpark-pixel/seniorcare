@@ -20,13 +20,6 @@ const tabs: Tab[] = [
   { id: 'admin', label: '경영관리자', icon: '⚙️', roles: ['DIRECTOR'] },
 ];
 
-const actionButtons = [
-  { label: '신규', shortcut: 'F2' },
-  { label: '조회', shortcut: 'F3' },
-  { label: '저장', shortcut: 'F4' },
-  { label: '인쇄', shortcut: 'F6' },
-  { label: '엑셀', shortcut: 'F7' },
-];
 
 function getRoleLabel(role: string): string {
   switch (role) {
@@ -63,6 +56,14 @@ export default function TabNavigation({ activeTab, onTabChange, admin }: TabNavi
     <div className="flex-shrink-0">
       {/* Top tab bar */}
       <div className="flex items-center bg-white border-b border-gray-200">
+        {/* Logo */}
+        <div className="flex items-center gap-2 px-4 flex-shrink-0 border-r border-gray-200">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: '#F0835A' }}>
+            C
+          </div>
+          <span className="text-sm font-bold text-gray-800 whitespace-nowrap">Caredoc</span>
+        </div>
+
         {/* Tabs */}
         <div className="flex items-center flex-1 overflow-x-auto">
           {visibleTabs.map((tab) => {
@@ -88,20 +89,9 @@ export default function TabNavigation({ activeTab, onTabChange, admin }: TabNavi
           })}
         </div>
 
-        {/* Right side: date + action buttons */}
-        <div className="flex items-center gap-2 px-4 flex-shrink-0">
-          <span className="text-sm text-gray-500 mr-2">{formatDate()}</span>
-          <div className="flex items-center divide-x divide-gray-300 border border-gray-300 rounded">
-            {actionButtons.map((btn) => (
-              <button
-                key={btn.shortcut}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
-                title={`${btn.label} (${btn.shortcut})`}
-              >
-                {btn.label}[{btn.shortcut}]
-              </button>
-            ))}
-          </div>
+        {/* Right side: date */}
+        <div className="flex items-center px-4 flex-shrink-0">
+          <span className="text-sm text-gray-500">{formatDate()}</span>
         </div>
       </div>
 
