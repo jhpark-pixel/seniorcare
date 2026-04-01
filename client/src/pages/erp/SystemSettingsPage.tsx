@@ -5,7 +5,7 @@ import { staff } from '../../data/mockData';
 const director = staff.find(s => s.role === 'DIRECTOR');
 
 const facilityInfo = {
-  name: '케어닥 케어홈 배곧신도시점',
+  name: '케어닥 케어홈 송추점',
   address: '경기도 시흥시 배곧신도시로 123, 케어닥빌딩',
   ceo: director?.name ?? '박준혁',
   bizNumber: '123-45-67890',

@@ -42,7 +42,7 @@ export default function Login() {
               C
             </div>
             <h1 className="text-2xl font-bold text-gray-900">케어닥 케어홈</h1>
-            <p className="text-gray-500 text-sm mt-1">배곧신도시점 · 입주자 통합 관리</p>
+            <p className="text-gray-500 text-sm mt-1">송추점 · 입주자 통합 관리</p>
           </div>
 
           {/* 폼 */}

@@ -111,7 +111,7 @@ export default function TabNavigation({ activeTab, onTabChange, admin }: TabNavi
       {/* Bottom status bar */}
       <div className="flex items-center justify-between px-4 py-1.5 bg-gray-100 border-b border-gray-200 text-xs text-gray-500">
         <span>
-          케어닥 케어홈 배곧신도시점
+          케어닥 케어홈 송추점
           {admin && ` | ${admin.name} (${getRoleLabel(admin.role)})`}
         </span>
         <span>v2.0.0</span>

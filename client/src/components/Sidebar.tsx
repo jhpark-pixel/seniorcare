@@ -44,7 +44,7 @@ export default function Sidebar() {
           </div>
           <div>
             <h1 className="font-bold text-sm leading-tight">케어닥 케어홈</h1>
-            <p className="text-xs text-slate-400">배곧신도시점</p>
+            <p className="text-xs text-slate-400">송추점</p>
           </div>
         </div>
       </div>
