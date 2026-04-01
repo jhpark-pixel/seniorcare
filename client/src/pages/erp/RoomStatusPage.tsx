@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { rooms as mockRooms, MockRoom } from '../../data/mockData';
 
 type RoomStatus = '사용중' | '빈방' | '수리중';
@@ -17,15 +18,58 @@ function countByStatus(roomList: RoomState[]) {
   return counts;
 }
 
+interface AssignForm {
+  roomId: string;
+  residentName: string;
+}
+
+interface InspectionRecord {
+  id: string;
+  roomId: string;
+  room: string;
+  date: string;
+  inspector: string;
+  result: '이상없음' | '경미한결함' | '수리필요';
+  note: string;
+}
+
+const initialInspections: InspectionRecord[] = [
+  { id: '1', roomId: '', room: '1관 101호', date: '2026-03-25', inspector: '김서연', result: '이상없음', note: '정기 점검' },
+  { id: '2', roomId: '', room: '1관 107호', date: '2026-03-28', inspector: '이하은', result: '수리필요', note: '온수 배관 누수 발견' },
+  { id: '3', roomId: '', room: '2관 203호', date: '2026-03-27', inspector: '김서연', result: '경미한결함', note: '에어컨 필터 교체 필요' },
+  { id: '4', roomId: '', room: '2관 210호', date: '2026-03-20', inspector: '이하은', result: '이상없음', note: '정기 점검' },
+  { id: '5', roomId: '', room: '1관 105호', date: '2026-03-22', inspector: '김서연', result: '경미한결함', note: '창문 잠금장치 헐거움' },
+];
+
+const inspectionColors: Record<string, string> = {
+  '이상없음': 'bg-green-100 text-green-800',
+  '경미한결함': 'bg-yellow-100 text-yellow-800',
+  '수리필요': 'bg-red-100 text-red-800',
+};
+
+const tabs = [
+  { id: 'status', label: '동/호실 현황', path: '/erp/room-status/status' },
+  { id: 'assign', label: '호실배정 관리', path: '/erp/room-status/assign' },
+  { id: 'inspection', label: '호실점검 이력', path: '/erp/room-status/inspection' },
+];
+
 export default function RoomStatusPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [rooms, setRooms] = useState<RoomState[]>(mockRooms.map(r => ({ ...r })));
   const [selectedRoom, setSelectedRoom] = useState<RoomState | null>(null);
   const [newStatus, setNewStatus] = useState<RoomStatus>('사용중');
+  const [assignForm, setAssignForm] = useState<AssignForm>({ roomId: '', residentName: '' });
+  const [inspections] = useState<InspectionRecord[]>(initialInspections);
 
   const building1 = rooms.filter(r => r.building === '1관');
   const building2 = rooms.filter(r => r.building === '2관');
   const total = rooms.length;
   const counts = countByStatus(rooms);
+
+  const emptyRooms = rooms.filter(r => r.status === '빈방');
 
   const openDetail = (room: RoomState) => {
     setSelectedRoom(room);
@@ -40,6 +84,16 @@ export default function RoomStatusPage() {
       return { ...r, status: newStatus, residentName: updatedResident };
     }));
     setSelectedRoom(null);
+  };
+
+  const handleAssign = () => {
+    if (!assignForm.roomId || !assignForm.residentName) return;
+    setRooms(prev => prev.map(r =>
+      r.id === assignForm.roomId
+        ? { ...r, status: '사용중' as RoomStatus, residentName: assignForm.residentName }
+        : r
+    ));
+    setAssignForm({ roomId: '', residentName: '' });
   };
 
   function RoomGrid({ title, roomList }: { title: string; roomList: RoomState[] }) {
@@ -76,32 +130,189 @@ export default function RoomStatusPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">동/호실 현황</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">동/호실 현황</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
-          <p className="text-sm text-gray-500">총 호실</p>
-          <p className="text-3xl font-bold text-gray-900">{total}<span className="text-base font-normal text-gray-500">실</span></p>
-        </div>
-        <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
-          <p className="text-sm text-blue-600">사용중</p>
-          <p className="text-3xl font-bold text-blue-700">{counts['사용중']}<span className="text-base font-normal text-blue-500">실</span></p>
-        </div>
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-sm text-gray-500">빈방</p>
-          <p className="text-3xl font-bold text-gray-600">{counts['빈방']}<span className="text-base font-normal text-gray-400">실</span></p>
-        </div>
-        <div className="bg-orange-50 rounded-xl border border-orange-200 p-4 text-center">
-          <p className="text-sm text-orange-600">수리중</p>
-          <p className="text-3xl font-bold text-orange-700">{counts['수리중']}<span className="text-base font-normal text-orange-500">실</span></p>
-        </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="space-y-6">
-        <RoomGrid title="1관 (본관)" roomList={building1} />
-        <RoomGrid title="2관 (별관)" roomList={building2} />
-      </div>
+      {/* status: 동/호실 현황 그리드 */}
+      {segment === 'status' && (
+        <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+              <p className="text-sm text-gray-500">총 호실</p>
+              <p className="text-3xl font-bold text-gray-900">{total}<span className="text-base font-normal text-gray-500">실</span></p>
+            </div>
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
+              <p className="text-sm text-blue-600">사용중</p>
+              <p className="text-3xl font-bold text-blue-700">{counts['사용중']}<span className="text-base font-normal text-blue-500">실</span></p>
+            </div>
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center">
+              <p className="text-sm text-gray-500">빈방</p>
+              <p className="text-3xl font-bold text-gray-600">{counts['빈방']}<span className="text-base font-normal text-gray-400">실</span></p>
+            </div>
+            <div className="bg-orange-50 rounded-xl border border-orange-200 p-4 text-center">
+              <p className="text-sm text-orange-600">수리중</p>
+              <p className="text-3xl font-bold text-orange-700">{counts['수리중']}<span className="text-base font-normal text-orange-500">실</span></p>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <RoomGrid title="1관 (본관)" roomList={building1} />
+            <RoomGrid title="2관 (별관)" roomList={building2} />
+          </div>
+        </div>
+      )}
 
+      {/* assign: 호실배정 관리 */}
+      {segment === 'assign' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">신규 호실 배정</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">빈방 선택</label>
+                <select
+                  value={assignForm.roomId}
+                  onChange={e => setAssignForm({ ...assignForm, roomId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">-- 호실 선택 --</option>
+                  {emptyRooms.map(r => (
+                    <option key={r.id} value={r.id}>{r.building} {r.roomNumber}호 ({r.type})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
+                <input
+                  type="text"
+                  value={assignForm.residentName}
+                  onChange={e => setAssignForm({ ...assignForm, residentName: e.target.value })}
+                  placeholder="입소자 이름 입력"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={handleAssign}
+                  className="w-full px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]"
+                >
+                  배정 처리
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">현재 배정 현황</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">건물</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">호실</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">유형</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">입소자</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">상태</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rooms.map(room => {
+                    const status = room.status as RoomStatus;
+                    const cfg = statusConfig[status];
+                    return (
+                      <tr key={room.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-700">{room.building}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{room.roomNumber}호</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{room.type}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{room.residentName || '-'}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${cfg.bg} ${cfg.text}`}>{room.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => openDetail(room)}
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                          >
+                            상태변경
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* inspection: 호실점검 이력 */}
+      {segment === 'inspection' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-green-600">이상없음</p>
+              <p className="text-3xl font-bold text-green-700">{inspections.filter(i => i.result === '이상없음').length}<span className="text-base font-normal">건</span></p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-yellow-600">경미한결함</p>
+              <p className="text-3xl font-bold text-yellow-700">{inspections.filter(i => i.result === '경미한결함').length}<span className="text-base font-normal">건</span></p>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-red-600">수리필요</p>
+              <p className="text-3xl font-bold text-red-700">{inspections.filter(i => i.result === '수리필요').length}<span className="text-base font-normal">건</span></p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">점검 이력</h2>
+              <button className="px-3 py-1.5 bg-[#F0835A] text-white rounded-lg text-xs font-medium hover:bg-[#d9714d]">+ 점검 등록</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">점검일</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">호실</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">점검자</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">결과</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">비고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspections.map(rec => (
+                    <tr key={rec.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-600">{rec.date}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{rec.room}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{rec.inspector}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${inspectionColors[rec.result]}`}>{rec.result}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{rec.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status change modal */}
       {selectedRoom && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">

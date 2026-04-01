@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { residents, generateId } from '../../data/mockData';
 
 interface LeaveRecord {
@@ -20,7 +21,6 @@ const statusColor: Record<string, string> = {
   '복귀': 'bg-gray-100 text-gray-800',
 };
 
-// 실제 입주자 기준 장기외출 데이터
 const initialData: LeaveRecord[] = [
   {
     id: '1', applyDate: '2026-03-28', name: '김영순', room: '1관 101호',
@@ -60,7 +60,15 @@ const residentOptions = residents
 
 const emptyForm = { name: '', room: '', reason: '', startDate: '', endDate: '', guardian: '', guardianPhone: '' };
 
+const tabs = [
+  { id: 'register', label: '외출신청', path: '/resident/leave/register' },
+];
+
 export default function LeavePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || 'register';
+
   const [data, setData] = useState<LeaveRecord[]>(initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
@@ -115,6 +123,18 @@ export default function LeavePage() {
         <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
           + 외출 신청
         </button>
+      </div>
+
+      {/* 탭 바 */}
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* 요약 */}

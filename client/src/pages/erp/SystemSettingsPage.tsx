@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { staff } from '../../data/mockData';
-
-const tabs = ['기본정보', '코드관리', '요금설정', '알림설정'] as const;
-type Tab = typeof tabs[number];
 
 const director = staff.find(s => s.role === 'DIRECTOR');
 
@@ -44,10 +42,22 @@ const alertSettings = [
   { name: '야간 이상행동 알림', target: '야간 당직자', method: '앱 푸시 + SMS', enabled: true },
 ];
 
+const tabs = [
+  { id: 'facility', label: '기본정보', path: '/erp/system-settings/facility' },
+  { id: 'codes', label: '코드관리', path: '/erp/system-settings/codes' },
+  { id: 'fees', label: '요금설정', path: '/erp/system-settings/fees' },
+  { id: 'alerts', label: '알림설정', path: '/erp/system-settings/alerts' },
+  { id: 'backup', label: '데이터 백업/복원', path: '/erp/system-settings/backup' },
+];
+
 export default function SystemSettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('기본정보');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [form, setForm] = useState(facilityInfo);
   const [alerts, setAlerts] = useState(alertSettings);
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'running' | 'done'>('idle');
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -61,6 +71,11 @@ export default function SystemSettingsPage() {
     alert('설정이 저장되었습니다.');
   };
 
+  const handleBackup = () => {
+    setBackupStatus('running');
+    setTimeout(() => setBackupStatus('done'), 2000);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -68,27 +83,20 @@ export default function SystemSettingsPage() {
         <p className="mt-1 text-sm text-gray-500">시설 기본정보, 코드, 요금, 알림을 설정합니다.</p>
       </div>
 
-      {/* 탭 */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-[#F0835A] text-[#F0835A]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* 기본정보 */}
-      {activeTab === '기본정보' && (
+      {/* facility: 기본정보 설정 */}
+      {segment === 'facility' && (
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
           <h3 className="text-sm font-semibold text-gray-800 mb-4">시설 기본정보</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -122,8 +130,8 @@ export default function SystemSettingsPage() {
         </div>
       )}
 
-      {/* 코드관리 */}
-      {activeTab === '코드관리' && (
+      {/* codes: 코드관리 */}
+      {segment === 'codes' && (
         <div className="space-y-4">
           {codeCategories.map((cat) => (
             <div key={cat.category} className="bg-white rounded-lg shadow border border-gray-200 p-4">
@@ -143,8 +151,8 @@ export default function SystemSettingsPage() {
         </div>
       )}
 
-      {/* 요금설정 */}
-      {activeTab === '요금설정' && (
+      {/* fees: 요금설정 */}
+      {segment === 'fees' && (
         <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-800">호실 유형별 요금표</h3>
@@ -159,6 +167,7 @@ export default function SystemSettingsPage() {
                 <th className="px-4 py-3 text-right font-semibold text-gray-600">식사비</th>
                 <th className="px-4 py-3 text-right font-semibold text-gray-600">수도광열비</th>
                 <th className="px-4 py-3 text-right font-semibold text-gray-600">월 합계</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-600">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -170,15 +179,21 @@ export default function SystemSettingsPage() {
                   <td className="px-4 py-3 text-right text-gray-700">{row.meal}</td>
                   <td className="px-4 py-3 text-right text-gray-700">{row.utility}</td>
                   <td className="px-4 py-3 text-right font-bold text-blue-700">{row.total}</td>
+                  <td className="px-4 py-3 text-center">
+                    <button className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200">수정</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <div className="px-4 py-3 border-t border-gray-100 flex justify-end">
+            <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">저장</button>
+          </div>
         </div>
       )}
 
-      {/* 알림설정 */}
-      {activeTab === '알림설정' && (
+      {/* alerts: 알림설정 */}
+      {segment === 'alerts' && (
         <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-800">알림 설정</h3>
@@ -201,15 +216,9 @@ export default function SystemSettingsPage() {
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => toggleAlert(i)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        alert.enabled ? 'bg-[#F0835A]' : 'bg-gray-300'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${alert.enabled ? 'bg-[#F0835A]' : 'bg-gray-300'}`}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          alert.enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${alert.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </td>
                 </tr>
@@ -217,9 +226,62 @@ export default function SystemSettingsPage() {
             </tbody>
           </table>
           <div className="px-4 py-3 border-t border-gray-100 flex justify-end">
-            <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
-              저장
-            </button>
+            <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">저장</button>
+          </div>
+        </div>
+      )}
+
+      {/* backup: 데이터 백업/복원 */}
+      {segment === 'backup' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">데이터 백업</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">마지막 백업</p>
+                  <p className="text-xs text-gray-500 mt-0.5">2026-03-30 02:00 (자동 백업)</p>
+                </div>
+                <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded font-medium">성공</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">자동 백업 주기</p>
+                  <p className="text-xs text-gray-500 mt-0.5">매일 새벽 2시</p>
+                </div>
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded font-medium">활성</span>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleBackup}
+                disabled={backupStatus === 'running'}
+                className="px-5 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d] disabled:opacity-50"
+              >
+                {backupStatus === 'running' ? '백업 중...' : backupStatus === 'done' ? '백업 완료!' : '지금 백업'}
+              </button>
+              <button className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200">
+                백업 파일 다운로드
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">데이터 복원</h3>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-yellow-800 font-medium">주의: 복원 시 현재 데이터가 덮어씌워집니다. 복원 전 반드시 현재 데이터를 백업하세요.</p>
+            </div>
+            <div className="space-y-2">
+              {['2026-03-30 02:00', '2026-03-29 02:00', '2026-03-28 02:00'].map(date => (
+                <div key={date} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">백업 파일 - {date}</p>
+                    <p className="text-xs text-gray-500">자동 백업 | 크기: 12.3 MB</p>
+                  </div>
+                  <button className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 font-medium">복원</button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

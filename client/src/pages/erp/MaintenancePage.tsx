@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { staff } from '../../data/mockData';
 
 interface MaintenanceRequest {
@@ -44,7 +45,17 @@ const statusColors: Record<string, string> = {
 
 const emptyForm = { location: '', description: '', priority: '보통' as MaintenanceRequest['priority'] };
 
+const tabs = [
+  { id: 'register', label: '보수요청 등록', path: '/erp/maintenance/register' },
+  { id: 'status', label: '보수진행 현황', path: '/erp/maintenance/status' },
+  { id: 'history', label: '보수이력 조회', path: '/erp/maintenance/history' },
+];
+
 export default function MaintenancePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [requests, setRequests] = useState<MaintenanceRequest[]>(initialRequests);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
@@ -54,6 +65,8 @@ export default function MaintenancePage() {
   const totalCost = requests.reduce((sum, r) => sum + (r.cost || 0), 0);
   const pending = requests.filter(r => r.status !== '완료').length;
   const completed = requests.filter(r => r.status === '완료').length;
+  const inProgressRequests = requests.filter(r => r.status !== '완료');
+  const historyRequests = requests.filter(r => r.status === '완료');
 
   const handleSave = () => {
     const newReq: MaintenanceRequest = {
@@ -89,87 +102,166 @@ export default function MaintenancePage() {
     setCompleteCost('');
   };
 
+  const RequestTable = ({ rows }: { rows: MaintenanceRequest[] }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">요청일</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">요청자</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">위치</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">내용</th>
+              <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">우선순위</th>
+              <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">상태</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">완료일</th>
+              <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">비용</th>
+              <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(req => (
+              <tr key={req.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-sm text-gray-600">{req.requestDate}</td>
+                <td className="px-4 py-3 text-sm text-gray-900 font-medium">{req.requester}</td>
+                <td className="px-4 py-3 text-sm text-gray-700">{req.location}</td>
+                <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{req.description}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded ${priorityColors[req.priority]}`}>{req.priority}</span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${statusColors[req.status]}`}>{req.status}</span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-500">{req.completionDate || '-'}</td>
+                <td className="px-4 py-3 text-sm text-gray-700 text-right font-medium">
+                  {req.cost ? `${req.cost.toLocaleString()}원` : '-'}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex justify-center gap-1">
+                    {req.status === '요청' && (
+                      <button onClick={() => handleProgress(req.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">진행</button>
+                    )}
+                    {req.status === '진행중' && (
+                      <button onClick={() => openComplete(req.id)} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900">유지보수</h1>
         <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">
           + 요청 등록
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
-          <p className="text-sm text-gray-500">전체 요청</p>
-          <p className="text-3xl font-bold text-gray-900">{requests.length}<span className="text-base font-normal text-gray-500">건</span></p>
-        </div>
-        <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 text-center">
-          <p className="text-sm text-yellow-700">미처리</p>
-          <p className="text-3xl font-bold text-yellow-700">{pending}<span className="text-base font-normal text-yellow-500">건</span></p>
-        </div>
-        <div className="bg-green-50 rounded-xl border border-green-200 p-4 text-center">
-          <p className="text-sm text-green-700">완료</p>
-          <p className="text-3xl font-bold text-green-700">{completed}<span className="text-base font-normal text-green-500">건</span></p>
-        </div>
-        <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
-          <p className="text-sm text-blue-600">이번 달 비용</p>
-          <p className="text-2xl font-bold text-blue-700">{totalCost.toLocaleString()}<span className="text-sm font-normal text-blue-500">원</span></p>
-        </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">요청일</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">요청자</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">위치</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">내용</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">우선순위</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">상태</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">완료일</th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">비용</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map(req => (
-                <tr key={req.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-600">{req.requestDate}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">{req.requester}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{req.location}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{req.description}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${priorityColors[req.priority]}`}>
-                      {req.priority}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded ${statusColors[req.status]}`}>
-                      {req.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{req.completionDate || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700 text-right font-medium">
-                    {req.cost ? `${req.cost.toLocaleString()}원` : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center gap-1">
-                      {req.status === '요청' && (
-                        <button onClick={() => handleProgress(req.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">진행</button>
-                      )}
-                      {req.status === '진행중' && (
-                        <button onClick={() => openComplete(req.id)} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* register: 보수요청 등록 폼 */}
+      {segment === 'register' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+              <p className="text-sm text-gray-500">전체 요청</p>
+              <p className="text-3xl font-bold text-gray-900">{requests.length}<span className="text-base font-normal text-gray-500">건</span></p>
+            </div>
+            <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 text-center">
+              <p className="text-sm text-yellow-700">미처리</p>
+              <p className="text-3xl font-bold text-yellow-700">{pending}<span className="text-base font-normal text-yellow-500">건</span></p>
+            </div>
+            <div className="bg-green-50 rounded-xl border border-green-200 p-4 text-center">
+              <p className="text-sm text-green-700">완료</p>
+              <p className="text-3xl font-bold text-green-700">{completed}<span className="text-base font-normal text-green-500">건</span></p>
+            </div>
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
+              <p className="text-sm text-blue-600">이번 달 비용</p>
+              <p className="text-2xl font-bold text-blue-700">{totalCost.toLocaleString()}<span className="text-sm font-normal text-blue-500">원</span></p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">보수요청 등록</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">위치</label>
+                <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="예: 1관 101호 화장실" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={3} placeholder="보수 내용을 상세히 입력하세요" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">우선순위</label>
+                <select value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value as MaintenanceRequest['priority'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                  <option>긴급</option>
+                  <option>높음</option>
+                  <option>보통</option>
+                  <option>낮음</option>
+                </select>
+              </div>
+              <div className="flex justify-end">
+                <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">등록</button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* status: 보수진행 현황 */}
+      {segment === 'status' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-yellow-700">요청</p>
+              <p className="text-3xl font-bold text-yellow-700">{requests.filter(r => r.status === '요청').length}<span className="text-base font-normal">건</span></p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-blue-600">진행중</p>
+              <p className="text-3xl font-bold text-blue-700">{requests.filter(r => r.status === '진행중').length}<span className="text-base font-normal">건</span></p>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-red-600">긴급 요청</p>
+              <p className="text-3xl font-bold text-red-700">{requests.filter(r => r.priority === '긴급' && r.status !== '완료').length}<span className="text-base font-normal">건</span></p>
+            </div>
+          </div>
+          <RequestTable rows={inProgressRequests} />
+        </div>
+      )}
+
+      {/* history: 보수이력 조회 */}
+      {segment === 'history' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-green-600">완료 건수</p>
+              <p className="text-3xl font-bold text-green-700">{historyRequests.length}<span className="text-base font-normal">건</span></p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-blue-600">총 누적 비용</p>
+              <p className="text-2xl font-bold text-blue-700">{totalCost.toLocaleString()}<span className="text-base font-normal">원</span></p>
+            </div>
+          </div>
+          <RequestTable rows={historyRequests} />
+        </div>
+      )}
 
       {/* New request modal */}
       {showModal && (

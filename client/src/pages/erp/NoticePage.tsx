@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { staff, generateId, daysAgo } from '../../data/mockData';
 
 interface Notice {
@@ -36,10 +37,18 @@ const categories = ['전체', '일반', '행사', '건강', '시설'];
 
 const emptyForm = { title: '', category: '일반' as Notice['category'], content: '' };
 
+const tabs = [
+  { id: 'register', label: '공지사항 작성', path: '/community/notice/register' },
+  { id: 'list', label: '공지사항 목록', path: '/community/notice/list' },
+];
+
 export default function NoticePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [notices, setNotices] = useState<Notice[]>(initialNotices);
   const [activeCategory, setActiveCategory] = useState('전체');
-  const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');
 
@@ -64,7 +73,7 @@ export default function NoticePage() {
     };
     setNotices(prev => [newNotice, ...prev]);
     setFormData(emptyForm);
-    setShowModal(false);
+    navigate('/community/notice/list');
   };
 
   const handleDelete = (id: string) => {
@@ -76,132 +85,171 @@ export default function NoticePage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">공지사항</h1>
-        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">
-          + 공지 작성
-        </button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">공지사항</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex gap-2 border-b-0">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-        <input
-          type="text"
-          placeholder="제목 또는 작성자 검색..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="ml-auto px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A] w-56"
-        />
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {pinned.map(notice => (
-        <div key={notice.id} className="mb-4 p-5 bg-yellow-50 border border-yellow-200 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">중요</span>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded ${categoryColors[notice.category]}`}>
-                {notice.category}
-              </span>
+      {/* register: 공지사항 작성 폼 */}
+      {segment === 'register' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">공지사항 작성</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                placeholder="공지 제목을 입력하세요..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+              />
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">고정해제</button>
-              <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+              <select
+                value={formData.category}
+                onChange={e => setFormData({ ...formData, category: e.target.value as Notice['category'] })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+              >
+                <option>일반</option>
+                <option>행사</option>
+                <option>건강</option>
+                <option>시설</option>
+              </select>
             </div>
-          </div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">{notice.title}</h2>
-          <div className="flex gap-4 text-sm text-gray-500">
-            <span>작성자: {notice.author}</span>
-            <span>작성일: {notice.date}</span>
-            <span>조회수: {notice.views}</span>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+              <textarea
+                value={formData.content}
+                onChange={e => setFormData({ ...formData, content: e.target.value })}
+                rows={8}
+                placeholder="공지 내용을 입력하세요..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setFormData(emptyForm); navigate('/community/notice/list'); }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-6 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d] font-medium"
+              >
+                등록
+              </button>
+            </div>
           </div>
         </div>
-      ))}
+      )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-20">번호</th>
-              <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-24">카테고리</th>
-              <th className="text-left px-5 py-3 text-sm font-medium text-gray-600">제목</th>
-              <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-28">작성자</th>
-              <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-28">작성일</th>
-              <th className="text-right px-5 py-3 text-sm font-medium text-gray-600 w-20">조회수</th>
-              <th className="text-center px-5 py-3 text-sm font-medium text-gray-600 w-32">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {regular.map((notice, idx) => (
-              <tr key={notice.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td className="px-5 py-3 text-sm text-gray-500">{idx + 1}</td>
-                <td className="px-5 py-3">
+      {/* list: 공지사항 목록 */}
+      {segment === 'list' && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-2">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeCategory === cat
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="제목 또는 작성자 검색..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="ml-auto px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A] w-56"
+            />
+          </div>
+
+          {pinned.map(notice => (
+            <div key={notice.id} className="p-5 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">중요</span>
                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${categoryColors[notice.category]}`}>
                     {notice.category}
                   </span>
-                </td>
-                <td className="px-5 py-3 text-sm text-gray-900 font-medium">{notice.title}</td>
-                <td className="px-5 py-3 text-sm text-gray-600">{notice.author}</td>
-                <td className="px-5 py-3 text-sm text-gray-500">{notice.date}</td>
-                <td className="px-5 py-3 text-sm text-gray-500 text-right">{notice.views}</td>
-                <td className="px-5 py-3 text-center">
-                  <div className="flex justify-center gap-1">
-                    <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-400 text-yellow-900 rounded hover:bg-yellow-500">고정</button>
-                    <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {regular.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-gray-400 text-sm">공지사항이 없습니다.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">고정해제</button>
+                  <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
+                </div>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">{notice.title}</h2>
+              <div className="flex gap-4 text-sm text-gray-500">
+                <span>작성자: {notice.author}</span>
+                <span>작성일: {notice.date}</span>
+                <span>조회수: {notice.views}</span>
+              </div>
+            </div>
+          ))}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">공지 작성</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value as Notice['category'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
-                  <option>일반</option>
-                  <option>행사</option>
-                  <option>건강</option>
-                  <option>시설</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
-                <textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} rows={5} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
-              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-20">번호</th>
+                  <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-24">카테고리</th>
+                  <th className="text-left px-5 py-3 text-sm font-medium text-gray-600">제목</th>
+                  <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-28">작성자</th>
+                  <th className="text-left px-5 py-3 text-sm font-medium text-gray-600 w-28">작성일</th>
+                  <th className="text-right px-5 py-3 text-sm font-medium text-gray-600 w-20">조회수</th>
+                  <th className="text-center px-5 py-3 text-sm font-medium text-gray-600 w-32">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regular.map((notice, idx) => (
+                  <tr key={notice.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 text-sm text-gray-500">{idx + 1}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded ${categoryColors[notice.category]}`}>
+                        {notice.category}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-900 font-medium">{notice.title}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600">{notice.author}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500">{notice.date}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 text-right">{notice.views}</td>
+                    <td className="px-5 py-3 text-center">
+                      <div className="flex justify-center gap-1">
+                        <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-400 text-yellow-900 rounded hover:bg-yellow-500">고정</button>
+                        <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {regular.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-8 text-center text-gray-400 text-sm">공지사항이 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

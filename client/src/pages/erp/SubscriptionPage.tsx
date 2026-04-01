@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { residents, generateId } from '../../data/mockData';
 
 const depositColor: Record<string, string> = {
@@ -36,18 +37,31 @@ const initialData: SubscriptionItem[] = [
   { id: '8', date: '2026-03-10', name: '강준호', phone: '010-8888-9999', room: '2관 209호', wishDate: '2026-05-10', amount: 5000000, deposit: '미납', progress: '접수' },
 ];
 
-// 빈 호실 목록 (입주자가 없는 호실)
+// 빈 호실 목록
 const vacantRooms = residents
   .filter(r => r.status !== 'DISCHARGED')
   .map(r => `${r.building} ${r.roomNumber}호`);
 
 const emptyForm = { name: '', phone: '', room: vacantRooms[0] || '1관 101호', wishDate: '', amount: '5000000' };
 
+const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
+
+const tabs = [
+  { id: 'register', label: '청약등록', path: '/resident/subscription/register' },
+  { id: 'payment', label: '청약금 입금', path: '/resident/subscription/payment' },
+  { id: 'status', label: '가입현황', path: '/resident/subscription/status' },
+];
+
 export default function SubscriptionPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || 'register';
+
   const [data, setData] = useState<SubscriptionItem[]>(initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');
+  const [depositFilter, setDepositFilter] = useState('전체');
 
   const filtered = search ? data.filter(d => d.name.includes(search)) : data;
 
@@ -56,6 +70,14 @@ export default function SubscriptionPage() {
     approved: data.filter(d => d.progress === '승인').length,
     pending: data.filter(d => d.progress === '접수').length,
     cancelled: data.filter(d => d.progress === '취소').length,
+  };
+
+  const depositSummary = {
+    paid: data.filter(d => d.deposit === '완납').length,
+    unpaid: data.filter(d => d.deposit === '미납').length,
+    refund: data.filter(d => d.deposit === '환불').length,
+    totalPaid: data.filter(d => d.deposit === '완납').reduce((s, d) => s + d.amount, 0),
+    totalUnpaid: data.filter(d => d.deposit === '미납').reduce((s, d) => s + d.amount, 0),
   };
 
   const handleSave = () => {
@@ -88,6 +110,12 @@ export default function SubscriptionPage() {
     setData(prev => prev.filter(d => d.id !== id));
   };
 
+  const handleDepositProcess = (id: string) => {
+    setData(prev => prev.map(d => d.id === id ? { ...d, deposit: '완납' } : d));
+  };
+
+  const paymentFiltered = depositFilter === '전체' ? data : data.filter(d => d.deposit === depositFilter);
+
   return (
     <div className="space-y-6">
       {/* 헤더 */}
@@ -96,115 +124,270 @@ export default function SubscriptionPage() {
           <h1 className="text-2xl font-bold text-gray-900">청약관리</h1>
           <p className="mt-1 text-sm text-gray-500">입소 청약 신청 현황을 관리합니다.</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
-        >
-          + 신규 등록
-        </button>
+        {segment === 'register' && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
+          >
+            + 신규 등록
+          </button>
+        )}
       </div>
 
-      {/* 요약 카드 */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">{summary.total}</div>
-          <div className="text-sm text-gray-500 mt-1">총 청약</div>
-        </div>
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{summary.approved}</div>
-          <div className="text-sm text-gray-500 mt-1">승인완료</div>
-        </div>
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{summary.pending}</div>
-          <div className="text-sm text-gray-500 mt-1">대기중</div>
-        </div>
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-red-600">{summary.cancelled}</div>
-          <div className="text-sm text-gray-500 mt-1">취소</div>
-        </div>
+      {/* 탭 바 */}
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* 검색 */}
-      <div>
-        <input
-          type="text"
-          placeholder="신청자명으로 검색..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A] focus:border-transparent"
-        />
-      </div>
+      {/* 청약등록 탭 */}
+      {segment === 'register' && (
+        <div className="space-y-6">
+          {/* 요약 카드 */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">{summary.total}</div>
+              <div className="text-sm text-gray-500 mt-1">총 청약</div>
+            </div>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{summary.approved}</div>
+              <div className="text-sm text-gray-500 mt-1">승인완료</div>
+            </div>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{summary.pending}</div>
+              <div className="text-sm text-gray-500 mt-1">대기중</div>
+            </div>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+              <div className="text-2xl font-bold text-red-600">{summary.cancelled}</div>
+              <div className="text-sm text-gray-500 mt-1">취소</div>
+            </div>
+          </div>
 
-      {/* 테이블 */}
-      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">접수일</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">신청자명</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">연락처</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">희망호실</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">희망입소일</th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-600">청약금액</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">입금상태</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">진행상태</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-gray-700">{row.date}</td>
-                  <td className="px-4 py-3 text-gray-900 font-medium">{row.name}</td>
-                  <td className="px-4 py-3 text-gray-700">{row.phone}</td>
-                  <td className="px-4 py-3 text-gray-700">{row.room}</td>
-                  <td className="px-4 py-3 text-gray-700">{row.wishDate}</td>
-                  <td className="px-4 py-3 text-gray-700 text-right">{row.amount.toLocaleString('ko-KR')}원</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${depositColor[row.deposit]}`}>
-                      {row.deposit}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${progressColor[row.progress]}`}>
-                      {row.progress}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex gap-1">
-                      {row.progress === '접수' && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(row.id)}
-                            className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                          >
-                            승인
-                          </button>
-                          <button
-                            onClick={() => handleCancel(row.id)}
-                            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                          >
-                            취소
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleDelete(row.id)}
-                        className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* 검색 */}
+          <div>
+            <input
+              type="text"
+              placeholder="신청자명으로 검색..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A] focus:border-transparent"
+            />
+          </div>
+
+          {/* 최근 청약 목록 */}
+          <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">접수일</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">신청자명</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">연락처</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">희망호실</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">희망입소일</th>
+                    <th className="px-4 py-3 text-right font-semibold text-gray-600">청약금액</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">입금상태</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">진행상태</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-gray-700">{row.date}</td>
+                      <td className="px-4 py-3 text-gray-900 font-medium">{row.name}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.phone}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.room}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.wishDate}</td>
+                      <td className="px-4 py-3 text-gray-700 text-right">{row.amount.toLocaleString('ko-KR')}원</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${depositColor[row.deposit]}`}>
+                          {row.deposit}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${progressColor[row.progress]}`}>
+                          {row.progress}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex gap-1">
+                          {row.progress === '접수' && (
+                            <>
+                              <button onClick={() => handleApprove(row.id)} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">승인</button>
+                              <button onClick={() => handleCancel(row.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">취소</button>
+                            </>
+                          )}
+                          <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">삭제</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 모달 */}
+      {/* 청약금 입금 탭 */}
+      {segment === 'payment' && (
+        <div className="space-y-6">
+          {/* 입금현황 요약 */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+              <div className="text-sm text-gray-500">완납</div>
+              <div className="text-xl font-bold text-green-600 mt-1">{depositSummary.paid}건</div>
+              <div className="text-xs text-gray-400 mt-1">{fmt(depositSummary.totalPaid)}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+              <div className="text-sm text-gray-500">미납</div>
+              <div className="text-xl font-bold text-red-600 mt-1">{depositSummary.unpaid}건</div>
+              <div className="text-xs text-gray-400 mt-1">{fmt(depositSummary.totalUnpaid)}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+              <div className="text-sm text-gray-500">환불</div>
+              <div className="text-xl font-bold text-gray-500 mt-1">{depositSummary.refund}건</div>
+            </div>
+          </div>
+
+          {/* 필터 */}
+          <div className="flex gap-2">
+            {['전체', '미납', '완납', '환불'].map(f => (
+              <button key={f} onClick={() => setDepositFilter(f)}
+                className={`px-4 py-2 text-sm rounded-lg border transition-colors ${depositFilter === f ? 'bg-[#F0835A] text-white border-[#F0835A]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">접수일</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">신청자명</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">희망호실</th>
+                    <th className="px-4 py-3 text-right font-semibold text-gray-600">청약금액</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">입금상태</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">진행상태</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">처리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentFiltered.map(row => (
+                    <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-gray-700">{row.date}</td>
+                      <td className="px-4 py-3 text-gray-900 font-medium">{row.name}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.room}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{fmt(row.amount)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${depositColor[row.deposit]}`}>{row.deposit}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${progressColor[row.progress]}`}>{row.progress}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.deposit === '미납' && row.progress !== '취소' && (
+                          <button onClick={() => handleDepositProcess(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">입금처리</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 가입현황 탭 */}
+      {segment === 'status' && (
+        <div className="space-y-6">
+          {/* 현황 카드 */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+              <div className="text-sm text-green-700 font-medium">승인완료</div>
+              <div className="text-3xl font-bold text-green-700 mt-2">{summary.approved}명</div>
+              <div className="mt-3 space-y-1">
+                {data.filter(d => d.progress === '승인').map(d => (
+                  <div key={d.id} className="text-xs text-green-600 flex justify-between">
+                    <span>{d.name}</span><span>{d.room}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+              <div className="text-sm text-blue-700 font-medium">접수중</div>
+              <div className="text-3xl font-bold text-blue-700 mt-2">{summary.pending}명</div>
+              <div className="mt-3 space-y-1">
+                {data.filter(d => d.progress === '접수').map(d => (
+                  <div key={d.id} className="text-xs text-blue-600 flex justify-between">
+                    <span>{d.name}</span><span>{d.room}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+              <div className="text-sm text-red-700 font-medium">취소</div>
+              <div className="text-3xl font-bold text-red-700 mt-2">{summary.cancelled}명</div>
+              <div className="mt-3 space-y-1">
+                {data.filter(d => d.progress === '취소').map(d => (
+                  <div key={d.id} className="text-xs text-red-500 flex justify-between">
+                    <span>{d.name}</span><span>{d.room}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 전체 현황 테이블 */}
+          <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-sm font-semibold text-gray-700">청약자 전체 현황</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">신청자명</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">희망호실</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">희망입소일</th>
+                    <th className="px-4 py-3 text-right font-semibold text-gray-600">청약금액</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">입금</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-600">진행상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map(row => (
+                    <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-gray-900 font-medium">{row.name}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.room}</td>
+                      <td className="px-4 py-3 text-gray-700">{row.wishDate}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{fmt(row.amount)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${depositColor[row.deposit]}`}>{row.deposit}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${progressColor[row.progress]}`}>{row.progress}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 신규 등록 모달 */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
@@ -212,65 +395,38 @@ export default function SubscriptionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">신청자명</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="010-0000-0000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">희망호실</label>
-                <select
-                  value={formData.room}
-                  onChange={e => setFormData({ ...formData, room: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                >
+                <select value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]">
                   {vacantRooms.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">희망입소일</label>
-                <input
-                  type="date"
-                  value={formData.wishDate}
-                  onChange={e => setFormData({ ...formData, wishDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                <input type="date" value={formData.wishDate} onChange={e => setFormData({ ...formData, wishDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">청약금액</label>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={e => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                <input type="number" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => { setShowModal(false); setFormData(emptyForm); }}
-                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]"
-              >
-                저장
-              </button>
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave}
+                className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
         </div>

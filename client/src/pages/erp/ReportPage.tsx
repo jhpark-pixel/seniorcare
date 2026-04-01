@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { staff } from '../../data/mockData';
 
 type ReportType = '월간' | '분기' | '연간' | '커스텀';
@@ -37,13 +38,31 @@ const initialReports: Report[] = [
   { id: '5', name: '낙상사고 분석 특별보고서', type: '커스텀', period: '2025.10.01 ~ 2026.03.15', createdAt: '2026-03-20', creator: nurse1, status: '완료' },
 ];
 
+const tabs = [
+  { id: 'monthly', label: '월간 보고서', path: '/erp/report/monthly' },
+  { id: 'quarterly', label: '분기 보고서', path: '/erp/report/quarterly' },
+  { id: 'annual', label: '연간 보고서', path: '/erp/report/annual' },
+  { id: 'custom', label: '커스텀 보고서', path: '/erp/report/custom' },
+];
+
 export default function ReportPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [reports, setReports] = useState<Report[]>(initialReports);
-  const [filterType, setFilterType] = useState<ReportType | '전체'>('전체');
   const [showNewModal, setShowNewModal] = useState(false);
   const [newForm, setNewForm] = useState({ name: '', type: '월간' as ReportType, period: '' });
 
-  const filtered = filterType === '전체' ? reports : reports.filter((r) => r.type === filterType);
+  const typeMap: Record<string, ReportType> = {
+    monthly: '월간',
+    quarterly: '분기',
+    annual: '연간',
+    custom: '커스텀',
+  };
+
+  const currentType = typeMap[segment] ?? '월간';
+  const filtered = reports.filter(r => r.type === currentType);
 
   const handleCreateReport = () => {
     if (!newForm.name.trim()) return;
@@ -61,6 +80,15 @@ export default function ReportPage() {
     setShowNewModal(false);
   };
 
+  const templateMap: Record<string, string[]> = {
+    monthly: ['월간 운영현황 보고서', '월간 재무현황 보고서', '월간 건강관리 보고서'],
+    quarterly: ['분기 경영실적 보고서', '분기 서비스 품질 보고서'],
+    annual: ['연간 경영실적 보고서', '연간 입소자 현황 보고서', '연간 안전관리 보고서'],
+    custom: ['낙상사고 분석 보고서', '특별 감사 보고서', '외부 평가 대비 현황'],
+  };
+
+  const templates = templateMap[segment] ?? templateMap.monthly;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -69,26 +97,21 @@ export default function ReportPage() {
           <p className="mt-1 text-sm text-gray-500">생성된 경영 보고서를 확인하고 새 보고서를 생성합니다.</p>
         </div>
         <button
-          onClick={() => setShowNewModal(true)}
+          onClick={() => { setNewForm({ ...newForm, type: currentType }); setShowNewModal(true); }}
           className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
         >
           + 새 보고서 생성
         </button>
       </div>
 
-      {/* 필터 */}
-      <div className="flex gap-2">
-        {(['전체', '월간', '분기', '연간', '커스텀'] as const).map((type) => (
-          <button
-            key={type}
-            onClick={() => setFilterType(type)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              filterType === type
-                ? 'bg-[#F0835A] text-white border-[#F0835A]'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-            }`}
-          >
-            {type}
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
           </button>
         ))}
       </div>
@@ -96,25 +119,44 @@ export default function ReportPage() {
       {/* 통계 카드 */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <div className="text-xs text-blue-600 font-medium">전체 보고서</div>
-          <div className="text-2xl font-bold text-blue-700 mt-1">{reports.length}건</div>
+          <div className="text-xs text-blue-600 font-medium">{currentType} 보고서</div>
+          <div className="text-2xl font-bold text-blue-700 mt-1">{filtered.length}건</div>
         </div>
         <div className="bg-green-50 rounded-lg p-4 border border-green-200">
           <div className="text-xs text-green-600 font-medium">완료</div>
-          <div className="text-2xl font-bold text-green-700 mt-1">{reports.filter((r) => r.status === '완료').length}건</div>
+          <div className="text-2xl font-bold text-green-700 mt-1">{filtered.filter((r) => r.status === '완료').length}건</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
           <div className="text-xs text-yellow-600 font-medium">생성중</div>
-          <div className="text-2xl font-bold text-yellow-700 mt-1">{reports.filter((r) => r.status === '생성중').length}건</div>
+          <div className="text-2xl font-bold text-yellow-700 mt-1">{filtered.filter((r) => r.status === '생성중').length}건</div>
         </div>
         <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
           <div className="text-xs text-purple-600 font-medium">이번 달 생성</div>
-          <div className="text-2xl font-bold text-purple-700 mt-1">{reports.filter(r => r.createdAt.startsWith('2026-03')).length}건</div>
+          <div className="text-2xl font-bold text-purple-700 mt-1">{filtered.filter(r => r.createdAt.startsWith('2026-03')).length}건</div>
+        </div>
+      </div>
+
+      {/* 보고서 템플릿 */}
+      <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">{currentType} 보고서 템플릿</h3>
+        <div className="flex flex-wrap gap-2">
+          {templates.map(tmpl => (
+            <button
+              key={tmpl}
+              onClick={() => { setNewForm({ name: tmpl, type: currentType, period: '' }); setShowNewModal(true); }}
+              className="px-3 py-1.5 bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-lg hover:bg-orange-50 hover:border-[#F0835A] hover:text-[#F0835A] transition-colors"
+            >
+              {tmpl}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* 보고서 테이블 */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-800">{currentType} 보고서 목록</h3>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
@@ -128,7 +170,11 @@ export default function ReportPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((report) => (
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">{currentType} 보고서가 없습니다.</td>
+              </tr>
+            ) : filtered.map((report) => (
               <tr key={report.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900">{report.name}</td>
                 <td className="px-4 py-3 text-center">

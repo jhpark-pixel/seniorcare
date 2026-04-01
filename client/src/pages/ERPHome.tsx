@@ -1,6 +1,4 @@
 import React from 'react';
-import { useAuthContext } from '../App';
-import TodoNotification from '../components/TodoNotification';
 import { residents } from '../data/mockData';
 
 interface WidgetProps {
@@ -49,17 +47,11 @@ function MiniTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
 }
 
 export default function ERPHome() {
-  const { admin } = useAuthContext();
   const activeCount = residents.filter(r => r.status === 'ACTIVE').length;
   const hospitalizedCount = residents.filter(r => r.status === 'HOSPITALIZED').length;
 
   return (
     <div className="space-y-4">
-      {/* 직종별 To-Do 알림 */}
-      {admin && (
-        <TodoNotification role={admin.role} name={admin.name} />
-      )}
-
       {/* Row 1: Full width emergency widget */}
       <Widget title="응급 및 안전 사고 발생 (주간)" icon="🚨" className="col-span-2">
         <MiniTable

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { residents, staff, generateId, daysAgo } from '../../data/mockData';
 
 interface ServiceRequestItem {
@@ -56,10 +57,27 @@ const nextStatusMap: Record<string, string> = {
 };
 
 const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
-
 const emptyForm = { residentId: '', type: '이미용', content: '', dueDate: '' };
 
+const tabs = [
+  { id: 'register', label: '서비스 신청 등록', path: '/concierge/service/register' },
+  { id: 'status', label: '신청 현황', path: '/concierge/service/status' },
+  { id: 'types', label: '서비스 유형 관리', path: '/concierge/service/types' },
+];
+
+const serviceTypeDetails = [
+  { type: '이미용', description: '커트, 염색, 파마 등 이미용 서비스', provider: '외부업체 김미장', schedule: '매주 화, 목', count: 2 },
+  { type: '세탁', description: '일반 세탁 및 드라이클리닝 서비스', provider: `생활지도사 ${staff[3].name}`, schedule: '매주 월, 수, 금', count: 2 },
+  { type: '외출지원', description: '병원, 마트 등 외출 시 동행 지원', provider: `생활지도사 ${staff[4].name}`, schedule: '사전 예약 필요', count: 2 },
+  { type: '택배', description: '택배 발송 및 수령 대행', provider: `생활지도사 ${staff[3].name}`, schedule: '수시', count: 2 },
+  { type: '기타', description: '시설 수리, 물품 교체 등 기타 서비스', provider: '시설관리 이동수', schedule: '수시', count: 2 },
+];
+
 export default function ServiceRequestPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const segment = location.pathname.split('/').pop() || '';
+
   const [data, setData] = useState<ServiceRequestItem[]>(initialData);
   const [filter, setFilter] = useState<string>('전체');
   const [showModal, setShowModal] = useState(false);
@@ -106,109 +124,25 @@ export default function ServiceRequestPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">서비스신청 (컨시어지)</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#e0734a]"
-        >
-          + 서비스 신청
-        </button>
       </div>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-        {statusFilters.map(s => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              filter === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {s}
-            <span className="ml-1 text-xs text-gray-400">
-              ({s === '전체' ? data.length : data.filter(d => d.status === s).length})
-            </span>
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => navigate(tab.path)}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              segment === tab.id ? 'bg-white text-[#F0835A] shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Search */}
-      <div>
-        <input
-          type="text"
-          placeholder="입소자명 또는 내용 검색..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-        />
-      </div>
-
-      <div className="bg-white rounded-lg shadow border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">신청일</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">입소자명</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">호실</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">서비스유형</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">내용</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">예정일</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">처리자</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">상태</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-2.5 text-gray-700">{row.date}</td>
-                  <td className="px-4 py-2.5 font-medium text-gray-900">{row.name}</td>
-                  <td className="px-4 py-2.5 text-gray-600">{row.room}</td>
-                  <td className="px-4 py-2.5">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${typeBadge(row.type)}`}>{row.type}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate">{row.content}</td>
-                  <td className="px-4 py-2.5 text-gray-600">{row.dueDate}</td>
-                  <td className="px-4 py-2.5 text-gray-600">{row.handler}</td>
-                  <td className="px-4 py-2.5">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(row.status)}`}>{row.status}</span>
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
-                    <div className="flex gap-1">
-                      {nextStatusMap[row.status] && (
-                        <button
-                          onClick={() => advanceStatus(row.id)}
-                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          {nextStatusMap[row.status]}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(row.id)}
-                        className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">검색 결과가 없습니다.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 모달 */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">서비스 신청</h2>
+      {/* register: 서비스 신청 등록 폼 + 최근 신청 목록 */}
+      {segment === 'register' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg shadow border p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">서비스 신청 등록</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
@@ -239,6 +173,7 @@ export default function ServiceRequestPage() {
                   value={formData.content}
                   onChange={e => setFormData({ ...formData, content: e.target.value })}
                   rows={3}
+                  placeholder="서비스 요청 내용을 입력하세요..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
                 />
               </div>
@@ -252,19 +187,214 @@ export default function ServiceRequestPage() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => { setShowModal(false); setFormData(emptyForm); }}
-                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                취소
-              </button>
+            <div className="flex justify-end mt-4">
               <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]"
+                className="px-6 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d] font-medium"
               >
-                저장
+                신청 등록
               </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow border overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <h3 className="text-sm font-semibold text-gray-800">최근 신청 목록 (최근 5건)</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">신청일</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">입소자명</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">서비스유형</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">내용</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.slice(0, 5).map((row) => (
+                    <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-2.5 text-gray-700">{row.date}</td>
+                      <td className="px-4 py-2.5 font-medium text-gray-900">{row.name}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${typeBadge(row.type)}`}>{row.type}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate">{row.content}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(row.status)}`}>{row.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* status: 서비스 신청 현황 */}
+      {segment === 'status' && (
+        <div className="space-y-4">
+          {/* Summary cards */}
+          <div className="grid grid-cols-4 gap-4">
+            {statusFilters.filter(s => s !== '전체').map(s => (
+              <div key={s} className="bg-white rounded-lg shadow border p-4 text-center">
+                <div className={`text-2xl font-bold ${s === '대기' ? 'text-yellow-600' : s === '진행중' ? 'text-blue-600' : s === '완료' ? 'text-green-600' : 'text-gray-500'}`}>
+                  {data.filter(d => d.status === s).length}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{s}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Status filter tabs */}
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {statusFilters.map(s => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  filter === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {s}
+                <span className="ml-1 text-xs text-gray-400">
+                  ({s === '전체' ? data.length : data.filter(d => d.status === s).length})
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div>
+            <input
+              type="text"
+              placeholder="입소자명 또는 내용 검색..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+            />
+          </div>
+
+          <div className="bg-white rounded-lg shadow border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">신청일</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">입소자명</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">호실</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">서비스유형</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">내용</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">예정일</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">처리자</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">상태</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-2.5 text-gray-700">{row.date}</td>
+                      <td className="px-4 py-2.5 font-medium text-gray-900">{row.name}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{row.room}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${typeBadge(row.type)}`}>{row.type}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate">{row.content}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{row.dueDate}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{row.handler}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(row.status)}`}>{row.status}</span>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex gap-1">
+                          {nextStatusMap[row.status] && (
+                            <button
+                              onClick={() => advanceStatus(row.id)}
+                              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                              {nextStatusMap[row.status]}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(row.id)}
+                            className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">검색 결과가 없습니다.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* types: 서비스 유형 관리 */}
+      {segment === 'types' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {serviceTypeDetails.map(st => (
+              <div key={st.type} className="bg-white rounded-lg shadow border p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-sm font-semibold ${typeBadge(st.type)}`}>{st.type}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">편집</button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">{st.description}</p>
+                <div className="space-y-1.5 text-xs text-gray-500">
+                  <div className="flex gap-2">
+                    <span className="font-medium text-gray-700 w-16">담당자</span>
+                    <span>{st.provider}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-medium text-gray-700 w-16">운영일정</span>
+                    <span>{st.schedule}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-medium text-gray-700 w-16">이번달 건수</span>
+                    <span className="font-semibold text-[#F0835A]">{data.filter(d => d.type === st.type).length}건</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-lg shadow border overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-800">유형별 신청 현황</h3>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                {typeOptions.map(type => {
+                  const typeData = data.filter(d => d.type === type);
+                  const total = typeData.length;
+                  const done = typeData.filter(d => d.status === '완료').length;
+                  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                  return (
+                    <div key={type} className="flex items-center gap-4">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium w-20 text-center ${typeBadge(type)}`}>{type}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <div className="bg-[#F0835A] h-2 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-600 w-24 text-right">완료 {done}/{total}건 ({pct}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
