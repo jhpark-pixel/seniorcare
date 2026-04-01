@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { staff } from '../../data/mockData';
 
 type ReportType = '월간' | '분기' | '연간' | '커스텀';
 type ReportStatus = '완료' | '생성중';
@@ -13,6 +14,9 @@ interface Report {
   status: ReportStatus;
 }
 
+const director = staff.find(s => s.role === 'DIRECTOR')?.name ?? '박준혁';
+const nurse1 = staff.find(s => s.role === 'NURSE')?.name ?? '김서연';
+
 const typeColor: Record<ReportType, string> = {
   '월간': 'bg-blue-100 text-blue-700',
   '분기': 'bg-purple-100 text-purple-700',
@@ -25,19 +29,37 @@ const statusColor: Record<ReportStatus, string> = {
   '생성중': 'bg-yellow-100 text-yellow-700',
 };
 
-const mockReports: Report[] = [
-  { id: '1', name: '2026년 3월 운영현황 보고서', type: '월간', period: '2026.03.01 ~ 2026.03.31', createdAt: '2026-03-30', creator: '홍길동', status: '생성중' },
-  { id: '2', name: '2026년 1분기 경영실적 보고서', type: '분기', period: '2026.01.01 ~ 2026.03.31', createdAt: '2026-03-28', creator: '홍길동', status: '완료' },
-  { id: '3', name: '2026년 2월 운영현황 보고서', type: '월간', period: '2026.02.01 ~ 2026.02.28', createdAt: '2026-03-01', creator: '홍길동', status: '완료' },
-  { id: '4', name: '2025년 연간 경영실적 보고서', type: '연간', period: '2025.01.01 ~ 2025.12.31', createdAt: '2026-01-15', creator: '홍길동', status: '완료' },
-  { id: '5', name: '낙상사고 분석 특별보고서', type: '커스텀', period: '2025.10.01 ~ 2026.03.15', createdAt: '2026-03-20', creator: '김간호', status: '완료' },
+const initialReports: Report[] = [
+  { id: '1', name: '2026년 3월 운영현황 보고서', type: '월간', period: '2026.03.01 ~ 2026.03.31', createdAt: '2026-03-30', creator: director, status: '생성중' },
+  { id: '2', name: '2026년 1분기 경영실적 보고서', type: '분기', period: '2026.01.01 ~ 2026.03.31', createdAt: '2026-03-28', creator: director, status: '완료' },
+  { id: '3', name: '2026년 2월 운영현황 보고서', type: '월간', period: '2026.02.01 ~ 2026.02.28', createdAt: '2026-03-01', creator: director, status: '완료' },
+  { id: '4', name: '2025년 연간 경영실적 보고서', type: '연간', period: '2025.01.01 ~ 2025.12.31', createdAt: '2026-01-15', creator: director, status: '완료' },
+  { id: '5', name: '낙상사고 분석 특별보고서', type: '커스텀', period: '2025.10.01 ~ 2026.03.15', createdAt: '2026-03-20', creator: nurse1, status: '완료' },
 ];
 
 export default function ReportPage() {
-  const [reports] = useState<Report[]>(mockReports);
+  const [reports, setReports] = useState<Report[]>(initialReports);
   const [filterType, setFilterType] = useState<ReportType | '전체'>('전체');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newForm, setNewForm] = useState({ name: '', type: '월간' as ReportType, period: '' });
 
   const filtered = filterType === '전체' ? reports : reports.filter((r) => r.type === filterType);
+
+  const handleCreateReport = () => {
+    if (!newForm.name.trim()) return;
+    const newReport: Report = {
+      id: crypto.randomUUID(),
+      name: newForm.name,
+      type: newForm.type,
+      period: newForm.period || '기간 미지정',
+      createdAt: new Date().toISOString().slice(0, 10),
+      creator: director,
+      status: '생성중',
+    };
+    setReports(prev => [newReport, ...prev]);
+    setNewForm({ name: '', type: '월간', period: '' });
+    setShowNewModal(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -46,7 +68,10 @@ export default function ReportPage() {
           <h1 className="text-2xl font-bold text-gray-900">경영 리포트</h1>
           <p className="mt-1 text-sm text-gray-500">생성된 경영 보고서를 확인하고 새 보고서를 생성합니다.</p>
         </div>
-        <button className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
+        <button
+          onClick={() => setShowNewModal(true)}
+          className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
+        >
           + 새 보고서 생성
         </button>
       </div>
@@ -84,7 +109,7 @@ export default function ReportPage() {
         </div>
         <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
           <div className="text-xs text-purple-600 font-medium">이번 달 생성</div>
-          <div className="text-2xl font-bold text-purple-700 mt-1">2건</div>
+          <div className="text-2xl font-bold text-purple-700 mt-1">{reports.filter(r => r.createdAt.startsWith('2026-03')).length}건</div>
         </div>
       </div>
 
@@ -134,6 +159,54 @@ export default function ReportPage() {
           </tbody>
         </table>
       </div>
+
+      {/* 새 보고서 생성 모달 */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">새 보고서 생성</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">보고서명</label>
+                <input
+                  type="text"
+                  value={newForm.name}
+                  onChange={e => setNewForm({ ...newForm, name: e.target.value })}
+                  placeholder="보고서 제목 입력"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>
+                <select
+                  value={newForm.type}
+                  onChange={e => setNewForm({ ...newForm, type: e.target.value as ReportType })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]"
+                >
+                  <option>월간</option>
+                  <option>분기</option>
+                  <option>연간</option>
+                  <option>커스텀</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">기간</label>
+                <input
+                  type="text"
+                  value={newForm.period}
+                  onChange={e => setNewForm({ ...newForm, period: e.target.value })}
+                  placeholder="예: 2026.04.01 ~ 2026.04.30"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleCreateReport} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">생성</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

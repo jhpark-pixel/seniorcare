@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { residents } from '../../data/mockData';
 
 interface MedicationItem {
   id: string;
+  residentId: string;
   name: string;
   room: string;
   drug: string;
@@ -12,20 +14,21 @@ interface MedicationItem {
   status: string;
 }
 
-const initialData: MedicationItem[] = [
-  { id: '1', name: '김영순', room: '1관 301호', drug: '아모디핀 5mg', dose: '1정', times: ['아침'], doctor: '이상훈', prescDate: '2026-01-15', status: '활성' },
-  { id: '2', name: '김영순', room: '1관 301호', drug: '메트포르민 500mg', dose: '1정', times: ['아침', '저녁'], doctor: '이상훈', prescDate: '2026-02-10', status: '활성' },
-  { id: '3', name: '김영순', room: '1관 301호', drug: '아스피린 100mg', dose: '1정', times: ['아침'], doctor: '이상훈', prescDate: '2025-11-05', status: '활성' },
-  { id: '4', name: '이순자', room: '2관 205호', drug: '인슐린 글라진', dose: '14단위', times: ['아침'], doctor: '박진수', prescDate: '2026-03-01', status: '활성' },
-  { id: '5', name: '이순자', room: '2관 205호', drug: '메트포르민 1000mg', dose: '1정', times: ['아침', '저녁'], doctor: '박진수', prescDate: '2026-03-01', status: '활성' },
-  { id: '6', name: '이순자', room: '2관 205호', drug: '아토르바스타틴 20mg', dose: '1정', times: ['저녁'], doctor: '박진수', prescDate: '2026-01-20', status: '활성' },
-  { id: '7', name: '이순자', room: '2관 205호', drug: '오메프라졸 20mg', dose: '1캡슐', times: ['아침'], doctor: '박진수', prescDate: '2026-02-15', status: '활성' },
-  { id: '8', name: '이순자', room: '2관 205호', drug: '글리메피리드 2mg', dose: '1정', times: ['아침'], doctor: '박진수', prescDate: '2026-03-01', status: '활성' },
-  { id: '9', name: '박정희', room: '1관 402호', drug: '도네페질 10mg', dose: '1정', times: ['취침전'], doctor: '최영미', prescDate: '2025-10-20', status: '활성' },
-  { id: '10', name: '한순이', room: '2관 302호', drug: '와파린 3mg', dose: '1정', times: ['저녁'], doctor: '박진수', prescDate: '2026-02-01', status: '활성' },
-  { id: '11', name: '정미숙', room: '1관 201호', drug: '졸피뎀 5mg', dose: '1정', times: ['취침전'], doctor: '이상훈', prescDate: '2026-03-10', status: '활성' },
-  { id: '12', name: '최옥순', room: '2관 103호', drug: '로사르탄 50mg', dose: '1정', times: ['아침'], doctor: '이상훈', prescDate: '2026-01-05', status: '중단' },
-];
+// Build initial medication data from shared mock residents
+const initialData: MedicationItem[] = residents.flatMap((r, ri) =>
+  r.medications.map((med, mi) => ({
+    id: `${ri + 1}-${mi + 1}`,
+    residentId: r.id,
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    drug: `${med.name} ${med.dosage}`,
+    dose: '1정',
+    times: med.schedule.split(','),
+    doctor: med.prescribedBy,
+    prescDate: '2026-01-01',
+    status: med.isActive ? '활성' : '중단',
+  }))
+);
 
 const allTimes = ['아침', '점심', '저녁', '취침전'];
 
@@ -41,7 +44,8 @@ const timeBadge = (time: string) => {
 
 const statusFilters = ['전체', '활성', '중단'] as const;
 
-const emptyForm = { name: '', drug: '', dose: '', times: [] as string[], doctor: '' };
+const residentOptions = residents.map(r => r.name);
+const emptyForm = { name: residentOptions[0], drug: '', dose: '', times: [] as string[], doctor: '' };
 
 export default function MedicationPage() {
   const [data, setData] = useState<MedicationItem[]>(initialData);
@@ -72,10 +76,12 @@ export default function MedicationPage() {
 
   const handleSave = () => {
     if (!formData.name || !formData.drug || formData.times.length === 0) return;
+    const resident = residents.find(r => r.name === formData.name);
     const newItem: MedicationItem = {
       id: crypto.randomUUID(),
+      residentId: resident?.id ?? '',
       name: formData.name,
-      room: '',
+      room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
       drug: formData.drug,
       dose: formData.dose,
       times: formData.times,
@@ -228,12 +234,13 @@ export default function MedicationPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input
-                  type="text"
+                <select
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                >
+                  {residentOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">약물명</label>

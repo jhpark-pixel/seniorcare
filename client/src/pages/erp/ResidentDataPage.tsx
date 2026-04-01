@@ -1,19 +1,42 @@
 import React, { useState, useMemo } from 'react';
+import { residents } from '../../data/mockData';
 
 type SortKey = 'name' | 'room' | 'age' | 'gender' | 'admitDate' | 'healthScore' | 'mobility' | 'cognition' | 'status';
 
-const allResidents = [
-  { name: '김영순', room: '1관 301호', age: 82, gender: '여', admitDate: '2024-03-15', healthScore: 75, mobility: '자유보행', cognition: '정상', disease: '고혈압, 관절염', status: '입주중' },
-  { name: '이순자', room: '2관 205호', age: 78, gender: '여', admitDate: '2024-05-01', healthScore: 82, mobility: '자유보행', cognition: '정상', disease: '당뇨', status: '입주중' },
-  { name: '박정희', room: '1관 402호', age: 85, gender: '여', admitDate: '2023-11-20', healthScore: 45, mobility: '보조기 필요', cognition: '경도인지장애', disease: '치매초기, 골다공증', status: '입주중' },
-  { name: '최옥순', room: '2관 103호', age: 79, gender: '여', admitDate: '2024-01-10', healthScore: 68, mobility: '자유보행', cognition: '정상', disease: '당뇨, 고지혈증', status: '입주중' },
-  { name: '정미숙', room: '1관 201호', age: 76, gender: '여', admitDate: '2024-07-01', healthScore: 88, mobility: '자유보행', cognition: '정상', disease: '없음', status: '입주중' },
-  { name: '한순이', room: '2관 302호', age: 84, gender: '여', admitDate: '2023-09-15', healthScore: 55, mobility: '보조기 필요', cognition: '경도인지장애', disease: '고혈압, 뇌경색 병력', status: '외출중' },
-  { name: '서복순', room: '2관 401호', age: 81, gender: '여', admitDate: '2024-02-28', healthScore: 92, mobility: '자유보행', cognition: '정상', disease: '없음', status: '입주중' },
-  { name: '강말숙', room: '1관 105호', age: 87, gender: '여', admitDate: '2023-06-10', healthScore: 50, mobility: '휠체어', cognition: '중등도 인지장애', disease: '파킨슨, 고혈압', status: '입원중' },
-  { name: '조순옥', room: '1관 203호', age: 77, gender: '여', admitDate: '2024-08-20', healthScore: 72, mobility: '자유보행', cognition: '정상', disease: '관절염', status: '입주중' },
-  { name: '배영자', room: '2관 104호', age: 83, gender: '여', admitDate: '2024-04-05', healthScore: 38, mobility: '거동불편', cognition: '중등도 인지장애', disease: '심부전, 고혈압, 당뇨', status: '입원중' },
-];
+interface ResidentRow {
+  name: string;
+  room: string;
+  age: number;
+  gender: string;
+  admitDate: string;
+  healthScore: number;
+  mobility: string;
+  cognition: string;
+  disease: string;
+  status: string;
+  careGrade: string;
+}
+
+const statusLabel: Record<string, string> = {
+  ACTIVE: '입주중',
+  HOSPITALIZED: '입원중',
+  OUTING: '외출중',
+  DISCHARGED: '퇴소',
+};
+
+const allResidents: ResidentRow[] = residents.map(r => ({
+  name: r.name,
+  room: `${r.building} ${r.roomNumber}호`,
+  age: r.age,
+  gender: r.gender === 'MALE' ? '남' : '여',
+  admitDate: r.moveInDate,
+  healthScore: r.healthScore,
+  mobility: r.mobilityLabel,
+  cognition: r.cognitiveLabelKo,
+  disease: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
+  status: statusLabel[r.status] ?? r.status,
+  careGrade: r.careGrade,
+}));
 
 function getScoreColor(score: number) {
   if (score >= 80) return 'text-green-600 bg-green-100';
@@ -98,6 +121,7 @@ export default function ResidentDataPage() {
                   </th>
                 ))}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">질환</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">케어등급</th>
                 <th
                   onClick={() => handleSort('status')}
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 whitespace-nowrap select-none"
@@ -120,7 +144,15 @@ export default function ResidentDataPage() {
                   <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{r.mobility}</td>
                   <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{r.cognition}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{r.disease}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{r.status}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{r.careGrade}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      r.status === '입주중' ? 'bg-green-100 text-green-700' :
+                      r.status === '입원중' ? 'bg-yellow-100 text-yellow-700' :
+                      r.status === '외출중' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>{r.status}</span>
+                  </td>
                 </tr>
               ))}
             </tbody>

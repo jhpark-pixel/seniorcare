@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
 interface LeaveRecord {
   id: string;
@@ -19,13 +20,43 @@ const statusColor: Record<string, string> = {
   '복귀': 'bg-gray-100 text-gray-800',
 };
 
+// 실제 입주자 기준 장기외출 데이터
 const initialData: LeaveRecord[] = [
-  { id: '1', applyDate: '2026-03-28', name: '김영순', room: '1관 301호', reason: '딸 결혼식 참석', startDate: '2026-04-05', endDate: '2026-04-12', guardian: '김미정 (딸)', guardianPhone: '010-3456-7890', status: '승인' },
-  { id: '2', applyDate: '2026-03-26', name: '이순자', room: '2관 205호', reason: '외부 병원 정밀검사 및 회복', startDate: '2026-04-01', endDate: '2026-04-07', guardian: '이재호 (아들)', guardianPhone: '010-9876-5432', status: '승인' },
-  { id: '3', applyDate: '2026-03-25', name: '최옥순', room: '2관 103호', reason: '추석 명절 가족 방문', startDate: '2026-04-10', endDate: '2026-04-15', guardian: '최영수 (아들)', guardianPhone: '010-5555-1234', status: '신청' },
-  { id: '4', applyDate: '2026-03-20', name: '정미숙', room: '1관 201호', reason: '손녀 돌잔치 참석', startDate: '2026-03-22', endDate: '2026-03-24', guardian: '정하늘 (딸)', guardianPhone: '010-2222-3333', status: '복귀' },
-  { id: '5', applyDate: '2026-03-15', name: '한순이', room: '2관 302호', reason: '자택 방문 (리모델링 확인)', startDate: '2026-03-18', endDate: '2026-03-20', guardian: '한민수 (아들)', guardianPhone: '010-7777-8888', status: '복귀' },
+  {
+    id: '1', applyDate: '2026-03-28', name: '김영순', room: '1관 101호',
+    reason: '딸 결혼식 참석', startDate: '2026-04-05', endDate: '2026-04-12',
+    guardian: '김철수 (아들)', guardianPhone: '010-9876-5432', status: '승인',
+  },
+  {
+    id: '2', applyDate: '2026-03-26', name: '박정호', room: '1관 105호',
+    reason: '외부 정형외과 정밀검사 및 회복', startDate: '2026-04-01', endDate: '2026-04-07',
+    guardian: '박미선 (딸)', guardianPhone: '010-6543-2109', status: '승인',
+  },
+  {
+    id: '3', applyDate: '2026-03-25', name: '최순남', room: '1관 107호',
+    reason: '손자 돌잔치 참석', startDate: '2026-04-10', endDate: '2026-04-15',
+    guardian: '최민호 (아들)', guardianPhone: '010-4321-0987', status: '신청',
+  },
+  {
+    id: '4', applyDate: '2026-03-20', name: '정기원', room: '1관 109호',
+    reason: '자녀 방문 동반 외출', startDate: '2026-03-22', endDate: '2026-03-24',
+    guardian: '정수진 (딸)', guardianPhone: '010-3210-9876', status: '복귀',
+  },
+  {
+    id: '5', applyDate: '2026-03-15', name: '오세진', room: '2관 203호',
+    reason: '자택 방문 (리모델링 확인)', startDate: '2026-03-18', endDate: '2026-03-20',
+    guardian: '오수빈 (딸)', guardianPhone: '010-3333-4444', status: '복귀',
+  },
 ];
+
+const residentOptions = residents
+  .filter(r => r.status === 'ACTIVE')
+  .map(r => ({
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
+    phone: r.emergencyContact.phone,
+  }));
 
 const emptyForm = { name: '', room: '', reason: '', startDate: '', endDate: '', guardian: '', guardianPhone: '' };
 
@@ -34,9 +65,23 @@ export default function LeavePage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
 
+  const handleResidentSelect = (name: string) => {
+    const found = residentOptions.find(r => r.name === name);
+    if (found) {
+      setFormData(prev => ({
+        ...prev,
+        name: found.name,
+        room: found.room,
+        guardian: found.guardian,
+        guardianPhone: found.phone,
+      }));
+    }
+  };
+
   const handleSave = () => {
+    if (!formData.name || !formData.startDate || !formData.endDate) return;
     const newRecord: LeaveRecord = {
-      id: crypto.randomUUID(),
+      id: generateId('leave'),
       applyDate: new Date().toISOString().slice(0, 10),
       name: formData.name,
       room: formData.room,
@@ -56,6 +101,10 @@ export default function LeavePage() {
     setData(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
   };
 
+  const handleDelete = (id: string) => {
+    setData(prev => prev.filter(r => r.id !== id));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -66,6 +115,22 @@ export default function LeavePage() {
         <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
           + 외출 신청
         </button>
+      </div>
+
+      {/* 요약 */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">{data.filter(d => d.status === '신청').length}</div>
+          <div className="text-sm text-gray-500 mt-1">신청중</div>
+        </div>
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{data.filter(d => d.status === '승인').length}</div>
+          <div className="text-sm text-gray-500 mt-1">외출중</div>
+        </div>
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-gray-600">{data.filter(d => d.status === '복귀').length}</div>
+          <div className="text-sm text-gray-500 mt-1">복귀완료</div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
@@ -109,6 +174,7 @@ export default function LeavePage() {
                       {row.status === '승인' && (
                         <button onClick={() => handleStatusChange(row.id, '복귀')} className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">복귀</button>
                       )}
+                      <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-red-400 text-white rounded hover:bg-red-500">삭제</button>
                     </div>
                   </td>
                 </tr>
@@ -125,33 +191,42 @@ export default function LeavePage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <select
+                  value={formData.name}
+                  onChange={e => handleResidentSelect(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]"
+                >
+                  <option value="">선택하세요</option>
+                  {residentOptions.map(r => (
+                    <option key={r.name} value={r.name}>{r.name} ({r.room})</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
-                <input type="text" value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.room} readOnly className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">외출사유</label>
-                <input type="text" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">외출시작일</label>
-                  <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">외출종료일</label>
-                  <input type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">보호자</label>
-                <input type="text" value={formData.guardian} onChange={e => setFormData({ ...formData, guardian: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.guardian} onChange={e => setFormData({ ...formData, guardian: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input type="text" value={formData.guardianPhone} onChange={e => setFormData({ ...formData, guardianPhone: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.guardianPhone} onChange={e => setFormData({ ...formData, guardianPhone: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

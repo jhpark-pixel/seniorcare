@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { staff } from '../../data/mockData';
 
 interface MaintenanceRequest {
   id: string;
@@ -12,15 +13,20 @@ interface MaintenanceRequest {
   cost: number | null;
 }
 
+const nurse1 = staff.find(s => s.role === 'NURSE')?.name ?? '김서연';
+const nurse2 = staff.filter(s => s.role === 'NURSE')[1]?.name ?? '이하은';
+const social1 = staff.find(s => s.role === 'SOCIAL_WORKER')?.name ?? '최민정';
+const director = staff.find(s => s.role === 'DIRECTOR')?.name ?? '박준혁';
+
 const initialRequests: MaintenanceRequest[] = [
-  { id: '1', requestDate: '2026-03-28', requester: '김간호사', location: '1관 204호 화장실', description: '온수 배관 누수 발생, 바닥 물 고임', priority: '긴급', status: '진행중', completionDate: null, cost: null },
-  { id: '2', requestDate: '2026-03-27', requester: '최생활지도사', location: '2관 202호', description: '에어컨 작동 불량 (냉방 안됨)', priority: '높음', status: '진행중', completionDate: null, cost: null },
-  { id: '3', requestDate: '2026-03-26', requester: '이간호사', location: '1관 3층 복도', description: '형광등 3개 깜빡임 현상', priority: '보통', status: '요청', completionDate: null, cost: null },
-  { id: '4', requestDate: '2026-03-25', requester: '박관리과장', location: '2관 엘리베이터', description: '정기 안전 점검 (분기별)', priority: '높음', status: '완료', completionDate: '2026-03-28', cost: 350000 },
-  { id: '5', requestDate: '2026-03-24', requester: '최생활지도사', location: '1층 대강당', description: '프로젝터 램프 교체 필요', priority: '보통', status: '완료', completionDate: '2026-03-27', cost: 180000 },
-  { id: '6', requestDate: '2026-03-23', requester: '김간호사', location: '2관 1층 현관', description: '자동문 센서 오작동 (열림 지연)', priority: '높음', status: '완료', completionDate: '2026-03-25', cost: 120000 },
-  { id: '7', requestDate: '2026-03-22', requester: '이간호사', location: '1관 105호', description: '창문 잠금장치 고장', priority: '낮음', status: '요청', completionDate: null, cost: null },
-  { id: '8', requestDate: '2026-03-20', requester: '박관리과장', location: '옥상 물탱크', description: '정수 필터 교체 및 물탱크 청소', priority: '보통', status: '완료', completionDate: '2026-03-22', cost: 250000 },
+  { id: '1', requestDate: '2026-03-28', requester: nurse1, location: '1관 107호 화장실', description: '온수 배관 누수 발생, 바닥 물 고임', priority: '긴급', status: '진행중', completionDate: null, cost: null },
+  { id: '2', requestDate: '2026-03-27', requester: social1, location: '2관 203호', description: '에어컨 작동 불량 (냉방 안됨)', priority: '높음', status: '진행중', completionDate: null, cost: null },
+  { id: '3', requestDate: '2026-03-26', requester: nurse2, location: '1관 3층 복도', description: '형광등 3개 깜빡임 현상', priority: '보통', status: '요청', completionDate: null, cost: null },
+  { id: '4', requestDate: '2026-03-25', requester: director, location: '2관 엘리베이터', description: '정기 안전 점검 (분기별)', priority: '높음', status: '완료', completionDate: '2026-03-28', cost: 350000 },
+  { id: '5', requestDate: '2026-03-24', requester: social1, location: '1층 대강당', description: '프로젝터 램프 교체 필요', priority: '보통', status: '완료', completionDate: '2026-03-27', cost: 180000 },
+  { id: '6', requestDate: '2026-03-23', requester: nurse1, location: '2관 1층 현관', description: '자동문 센서 오작동 (열림 지연)', priority: '높음', status: '완료', completionDate: '2026-03-25', cost: 120000 },
+  { id: '7', requestDate: '2026-03-22', requester: nurse2, location: '1관 105호', description: '창문 잠금장치 고장', priority: '낮음', status: '요청', completionDate: null, cost: null },
+  { id: '8', requestDate: '2026-03-20', requester: director, location: '옥상 물탱크', description: '정수 필터 교체 및 물탱크 청소', priority: '보통', status: '완료', completionDate: '2026-03-22', cost: 250000 },
 ];
 
 const priorityColors: Record<string, string> = {
@@ -53,7 +59,7 @@ export default function MaintenancePage() {
     const newReq: MaintenanceRequest = {
       id: crypto.randomUUID(),
       requestDate: new Date().toISOString().slice(0, 10),
-      requester: '관리자',
+      requester: director,
       location: formData.location,
       description: formData.description,
       priority: formData.priority,

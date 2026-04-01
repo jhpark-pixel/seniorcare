@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId, daysAgo } from '../../data/mockData';
 
 interface ComplaintItem {
   id: string;
@@ -12,15 +13,56 @@ interface ComplaintItem {
   satisfaction: number | null;
 }
 
+// Use actual emergency contacts from residents
 const initialData: ComplaintItem[] = [
-  { id: '1', date: '2026-03-30', complainant: '김철수 (김영순 자녀)', phone: '010-1234-5678', type: '서비스', content: '야간 순회 시 소음이 크다는 불만', processStatus: '접수', processDate: '-', satisfaction: null },
-  { id: '2', date: '2026-03-29', complainant: '이미영 (이순자 자녀)', phone: '010-2345-6789', type: '식사', content: '저녁 식사 반찬이 부족하다는 의견', processStatus: '처리중', processDate: '-', satisfaction: null },
-  { id: '3', date: '2026-03-28', complainant: '박정수 (박정희 배우자)', phone: '010-3456-7890', type: '시설', content: '2층 복도 조명이 어두워 위험하다는 지적', processStatus: '완료', processDate: '2026-03-29', satisfaction: 4 },
-  { id: '4', date: '2026-03-27', complainant: '최영미 (최옥순 자녀)', phone: '010-4567-8901', type: '서비스', content: '세탁물 분실 건 확인 요청', processStatus: '완료', processDate: '2026-03-28', satisfaction: 3 },
-  { id: '5', date: '2026-03-25', complainant: '한동건 (한순이 자녀)', phone: '010-5678-9012', type: '기타', content: '면회 시간 연장 요청', processStatus: '완료', processDate: '2026-03-26', satisfaction: 5 },
-  { id: '6', date: '2026-03-23', complainant: '정수현 (정미숙 자녀)', phone: '010-6789-0123', type: '식사', content: '당뇨식 메뉴 다양화 요청', processStatus: '완료', processDate: '2026-03-25', satisfaction: 4 },
-  { id: '7', date: '2026-03-20', complainant: '강미래 (강순덕 자녀)', phone: '010-7890-1234', type: '시설', content: '화장실 온수 온도 불안정 신고', processStatus: '완료', processDate: '2026-03-21', satisfaction: 5 },
-  { id: '8', date: '2026-03-18', complainant: '오진우 (오말순 자녀)', phone: '010-8901-2345', type: '서비스', content: '투약 시간 변경 후 미안내 건', processStatus: '완료', processDate: '2026-03-19', satisfaction: 2 },
+  {
+    id: '1', date: daysAgo(1),
+    complainant: `${residents[0].emergencyContact.name} (${residents[0].name} ${residents[0].emergencyContact.relationship})`,
+    phone: residents[0].emergencyContact.phone,
+    type: '서비스', content: '야간 순회 시 소음이 크다는 불만', processStatus: '접수', processDate: '-', satisfaction: null,
+  },
+  {
+    id: '2', date: daysAgo(2),
+    complainant: `${residents[1].emergencyContact.name} (${residents[1].name} ${residents[1].emergencyContact.relationship})`,
+    phone: residents[1].emergencyContact.phone,
+    type: '식사', content: '저녁 식사 연하식 메뉴가 단조롭다는 의견', processStatus: '처리중', processDate: '-', satisfaction: null,
+  },
+  {
+    id: '3', date: daysAgo(3),
+    complainant: `${residents[2].emergencyContact.name} (${residents[2].name} ${residents[2].emergencyContact.relationship})`,
+    phone: residents[2].emergencyContact.phone,
+    type: '시설', content: '2층 복도 조명이 어두워 위험하다는 지적', processStatus: '완료', processDate: daysAgo(2), satisfaction: 4,
+  },
+  {
+    id: '4', date: daysAgo(4),
+    complainant: `${residents[3].emergencyContact.name} (${residents[3].name} ${residents[3].emergencyContact.relationship})`,
+    phone: residents[3].emergencyContact.phone,
+    type: '서비스', content: '세탁물 분실 건 확인 요청', processStatus: '완료', processDate: daysAgo(3), satisfaction: 3,
+  },
+  {
+    id: '5', date: daysAgo(6),
+    complainant: `${residents[4].emergencyContact.name} (${residents[4].name} ${residents[4].emergencyContact.relationship})`,
+    phone: residents[4].emergencyContact.phone,
+    type: '기타', content: '면회 시간 연장 요청', processStatus: '완료', processDate: daysAgo(5), satisfaction: 5,
+  },
+  {
+    id: '6', date: daysAgo(8),
+    complainant: `${residents[5].emergencyContact.name} (${residents[5].name} ${residents[5].emergencyContact.relationship})`,
+    phone: residents[5].emergencyContact.phone,
+    type: '식사', content: '연하식(미음) 온도 관련 개선 요청', processStatus: '완료', processDate: daysAgo(6), satisfaction: 4,
+  },
+  {
+    id: '7', date: daysAgo(11),
+    complainant: `${residents[6].emergencyContact.name} (${residents[6].name} ${residents[6].emergencyContact.relationship})`,
+    phone: residents[6].emergencyContact.phone,
+    type: '시설', content: '화장실 온수 온도 불안정 신고', processStatus: '완료', processDate: daysAgo(10), satisfaction: 5,
+  },
+  {
+    id: '8', date: daysAgo(13),
+    complainant: `${residents[7].emergencyContact.name} (${residents[7].name} ${residents[7].emergencyContact.relationship})`,
+    phone: residents[7].emergencyContact.phone,
+    type: '서비스', content: '입원 중 시설 연락 미흡 건', processStatus: '완료', processDate: daysAgo(12), satisfaction: 2,
+  },
 ];
 
 const typeOptions = ['시설', '서비스', '식사', '기타'];
@@ -61,7 +103,8 @@ const renderStars = (score: number | null, onClick?: (v: number) => void) => {
   );
 };
 
-const emptyForm = { complainant: '', phone: '', type: '서비스', content: '' };
+const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
+const emptyForm = { residentId: '', type: '서비스', content: '' };
 
 export default function ComplaintPage() {
   const [data, setData] = useState<ComplaintItem[]>(initialData);
@@ -79,12 +122,14 @@ export default function ComplaintPage() {
   const pending = data.filter(d => d.processStatus === '접수').length;
 
   const handleSave = () => {
-    if (!formData.complainant || !formData.content) return;
+    if (!formData.residentId || !formData.content) return;
+    const res = residents.find(r => r.id === formData.residentId);
+    if (!res) return;
     const newItem: ComplaintItem = {
-      id: crypto.randomUUID(),
+      id: generateId('cp'),
       date: new Date().toISOString().slice(0, 10),
-      complainant: formData.complainant,
-      phone: formData.phone,
+      complainant: `${res.emergencyContact.name} (${res.name} ${res.emergencyContact.relationship})`,
+      phone: res.emergencyContact.phone,
       type: formData.type,
       content: formData.content,
       processStatus: '접수',
@@ -228,6 +273,11 @@ export default function ComplaintPage() {
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">검색 결과가 없습니다.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -239,25 +289,29 @@ export default function ComplaintPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
             <h2 className="text-lg font-bold text-gray-900">민원 접수</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">민원인</label>
-                <input
-                  type="text"
-                  value={formData.complainant}
-                  onChange={e => setFormData({ ...formData, complainant: e.target.value })}
-                  placeholder="이름 (관계)"
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택 (보호자 자동 연결)</label>
+                <select
+                  value={formData.residentId}
+                  onChange={e => setFormData({ ...formData, residentId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="010-0000-0000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                >
+                  <option value="">-- 입소자 선택 --</option>
+                  {residentOptions.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} ({r.building} {r.roomNumber}호) - 보호자: {r.emergencyContact.name} ({r.emergencyContact.relationship})
+                    </option>
+                  ))}
+                </select>
+                {formData.residentId && (() => {
+                  const res = residents.find(r => r.id === formData.residentId);
+                  if (!res) return null;
+                  return (
+                    <p className="mt-1 text-xs text-blue-600">
+                      연락처: {res.emergencyContact.phone}
+                    </p>
+                  );
+                })()}
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>

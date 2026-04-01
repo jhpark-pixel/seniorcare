@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
-const programs = [
+const programOptions = [
   { id: 1, name: '치매예방 인지훈련' },
   { id: 2, name: '실버 요가교실' },
   { id: 3, name: '음악치료 프로그램' },
@@ -8,27 +9,49 @@ const programs = [
   { id: 5, name: '원예치료' },
 ];
 
-const initialMembers = [
-  { name: '김영순', room: '1관 301호', enrolled: true, attended: true },
-  { name: '이순자', room: '2관 205호', enrolled: true, attended: true },
-  { name: '박정희', room: '1관 402호', enrolled: true, attended: false },
-  { name: '최옥순', room: '2관 103호', enrolled: true, attended: true },
-  { name: '정미숙', room: '1관 201호', enrolled: true, attended: true },
-  { name: '한순이', room: '2관 302호', enrolled: true, attended: false },
-  { name: '조순옥', room: '1관 203호', enrolled: true, attended: true },
-  { name: '배영자', room: '2관 104호', enrolled: true, attended: false },
-];
+// Use real residents from mock data (active only)
+const activeResidents = residents.filter(r => r.status !== 'DISCHARGED');
+
+interface MemberAttendance {
+  residentId: string;
+  name: string;
+  room: string;
+  enrolled: boolean;
+  attended: boolean;
+}
+
+const buildInitialMembers = (): MemberAttendance[] =>
+  activeResidents.map((r, i) => ({
+    residentId: r.id,
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    enrolled: true,
+    attended: i % 3 !== 2, // roughly 2/3 attendance
+  }));
 
 export default function ProgramAttendancePage() {
-  const [selectedProgram, setSelectedProgram] = useState(programs[0].id);
-  const [date, setDate] = useState('2026-03-30');
-  const [members, setMembers] = useState(initialMembers.map((m) => ({ ...m })));
+  const [selectedProgram, setSelectedProgram] = useState(programOptions[0].id);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [members, setMembers] = useState<MemberAttendance[]>(buildInitialMembers());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const toggleAttendance = (index: number) => {
-    setMembers((prev) => prev.map((m, i) => i === index ? { ...m, attended: !m.attended } : m));
+  const toggleAttendance = (residentId: string) => {
+    setMembers(prev => prev.map(m => m.residentId === residentId ? { ...m, attended: !m.attended } : m));
+    setSaved(false);
   };
 
-  const attendedCount = members.filter((m) => m.attended).length;
+  const handleSave = () => {
+    setSaved(true);
+  };
+
+  const handleProgramChange = (id: number) => {
+    setSelectedProgram(id);
+    setMembers(buildInitialMembers());
+    setSaved(false);
+  };
+
+  const attendedCount = members.filter(m => m.attended).length;
   const totalCount = members.length;
   const rate = totalCount > 0 ? Math.round((attendedCount / totalCount) * 100) : 0;
 
@@ -44,10 +67,10 @@ export default function ProgramAttendancePage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">프로그램 선택</label>
           <select
             value={selectedProgram}
-            onChange={(e) => setSelectedProgram(Number(e.target.value))}
+            onChange={(e) => handleProgramChange(Number(e.target.value))}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
           >
-            {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {programOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
         <div>
@@ -55,7 +78,7 @@ export default function ProgramAttendancePage() {
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => { setDate(e.target.value); setSaved(false); }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -71,6 +94,12 @@ export default function ProgramAttendancePage() {
         </div>
       </div>
 
+      {saved && (
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
+          출석 현황이 저장되었습니다. ({date} / {programOptions.find(p => p.id === selectedProgram)?.name})
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -82,8 +111,8 @@ export default function ProgramAttendancePage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {members.map((m, i) => (
-                <tr key={i} className="hover:bg-gray-50">
+              {members.map((m) => (
+                <tr key={m.residentId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{m.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{m.room}</td>
                   <td className="px-6 py-4 text-sm">
@@ -94,7 +123,7 @@ export default function ProgramAttendancePage() {
                       <input
                         type="checkbox"
                         checked={m.attended}
-                        onChange={() => toggleAttendance(i)}
+                        onChange={() => toggleAttendance(m.residentId)}
                         className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className={`text-sm ${m.attended ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
@@ -111,7 +140,7 @@ export default function ProgramAttendancePage() {
 
       <div className="flex justify-end">
         <button
-          onClick={() => alert('출석 현황이 저장되었습니다.')}
+          onClick={handleSave}
           className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
         >
           출석 저장

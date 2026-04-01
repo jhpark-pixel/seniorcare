@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
 const contractStatusColor: Record<string, string> = {
   '계약중': 'bg-green-100 text-green-800',
@@ -30,15 +31,21 @@ interface ContractItem {
 }
 
 const initialData: ContractItem[] = [
-  { id: '1', contractNo: 'CT-2025-001', name: '김영순', room: '1관 301호', type: '1인실', startDate: '2025-01-15', endDate: '2026-01-14', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
-  { id: '2', contractNo: 'CT-2025-003', name: '이순자', room: '2관 205호', type: '1인실', startDate: '2025-03-01', endDate: '2026-02-28', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
-  { id: '3', contractNo: 'CT-2025-005', name: '박정희', room: '1관 402호', type: '2인실', startDate: '2025-05-10', endDate: '2026-05-09', monthly: 1800000, deposit: 20000000, depositStatus: '분할납부중', status: '계약중' },
-  { id: '4', contractNo: 'CT-2025-007', name: '최옥순', room: '2관 103호', type: '1인실', startDate: '2025-02-01', endDate: '2026-01-31', monthly: 2500000, deposit: 35000000, depositStatus: '완납', status: '만료예정' },
-  { id: '5', contractNo: 'CT-2025-009', name: '정미숙', room: '1관 201호', type: '1인실', startDate: '2025-06-15', endDate: '2026-06-14', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
-  { id: '6', contractNo: 'CT-2025-011', name: '한순이', room: '2관 302호', type: '2인실', startDate: '2025-04-01', endDate: '2026-03-31', monthly: 1800000, deposit: 20000000, depositStatus: '완납', status: '갱신대기' },
-  { id: '7', contractNo: 'CT-2024-022', name: '강말숙', room: '1관 105호', type: '1인실', startDate: '2024-09-01', endDate: '2025-08-31', monthly: 2000000, deposit: 25000000, depositStatus: '환불완료', status: '해지' },
-  { id: '8', contractNo: 'CT-2025-015', name: '서복순', room: '2관 401호', type: '2인실', startDate: '2025-07-01', endDate: '2026-06-30', monthly: 1500000, deposit: 20000000, depositStatus: '미납', status: '계약중' },
+  { id: '1', contractNo: 'CT-2025-001', name: '김영순', room: '1관 101호', type: '1인실', startDate: '2022-01-10', endDate: '2026-01-09', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '갱신대기' },
+  { id: '2', contractNo: 'CT-2021-003', name: '이복자', room: '1관 103호', type: '1인실', startDate: '2021-06-15', endDate: '2026-06-14', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
+  { id: '3', contractNo: 'CT-2023-005', name: '박정호', room: '1관 105호', type: '1인실', startDate: '2023-02-20', endDate: '2026-02-19', monthly: 2000000, deposit: 25000000, depositStatus: '완납', status: '만료예정' },
+  { id: '4', contractNo: 'CT-2022-007', name: '최순남', room: '1관 107호', type: '1인실', startDate: '2022-09-05', endDate: '2026-09-04', monthly: 2500000, deposit: 35000000, depositStatus: '완납', status: '계약중' },
+  { id: '5', contractNo: 'CT-2023-009', name: '정기원', room: '1관 109호', type: '1인실', startDate: '2023-07-01', endDate: '2026-06-30', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
+  { id: '6', contractNo: 'CT-2021-011', name: '한말순', room: '2관 201호', type: '1인실', startDate: '2021-03-10', endDate: '2026-03-09', monthly: 1800000, deposit: 20000000, depositStatus: '완납', status: '갱신대기' },
+  { id: '7', contractNo: 'CT-2024-013', name: '오세진', room: '2관 203호', type: '1인실', startDate: '2024-01-15', endDate: '2027-01-14', monthly: 2000000, deposit: 25000000, depositStatus: '완납', status: '계약중' },
+  { id: '8', contractNo: 'CT-2023-015', name: '송미경', room: '2관 205호', type: '1인실', startDate: '2023-05-20', endDate: '2026-05-19', monthly: 2200000, deposit: 30000000, depositStatus: '완납', status: '계약중' },
+  { id: '9', contractNo: 'CT-2022-017', name: '윤태식', room: '2관 207호', type: '1인실', startDate: '2022-11-01', endDate: '2026-10-31', monthly: 2200000, deposit: 30000000, depositStatus: '분할납부중', status: '계약중' },
+  { id: '10', contractNo: 'CT-2024-019', name: '강옥희', room: '2관 209호', type: '1인실', startDate: '2024-06-10', endDate: '2027-06-09', monthly: 2000000, deposit: 25000000, depositStatus: '완납', status: '계약중' },
 ];
+
+const residentOptions = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호`, type: '1인실' }));
 
 const emptyForm = { name: '', room: '', type: '1인실', startDate: '', endDate: '', monthly: '2200000', deposit: '30000000' };
 
@@ -60,10 +67,19 @@ export default function ContractPage() {
     return `CT-${year}-${String(next).padStart(3, '0')}`;
   };
 
+  const handleResidentSelect = (name: string) => {
+    const found = residentOptions.find(r => r.name === name);
+    if (found) {
+      setFormData(prev => ({ ...prev, name: found.name, room: found.room, type: found.type }));
+    } else {
+      setFormData(prev => ({ ...prev, name }));
+    }
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.startDate || !formData.endDate) return;
     const newItem: ContractItem = {
-      id: crypto.randomUUID(),
+      id: generateId('contract'),
       contractNo: nextContractNo(),
       name: formData.name,
       room: formData.room,
@@ -189,12 +205,16 @@ export default function ContractPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input
-                  type="text"
+                <select
                   value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => handleResidentSelect(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                >
+                  <option value="">선택하세요</option>
+                  {residentOptions.map(r => (
+                    <option key={r.name} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
@@ -202,7 +222,7 @@ export default function ContractPage() {
                   type="text"
                   value={formData.room}
                   onChange={e => setFormData({ ...formData, room: e.target.value })}
-                  placeholder="예: 1관 301호"
+                  placeholder="예: 1관 101호"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
                 />
               </div>

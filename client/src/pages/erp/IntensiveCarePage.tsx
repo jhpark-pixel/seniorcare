@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, staff } from '../../data/mockData';
 
 interface IntensiveCareRecord {
   id: string;
@@ -13,12 +14,12 @@ interface IntensiveCareRecord {
 }
 
 const initialData: IntensiveCareRecord[] = [
-  { id: '1', name: '김영순', room: '1관 301호', reason: '고혈압 + 당뇨 복합 관리', grade: '상', period: '2026-01-15 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '148/92', hr: '78', temp: '36.4', sugar: '165' } },
-  { id: '2', name: '이순자', room: '2관 205호', reason: '당뇨 인슐린 집중 관리', grade: '상', period: '2026-02-01 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '132/84', hr: '72', temp: '36.6', sugar: '198' } },
-  { id: '3', name: '박정희', room: '1관 402호', reason: '치매 진행 관찰 및 안전 관리', grade: '상', period: '2025-11-10 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '126/78', hr: '68', temp: '36.5', sugar: '102' } },
-  { id: '4', name: '한순이', room: '2관 302호', reason: '심장질환 와파린 복용 모니터링', grade: '중', period: '2026-02-15 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '118/74', hr: '64', temp: '36.3', sugar: '95' } },
-  { id: '5', name: '정미숙', room: '1관 201호', reason: '낙상 고위험 + 수면장애', grade: '중', period: '2026-03-01 ~ 현재', manager: '간호사 김미영', active: true, vitals: { bp: '122/76', hr: '70', temp: '36.5', sugar: '108' } },
-  { id: '6', name: '강순덕', room: '2관 401호', reason: '퇴원 후 회복기 관찰', grade: '하', period: '2026-03-20 ~ 현재', manager: '간호사 이정은', active: true, vitals: { bp: '120/78', hr: '74', temp: '36.7', sugar: '100' } },
+  { id: '1', name: '김영순', room: '1관 101호', reason: '고혈압 + 당뇨 복합 관리', grade: '상', period: '2026-01-15 ~ 현재', manager: '간호사 김서연', active: true, vitals: { bp: '148/92', hr: '78', temp: '36.4', sugar: '165' } },
+  { id: '2', name: '이복자', room: '1관 103호', reason: '치매 진행 관찰 + 심부전 모니터링', grade: '상', period: '2026-02-01 ~ 현재', manager: '간호사 김서연', active: true, vitals: { bp: '132/84', hr: '72', temp: '36.6', sugar: '105' } },
+  { id: '3', name: '최순남', room: '1관 107호', reason: '뇌졸중 후유증 재활 및 고혈압 관리', grade: '상', period: '2025-11-10 ~ 현재', manager: '간호사 이하은', active: true, vitals: { bp: '152/96', hr: '68', temp: '36.5', sugar: '102' } },
+  { id: '4', name: '윤태식', room: '2관 207호', reason: '뇌졸중 + 치매 복합 와파린 복용 모니터링', grade: '상', period: '2026-02-15 ~ 현재', manager: '간호사 이하은', active: true, vitals: { bp: '118/74', hr: '64', temp: '36.3', sugar: '95' } },
+  { id: '5', name: '정기원', room: '1관 109호', reason: '파킨슨병 약물 조절 + 우울증 관찰', grade: '중', period: '2026-03-01 ~ 현재', manager: '간호사 김서연', active: true, vitals: { bp: '122/76', hr: '70', temp: '36.5', sugar: '108' } },
+  { id: '6', name: '한말순', room: '2관 201호', reason: '중증 치매 안전 관리 + 골다공증 낙상 예방', grade: '중', period: '2026-03-20 ~ 현재', manager: '간호사 이하은', active: true, vitals: { bp: '120/78', hr: '74', temp: '36.7', sugar: '100' } },
 ];
 
 const gradeStyle = (grade: string) => {
@@ -30,7 +31,13 @@ const gradeStyle = (grade: string) => {
   return map[grade] || { border: 'border-gray-300', bg: 'bg-gray-50', badge: 'bg-gray-500 text-white' };
 };
 
-const emptyForm = { name: '', room: '', reason: '', grade: '상' as const, manager: '' };
+const residentOptions = residents.map(r => r.name);
+const managerOptions = [
+  ...staff.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
+  ...staff.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
+];
+
+const emptyForm: { name: string; reason: string; grade: '상' | '중' | '하'; manager: string } = { name: residentOptions[0], reason: '', grade: '상', manager: managerOptions[0] };
 
 export default function IntensiveCarePage() {
   const [data, setData] = useState<IntensiveCareRecord[]>(initialData);
@@ -42,10 +49,12 @@ export default function IntensiveCarePage() {
   activeData.forEach(d => { gradeCount[d.grade as keyof typeof gradeCount]++; });
 
   const handleSave = () => {
+    if (!formData.name || !formData.reason) return;
+    const resident = residents.find(r => r.name === formData.name);
     const newRecord: IntensiveCareRecord = {
       id: crypto.randomUUID(),
       name: formData.name,
-      room: formData.room,
+      room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
       reason: formData.reason,
       grade: formData.grade,
       period: `${new Date().toISOString().slice(0, 10)} ~ 현재`,
@@ -163,11 +172,9 @@ export default function IntensiveCarePage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
-                <input type="text" value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <select value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  {residentOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">관리사유</label>
@@ -183,7 +190,9 @@ export default function IntensiveCarePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
-                <input type="text" value={formData.manager} onChange={e => setFormData({ ...formData, manager: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <select value={formData.manager} onChange={e => setFormData({ ...formData, manager: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  {managerOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

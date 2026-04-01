@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
 const statusColor: Record<string, string> = {
   '대기': 'bg-yellow-100 text-yellow-800',
@@ -20,28 +21,35 @@ interface BillingItem {
   status: string;
 }
 
+// 10명 입주자 기준 청구 데이터 (careGrade 반영 관리비)
 const initialData: BillingItem[] = [
-  { id: '1', month: '2026-03', name: '김영순', room: '1관 301호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 2550000, status: '완납' },
-  { id: '2', month: '2026-03', name: '이순자', room: '2관 205호', admin: 1800000, meal: 450000, utility: 180000, service: 150000, paid: 2580000, status: '완납' },
-  { id: '3', month: '2026-03', name: '박정희', room: '1관 402호', admin: 1500000, meal: 420000, utility: 150000, service: 100000, paid: 0, status: '미납' },
-  { id: '4', month: '2026-03', name: '최옥순', room: '2관 103호', admin: 2100000, meal: 500000, utility: 200000, service: 180000, paid: 2980000, status: '완납' },
-  { id: '5', month: '2026-03', name: '정미숙', room: '1관 201호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 1500000, status: '일부납' },
-  { id: '6', month: '2026-03', name: '한순이', room: '2관 302호', admin: 1500000, meal: 420000, utility: 150000, service: 100000, paid: 2170000, status: '완납' },
-  { id: '7', month: '2026-03', name: '서복순', room: '2관 401호', admin: 1200000, meal: 400000, utility: 130000, service: 80000, paid: 0, status: '대기' },
-  { id: '8', month: '2026-03', name: '강말숙', room: '1관 105호', admin: 1650000, meal: 430000, utility: 170000, service: 110000, paid: 2360000, status: '완납' },
-  { id: '9', month: '2026-03', name: '조순옥', room: '1관 203호', admin: 1800000, meal: 450000, utility: 180000, service: 130000, paid: 2560000, status: '완납' },
-  { id: '10', month: '2026-03', name: '배영자', room: '2관 104호', admin: 2000000, meal: 480000, utility: 190000, service: 160000, paid: 1500000, status: '일부납' },
+  { id: '1', month: '2026-03', name: '김영순', room: '1관 101호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 2550000, status: '완납' },
+  { id: '2', month: '2026-03', name: '이복자', room: '1관 103호', admin: 1500000, meal: 420000, utility: 150000, service: 150000, paid: 2220000, status: '완납' },
+  { id: '3', month: '2026-03', name: '박정호', room: '1관 105호', admin: 2000000, meal: 450000, utility: 180000, service: 100000, paid: 0, status: '미납' },
+  { id: '4', month: '2026-03', name: '최순남', room: '1관 107호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 2550000, status: '완납' },
+  { id: '5', month: '2026-03', name: '정기원', room: '1관 109호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 1500000, status: '일부납' },
+  { id: '6', month: '2026-03', name: '한말순', room: '2관 201호', admin: 1200000, meal: 400000, utility: 130000, service: 200000, paid: 1930000, status: '완납' },
+  { id: '7', month: '2026-03', name: '오세진', room: '2관 203호', admin: 2000000, meal: 450000, utility: 180000, service: 100000, paid: 2730000, status: '완납' },
+  { id: '8', month: '2026-03', name: '송미경', room: '2관 205호', admin: 1500000, meal: 420000, utility: 150000, service: 150000, paid: 0, status: '대기' },
+  { id: '9', month: '2026-03', name: '윤태식', room: '2관 207호', admin: 1500000, meal: 420000, utility: 150000, service: 130000, paid: 2200000, status: '완납' },
+  { id: '10', month: '2026-03', name: '강옥희', room: '2관 209호', admin: 1800000, meal: 450000, utility: 180000, service: 120000, paid: 1500000, status: '일부납' },
 ];
 
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 const monthOptions = ['전체', '2026-01', '2026-02', '2026-03'];
 
+const residentOptions = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` }));
+
 export default function BillingPage() {
   const [data, setData] = useState<BillingItem[]>(initialData);
   const [monthFilter, setMonthFilter] = useState('전체');
   const [payModalId, setPayModalId] = useState<string | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', room: '', month: '2026-03', admin: '1800000', meal: '450000', utility: '180000', service: '120000' });
 
   const filtered = monthFilter === '전체' ? data : data.filter(d => d.month === monthFilter);
 
@@ -66,6 +74,32 @@ export default function BillingPage() {
     setPayAmount('');
   };
 
+  const handleResidentSelect = (name: string) => {
+    const found = residentOptions.find(r => r.name === name);
+    if (found) {
+      setAddForm(prev => ({ ...prev, name: found.name, room: found.room }));
+    }
+  };
+
+  const handleAddSave = () => {
+    if (!addForm.name || !addForm.month) return;
+    const newItem: BillingItem = {
+      id: generateId('bill'),
+      month: addForm.month,
+      name: addForm.name,
+      room: addForm.room,
+      admin: Number(addForm.admin) || 0,
+      meal: Number(addForm.meal) || 0,
+      utility: Number(addForm.utility) || 0,
+      service: Number(addForm.service) || 0,
+      paid: 0,
+      status: '대기',
+    };
+    setData(prev => [newItem, ...prev]);
+    setShowAddModal(false);
+    setAddForm({ name: '', room: '', month: '2026-03', admin: '1800000', meal: '450000', utility: '180000', service: '120000' });
+  };
+
   const handleDelete = (id: string) => {
     setData(prev => prev.filter(d => d.id !== id));
   };
@@ -78,13 +112,21 @@ export default function BillingPage() {
           <h1 className="text-2xl font-bold text-gray-900">청구관리</h1>
           <p className="mt-1 text-sm text-gray-500">월별 생활비 청구 및 수납 현황을 관리합니다.</p>
         </div>
-        <select
-          value={monthFilter}
-          onChange={e => setMonthFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-        >
-          {monthOptions.map(m => <option key={m} value={m}>{m === '전체' ? '전체 월' : m}</option>)}
-        </select>
+        <div className="flex gap-2">
+          <select
+            value={monthFilter}
+            onChange={e => setMonthFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+          >
+            {monthOptions.map(m => <option key={m} value={m}>{m === '전체' ? '전체 월' : m}</option>)}
+          </select>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
+          >
+            + 청구 등록
+          </button>
+        </div>
       </div>
 
       {/* 요약 카드 */}
@@ -211,6 +253,59 @@ export default function BillingPage() {
               >
                 저장
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 청구 등록 모달 */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">청구 등록</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
+                <select
+                  value={addForm.name}
+                  onChange={e => handleResidentSelect(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">선택하세요</option>
+                  {residentOptions.map(r => (
+                    <option key={r.name} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">청구월</label>
+                <input
+                  type="month"
+                  value={addForm.month}
+                  onChange={e => setAddForm({ ...addForm, month: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">관리비</label>
+                <input type="number" value={addForm.admin} onChange={e => setAddForm({ ...addForm, admin: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">식사비</label>
+                <input type="number" value={addForm.meal} onChange={e => setAddForm({ ...addForm, meal: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">수도광열비</label>
+                <input type="number" value={addForm.utility} onChange={e => setAddForm({ ...addForm, utility: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">서비스비</label>
+                <input type="number" value={addForm.service} onChange={e => setAddForm({ ...addForm, service: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleAddSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
         </div>

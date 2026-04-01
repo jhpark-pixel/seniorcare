@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { staff } from '../../data/mockData';
 
 const days = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -11,37 +12,48 @@ const shiftColor: Record<Shift, string> = {
 };
 
 interface StaffSchedule {
+  id: string;
   name: string;
   role: string;
   shifts: Shift[];
 }
 
+// Build schedule from real staff, with realistic shift patterns
 const staffSchedules: StaffSchedule[] = [
-  { name: '김간호', role: '간호사', shifts: ['주간', '주간', '야간', '휴무', '주간', '주간', '휴무'] },
-  { name: '이간호', role: '간호사', shifts: ['야간', '휴무', '주간', '주간', '주간', '휴무', '야간'] },
-  { name: '박요양', role: '요양보호사', shifts: ['주간', '주간', '주간', '휴무', '야간', '휴무', '주간'] },
-  { name: '최요양', role: '요양보호사', shifts: ['휴무', '주간', '주간', '주간', '주간', '야간', '휴무'] },
-  { name: '정요양', role: '요양보호사', shifts: ['주간', '야간', '휴무', '주간', '주간', '주간', '휴무'] },
-  { name: '한생활', role: '생활지도사', shifts: ['주간', '주간', '휴무', '주간', '주간', '휴무', '야간'] },
-  { name: '송생활', role: '생활지도사', shifts: ['휴무', '주간', '주간', '야간', '휴무', '주간', '주간'] },
-  { name: '윤영양', role: '영양사', shifts: ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'] },
-  { name: '임물리', role: '물리치료사', shifts: ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'] },
-  { name: '오사무', role: '사무원', shifts: ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'] },
+  { id: staff[0].id, name: staff[0].name, role: staff[0].roleLabel, shifts: ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'] },
+  { id: staff[1].id, name: staff[1].name, role: staff[1].roleLabel, shifts: ['주간', '주간', '야간', '휴무', '주간', '주간', '휴무'] },
+  { id: staff[2].id, name: staff[2].name, role: staff[2].roleLabel, shifts: ['야간', '휴무', '주간', '주간', '주간', '휴무', '야간'] },
+  { id: staff[3].id, name: staff[3].name, role: staff[3].roleLabel, shifts: ['주간', '주간', '휴무', '주간', '주간', '휴무', '야간'] },
+  { id: staff[4].id, name: staff[4].name, role: staff[4].roleLabel, shifts: ['휴무', '주간', '주간', '야간', '휴무', '주간', '주간'] },
 ];
 
 // 오늘은 월요일(index 0) 기준
 const todayIndex = 0;
 
 export default function StaffManagementPage() {
-  const todayWorkers = staffSchedules.filter((s) => s.shifts[todayIndex] === '주간');
-  const nightWorkers = staffSchedules.filter((s) => s.shifts[todayIndex] === '야간');
-  const offWorkers = staffSchedules.filter((s) => s.shifts[todayIndex] === '휴무');
+  const [schedules, setSchedules] = useState<StaffSchedule[]>(staffSchedules);
+
+  const todayWorkers = schedules.filter((s) => s.shifts[todayIndex] === '주간');
+  const nightWorkers = schedules.filter((s) => s.shifts[todayIndex] === '야간');
+  const offWorkers = schedules.filter((s) => s.shifts[todayIndex] === '휴무');
+
+  const cycleShift = (staffId: string, dayIdx: number) => {
+    const order: Shift[] = ['주간', '야간', '휴무'];
+    setSchedules(prev => prev.map(s => {
+      if (s.id !== staffId) return s;
+      const cur = s.shifts[dayIdx];
+      const next = order[(order.indexOf(cur) + 1) % order.length];
+      const newShifts = [...s.shifts] as Shift[];
+      newShifts[dayIdx] = next;
+      return { ...s, shifts: newShifts };
+    }));
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">근무스케줄</h1>
-        <p className="mt-1 text-sm text-gray-500">주간 근무 배정표를 확인하고 관리합니다.</p>
+        <p className="mt-1 text-sm text-gray-500">주간 근무 배정표를 확인하고 관리합니다. 셀을 클릭하면 근무 상태가 변경됩니다.</p>
       </div>
 
       {/* 오늘 요약 */}
@@ -72,6 +84,18 @@ export default function StaffManagementPage() {
         </div>
       </div>
 
+      {/* 직원 정보 카드 */}
+      <div className="grid grid-cols-5 gap-3">
+        {staff.map(s => (
+          <div key={s.id} className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+            <div className="text-sm font-semibold text-gray-900">{s.name}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{s.roleLabel}</div>
+            <div className="text-xs text-gray-400 mt-1 truncate">{s.email}</div>
+            <div className="text-xs text-gray-400">{s.phone}</div>
+          </div>
+        ))}
+      </div>
+
       {/* 주간 스케줄 그리드 */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -97,15 +121,19 @@ export default function StaffManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {staffSchedules.map((staff, si) => (
-                <tr key={si} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{staff.name}</td>
-                  <td className="px-4 py-3 text-center text-gray-600 text-xs">{staff.role}</td>
-                  {staff.shifts.map((shift, di) => (
+              {schedules.map((s) => (
+                <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{s.name}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 text-xs">{s.role}</td>
+                  {s.shifts.map((shift, di) => (
                     <td key={di} className={`px-4 py-2 text-center ${di === todayIndex ? 'bg-orange-50/50' : ''}`}>
-                      <span className={`inline-block px-2 py-1 text-xs rounded-md font-medium border ${shiftColor[shift]}`}>
+                      <button
+                        onClick={() => cycleShift(s.id, di)}
+                        className={`inline-block px-2 py-1 text-xs rounded-md font-medium border transition-colors hover:opacity-80 ${shiftColor[shift]}`}
+                        title="클릭하여 변경"
+                      >
                         {shift}
-                      </span>
+                      </button>
                     </td>
                   ))}
                 </tr>

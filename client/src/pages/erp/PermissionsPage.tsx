@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
+import { staff } from '../../data/mockData';
 
-const roles = ['시설장', '경영관리자', '간호사', '생활지도사', '요양보호사'];
+const roles = ['시설장', '간호사', '생활지도사'];
 const modules = ['입소자관리', '건강관리', '컨시어지', '커뮤니티', '식사관리', '시설관리', '경영통계', '경영관리'];
 
 const initialPermissions: Record<string, Record<string, boolean>> = {
   '시설장': { '입소자관리': true, '건강관리': true, '컨시어지': true, '커뮤니티': true, '식사관리': true, '시설관리': true, '경영통계': true, '경영관리': true },
-  '경영관리자': { '입소자관리': true, '건강관리': false, '컨시어지': true, '커뮤니티': true, '식사관리': true, '시설관리': true, '경영통계': true, '경영관리': true },
   '간호사': { '입소자관리': true, '건강관리': true, '컨시어지': true, '커뮤니티': true, '식사관리': false, '시설관리': false, '경영통계': false, '경영관리': false },
   '생활지도사': { '입소자관리': true, '건강관리': false, '컨시어지': true, '커뮤니티': true, '식사관리': true, '시설관리': false, '경영통계': false, '경영관리': false },
-  '요양보호사': { '입소자관리': false, '건강관리': true, '컨시어지': false, '커뮤니티': false, '식사관리': false, '시설관리': false, '경영통계': false, '경영관리': false },
+};
+
+// Group real staff by role
+const staffByRole: Record<string, typeof staff> = {
+  '시설장': staff.filter(s => s.roleLabel === '시설장'),
+  '간호사': staff.filter(s => s.roleLabel === '간호사'),
+  '생활지도사': staff.filter(s => s.roleLabel === '생활지도사'),
 };
 
 export default function PermissionsPage() {
@@ -17,7 +23,7 @@ export default function PermissionsPage() {
   );
 
   const toggle = (role: string, module: string) => {
-    if (role === '시설장') return; // 시설장은 전체 권한 고정
+    if (role === '시설장') return;
     setPermissions((prev) => {
       const next = JSON.parse(JSON.stringify(prev));
       next[role][module] = !next[role][module];
@@ -36,6 +42,27 @@ export default function PermissionsPage() {
         <p className="mt-1 text-sm text-gray-500">역할별 메뉴 접근 권한을 관리합니다.</p>
       </div>
 
+      {/* 직원 역할별 현황 */}
+      <div className="grid grid-cols-3 gap-4">
+        {roles.map(role => (
+          <div key={role} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+            <div className="text-sm font-semibold text-gray-800 mb-2">{role}</div>
+            <div className="space-y-1">
+              {(staffByRole[role] ?? []).map(s => (
+                <div key={s.id} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-700 font-medium">{s.name}</span>
+                  <span className="text-gray-400">{s.email}</span>
+                </div>
+              ))}
+              {(staffByRole[role] ?? []).length === 0 && (
+                <span className="text-xs text-gray-400">해당 직원 없음</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 권한 매트릭스 */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

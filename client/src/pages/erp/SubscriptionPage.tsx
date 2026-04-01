@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
 const depositColor: Record<string, string> = {
   '미납': 'bg-red-100 text-red-800',
@@ -25,22 +26,22 @@ interface SubscriptionItem {
 }
 
 const initialData: SubscriptionItem[] = [
-  { id: '1', date: '2026-03-25', name: '김영호', phone: '010-3456-7890', room: '1관 305호', wishDate: '2026-04-15', amount: 5000000, deposit: '완납', progress: '승인' },
-  { id: '2', date: '2026-03-23', name: '이정숙', phone: '010-9876-5432', room: '1관 201호', wishDate: '2026-04-20', amount: 5000000, deposit: '완납', progress: '승인' },
-  { id: '3', date: '2026-03-22', name: '박현우', phone: '010-1234-5678', room: '2관 102호', wishDate: '2026-05-01', amount: 5000000, deposit: '미납', progress: '접수' },
-  { id: '4', date: '2026-03-20', name: '정대호', phone: '010-2222-3333', room: '1관 401호 (2인실)', wishDate: '2026-04-10', amount: 3000000, deposit: '완납', progress: '승인' },
-  { id: '5', date: '2026-03-18', name: '한서연', phone: '010-7777-8888', room: '2관 303호', wishDate: '2026-05-15', amount: 5000000, deposit: '미납', progress: '접수' },
-  { id: '6', date: '2026-03-15', name: '송미라', phone: '010-6666-7777', room: '1관 102호', wishDate: '2026-04-01', amount: 5000000, deposit: '환불', progress: '취소' },
-  { id: '7', date: '2026-03-12', name: '윤재석', phone: '010-4444-5555', room: '2관 205호', wishDate: '2026-04-25', amount: 5000000, deposit: '완납', progress: '승인' },
-  { id: '8', date: '2026-03-10', name: '오성호', phone: '010-8888-9999', room: '1관 303호', wishDate: '2026-05-10', amount: 5000000, deposit: '미납', progress: '접수' },
+  { id: '1', date: '2026-03-25', name: '김철수', phone: '010-9876-5432', room: '1관 101호', wishDate: '2026-04-15', amount: 5000000, deposit: '완납', progress: '승인' },
+  { id: '2', date: '2026-03-23', name: '이상훈', phone: '010-7654-3210', room: '1관 103호', wishDate: '2026-04-20', amount: 5000000, deposit: '완납', progress: '승인' },
+  { id: '3', date: '2026-03-22', name: '박미선', phone: '010-6543-2109', room: '1관 105호', wishDate: '2026-05-01', amount: 5000000, deposit: '미납', progress: '접수' },
+  { id: '4', date: '2026-03-20', name: '최민호', phone: '010-4321-0987', room: '1관 107호', wishDate: '2026-04-10', amount: 3000000, deposit: '완납', progress: '승인' },
+  { id: '5', date: '2026-03-18', name: '정수진', phone: '010-3210-9876', room: '1관 109호', wishDate: '2026-05-15', amount: 5000000, deposit: '미납', progress: '접수' },
+  { id: '6', date: '2026-03-15', name: '한지훈', phone: '010-1111-2222', room: '2관 201호', wishDate: '2026-04-01', amount: 5000000, deposit: '환불', progress: '취소' },
+  { id: '7', date: '2026-03-12', name: '오수빈', phone: '010-3333-4444', room: '2관 203호', wishDate: '2026-04-25', amount: 5000000, deposit: '완납', progress: '승인' },
+  { id: '8', date: '2026-03-10', name: '강준호', phone: '010-8888-9999', room: '2관 209호', wishDate: '2026-05-10', amount: 5000000, deposit: '미납', progress: '접수' },
 ];
 
-const emptyForm = { name: '', phone: '', room: '1관 101호', wishDate: '', amount: '5000000' };
+// 빈 호실 목록 (입주자가 없는 호실)
+const vacantRooms = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .map(r => `${r.building} ${r.roomNumber}호`);
 
-const roomOptions = [
-  '1관 101호', '1관 102호', '1관 201호', '1관 301호', '1관 305호', '1관 401호 (2인실)',
-  '2관 102호', '2관 205호', '2관 303호', '2관 401호',
-];
+const emptyForm = { name: '', phone: '', room: vacantRooms[0] || '1관 101호', wishDate: '', amount: '5000000' };
 
 export default function SubscriptionPage() {
   const [data, setData] = useState<SubscriptionItem[]>(initialData);
@@ -60,7 +61,7 @@ export default function SubscriptionPage() {
   const handleSave = () => {
     if (!formData.name || !formData.wishDate) return;
     const newItem: SubscriptionItem = {
-      id: crypto.randomUUID(),
+      id: generateId('sub'),
       date: new Date().toISOString().slice(0, 10),
       name: formData.name,
       phone: formData.phone,
@@ -76,11 +77,11 @@ export default function SubscriptionPage() {
   };
 
   const handleApprove = (id: string) => {
-    setData(prev => prev.map(d => d.id === id ? { ...d, progress: '승인' } : d));
+    setData(prev => prev.map(d => d.id === id ? { ...d, progress: '승인', deposit: '완납' } : d));
   };
 
   const handleCancel = (id: string) => {
-    setData(prev => prev.map(d => d.id === id ? { ...d, progress: '취소' } : d));
+    setData(prev => prev.map(d => d.id === id ? { ...d, progress: '취소', deposit: '환불' } : d));
   };
 
   const handleDelete = (id: string) => {
@@ -235,7 +236,7 @@ export default function SubscriptionPage() {
                   onChange={e => setFormData({ ...formData, room: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
                 >
-                  {roomOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                  {vacantRooms.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>

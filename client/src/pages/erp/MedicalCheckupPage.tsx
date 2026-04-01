@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents } from '../../data/mockData';
 
 interface Checkup {
   id: string;
@@ -13,14 +14,15 @@ interface Checkup {
 }
 
 const initialData: Checkup[] = [
-  { id: '1', date: '2026-03-15', name: '김영순', room: '1관 301호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '혈압 경계, 콜레스테롤 약간 상승. 식이 조절 권고', nextDate: '2026-06-15' },
-  { id: '2', date: '2026-03-18', name: '이순자', room: '2관 205호', type: '정밀', hospital: '시화병원', doctor: '박진수', result: '당화혈색소 7.2% 관리 필요. 인슐린 용량 조정', nextDate: '2026-06-18' },
-  { id: '3', date: '2026-03-20', name: '정미숙', room: '1관 201호', type: '치과', hospital: '배곧좋은치과', doctor: '김현정', result: '틀니 조정 완료. 잇몸 염증 경미', nextDate: '2026-09-20' },
-  { id: '4', date: '2026-03-22', name: '박정희', room: '1관 402호', type: '안과', hospital: '밝은눈안과', doctor: '최영미', result: '백내장 초기. 6개월 후 재검 필요', nextDate: '2026-09-22' },
-  { id: '5', date: '2026-03-25', name: '최옥순', room: '2관 103호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '전반적 양호. 비타민D 부족 보충 권고', nextDate: '2026-06-25' },
-  { id: '6', date: '2026-04-01', name: '한순이', room: '2관 302호', type: '정밀', hospital: '시화병원', doctor: '박진수', result: '-', nextDate: '2026-07-01' },
-  { id: '7', date: '2026-04-05', name: '강순덕', room: '2관 401호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '-', nextDate: '2026-07-05' },
-  { id: '8', date: '2026-04-10', name: '오말순', room: '1관 105호', type: '치과', hospital: '배곧좋은치과', doctor: '김현정', result: '-', nextDate: '2026-10-10' },
+  { id: '1', date: '2026-03-15', name: '김영순', room: '1관 101호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '혈압 경계, 콜레스테롤 약간 상승. 고혈압/당뇨 관리 식이 조절 권고', nextDate: '2026-06-15' },
+  { id: '2', date: '2026-03-18', name: '이복자', room: '1관 103호', type: '정밀', hospital: '시화병원', doctor: '박진수', result: '심부전 안정적. 도네페질 투여 중 치매 진행 모니터링 지속 필요', nextDate: '2026-06-18' },
+  { id: '3', date: '2026-03-20', name: '최순남', room: '1관 107호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '뇌졸중 후유증 안정. 클로피도그렐 복용 중 출혈 소견 없음', nextDate: '2026-06-20' },
+  { id: '4', date: '2026-03-22', name: '박정호', room: '1관 105호', type: '정형외과', hospital: '정형외과의원', doctor: '김정형', result: '관절염 약간 진행. 골다공증 수치 유지. 알렌드론산 지속 복용 권고', nextDate: '2026-09-22' },
+  { id: '5', date: '2026-03-25', name: '오세진', room: '2관 203호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: 'COPD 폐기능 안정. 흡입기 사용 적절. 혈압 양호', nextDate: '2026-06-25' },
+  { id: '6', date: '2026-04-01', name: '정기원', room: '1관 109호', type: '정밀', hospital: '시화병원', doctor: '박진수', result: '-', nextDate: '2026-07-01' },
+  { id: '7', date: '2026-04-05', name: '한말순', room: '2관 201호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '-', nextDate: '2026-07-05' },
+  { id: '8', date: '2026-04-10', name: '윤태식', room: '2관 207호', type: '정밀', hospital: '시화병원', doctor: '박진수', result: '-', nextDate: '2026-07-10' },
+  { id: '9', date: '2026-04-15', name: '강옥희', room: '2관 209호', type: '일반', hospital: '배곧서울병원', doctor: '이상훈', result: '-', nextDate: '2026-07-15' },
 ];
 
 const typeBadge = (type: string) => {
@@ -29,11 +31,13 @@ const typeBadge = (type: string) => {
     '정밀': 'bg-red-100 text-red-700',
     '치과': 'bg-teal-100 text-teal-700',
     '안과': 'bg-purple-100 text-purple-700',
+    '정형외과': 'bg-orange-100 text-orange-700',
   };
   return map[type] || 'bg-gray-100 text-gray-600';
 };
 
-const emptyForm = { name: '', type: '일반', hospital: '', doctor: '', date: '', result: '' };
+const residentOptions = residents.map(r => r.name);
+const emptyForm = { name: residentOptions[0], type: '일반', hospital: '', doctor: '', date: '', result: '' };
 
 export default function MedicalCheckupPage() {
   const [data, setData] = useState<Checkup[]>(initialData);
@@ -49,11 +53,12 @@ export default function MedicalCheckupPage() {
     if (editId) {
       setData(prev => prev.map(r => r.id === editId ? { ...r, result: formData.result } : r));
     } else {
+      const resident = residents.find(r => r.name === formData.name);
       const newRecord: Checkup = {
         id: crypto.randomUUID(),
         date: formData.date,
         name: formData.name,
-        room: '',
+        room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
         type: formData.type,
         hospital: formData.hospital,
         doctor: formData.doctor,
@@ -165,7 +170,9 @@ export default function MedicalCheckupPage() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                    <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    <select value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      {residentOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">검진유형</label>
@@ -174,6 +181,7 @@ export default function MedicalCheckupPage() {
                       <option>정밀</option>
                       <option>치과</option>
                       <option>안과</option>
+                      <option>정형외과</option>
                     </select>
                   </div>
                   <div>

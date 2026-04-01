@@ -2,6 +2,21 @@ import React from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { residents } from '../../data/mockData';
+
+// Use real residents with low health scores as unpaid examples (for demo plausibility)
+const unpaidResidents = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .sort((a, b) => a.healthScore - b.healthScore)
+  .slice(0, 5);
+
+const unpaidData = [
+  { name: unpaidResidents[0]?.name ?? '한말순', room: `${unpaidResidents[0]?.building ?? '2관'} ${unpaidResidents[0]?.roomNumber ?? '201'}호`, amount: '320만원', period: '3개월', status: '독촉 완료' },
+  { name: unpaidResidents[1]?.name ?? '송미경', room: `${unpaidResidents[1]?.building ?? '2관'} ${unpaidResidents[1]?.roomNumber ?? '205'}호`, amount: '280만원', period: '2개월', status: '납부 약속' },
+  { name: unpaidResidents[2]?.name ?? '윤태식', room: `${unpaidResidents[2]?.building ?? '2관'} ${unpaidResidents[2]?.roomNumber ?? '207'}호`, amount: '250만원', period: '2개월', status: '가족 연락중' },
+  { name: unpaidResidents[3]?.name ?? '이복자', room: `${unpaidResidents[3]?.building ?? '1관'} ${unpaidResidents[3]?.roomNumber ?? '103'}호`, amount: '200만원', period: '1개월', status: '미연락' },
+  { name: unpaidResidents[4]?.name ?? '최순남', room: `${unpaidResidents[4]?.building ?? '1관'} ${unpaidResidents[4]?.roomNumber ?? '107'}호`, amount: '150만원', period: '1개월', status: '납부 예정' },
+];
 
 const kpiCards = [
   { label: '월 매출', value: '2.38억', color: 'bg-blue-50 text-blue-700', icon: '💰', sub: '전월 대비 +3.2%' },
@@ -24,14 +39,6 @@ const revenueBreakdown = [
   { label: '식사비', percent: 25, amount: '5,950만', color: 'bg-green-500' },
   { label: '수도광열비', percent: 10, amount: '2,380만', color: 'bg-amber-500' },
   { label: '서비스비', percent: 10, amount: '2,380만', color: 'bg-purple-500' },
-];
-
-const unpaidData = [
-  { name: '김영순', room: '1관 301호', amount: '320만원', period: '3개월', status: '독촉 완료' },
-  { name: '이순자', room: '2관 205호', amount: '280만원', period: '2개월', status: '납부 약속' },
-  { name: '박정희', room: '1관 402호', amount: '250만원', period: '2개월', status: '가족 연락중' },
-  { name: '최옥순', room: '2관 103호', amount: '200만원', period: '1개월', status: '미연락' },
-  { name: '정미숙', room: '1관 201호', amount: '150만원', period: '1개월', status: '납부 예정' },
 ];
 
 export default function FinanceStatsPage() {

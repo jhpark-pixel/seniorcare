@@ -1,16 +1,18 @@
 import React from 'react';
+import { residents } from '../../data/mockData';
 
+// Map 10 residents to IoT devices with realistic statuses
 const devices = [
-  { id: 'IOT-001', location: '1관 301호 (김영순)', battery: 92, lastComm: '3초 전', status: 'normal' },
-  { id: 'IOT-002', location: '2관 205호 (이순자)', battery: 85, lastComm: '5초 전', status: 'normal' },
-  { id: 'IOT-003', location: '1관 402호 (박정희)', battery: 23, lastComm: '1분 전', status: 'warning' },
-  { id: 'IOT-004', location: '2관 103호 (최옥순)', battery: 78, lastComm: '8초 전', status: 'normal' },
-  { id: 'IOT-005', location: '1관 201호 (정미숙)', battery: 0, lastComm: '45분 전', status: 'error' },
-  { id: 'IOT-006', location: '2관 302호 (한순이)', battery: 65, lastComm: '12초 전', status: 'normal' },
-  { id: 'IOT-007', location: '2관 401호 (서복순)', battery: 41, lastComm: '3초 전', status: 'warning' },
-  { id: 'IOT-008', location: '1관 105호 (강말숙)', battery: 95, lastComm: '2초 전', status: 'normal' },
-  { id: 'IOT-009', location: '1관 203호 (조순옥)', battery: 88, lastComm: '7초 전', status: 'normal' },
-  { id: 'IOT-010', location: '2관 104호 (배영자)', battery: 12, lastComm: '30분 전', status: 'error' },
+  { id: 'IOT-001', location: `1관 101호 (${residents[0].name})`, battery: 92, lastComm: '3초 전', status: 'normal' },
+  { id: 'IOT-002', location: `1관 103호 (${residents[1].name})`, battery: 85, lastComm: '5초 전', status: 'normal' },
+  { id: 'IOT-003', location: `1관 105호 (${residents[2].name})`, battery: 23, lastComm: '1분 전', status: 'warning' },
+  { id: 'IOT-004', location: `1관 107호 (${residents[3].name})`, battery: 78, lastComm: '8초 전', status: 'normal' },
+  { id: 'IOT-005', location: `1관 109호 (${residents[4].name})`, battery: 0, lastComm: '45분 전', status: 'error' },
+  { id: 'IOT-006', location: `2관 201호 (${residents[5].name})`, battery: 65, lastComm: '12초 전', status: 'normal' },
+  { id: 'IOT-007', location: `2관 203호 (${residents[6].name})`, battery: 41, lastComm: '3초 전', status: 'warning' },
+  { id: 'IOT-008', location: `2관 205호 (${residents[7].name})`, battery: 95, lastComm: '2초 전', status: 'normal' },
+  { id: 'IOT-009', location: `2관 207호 (${residents[8].name})`, battery: 88, lastComm: '7초 전', status: 'normal' },
+  { id: 'IOT-010', location: `2관 209호 (${residents[9].name})`, battery: 12, lastComm: '30분 전', status: 'error' },
 ];
 
 const statusConfig: Record<string, { label: string; dot: string; border: string; bg: string }> = {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, staff, generateId, daysAgo } from '../../data/mockData';
 
 interface ServiceRequestItem {
   id: string;
@@ -13,16 +14,16 @@ interface ServiceRequestItem {
 }
 
 const initialData: ServiceRequestItem[] = [
-  { id: '1', date: '2026-03-30', name: '김영순', room: '1관 301호', type: '이미용', content: '커트 및 염색 요청', dueDate: '2026-04-02', handler: '외부업체 김미장', status: '대기' },
-  { id: '2', date: '2026-03-29', name: '이순자', room: '2관 205호', type: '세탁', content: '겨울 이불 세탁 요청', dueDate: '2026-03-31', handler: '생활지도사 박수진', status: '진행중' },
-  { id: '3', date: '2026-03-29', name: '박정희', room: '1관 402호', type: '외출지원', content: '아들 집 방문 외출 지원 (보호자 동행)', dueDate: '2026-04-05', handler: '생활지도사 최은영', status: '대기' },
-  { id: '4', date: '2026-03-28', name: '최옥순', room: '2관 103호', type: '택배', content: '손녀에게 보낼 택배 발송 요청', dueDate: '2026-03-29', handler: '생활지도사 박수진', status: '완료' },
-  { id: '5', date: '2026-03-28', name: '한순이', room: '2관 302호', type: '이미용', content: '파마 예약 요청', dueDate: '2026-04-03', handler: '외부업체 김미장', status: '대기' },
-  { id: '6', date: '2026-03-27', name: '정미숙', room: '1관 201호', type: '기타', content: '방 커튼 교체 요청', dueDate: '2026-04-01', handler: '시설관리 이동수', status: '진행중' },
-  { id: '7', date: '2026-03-26', name: '강순덕', room: '2관 401호', type: '세탁', content: '카디건 드라이클리닝 요청', dueDate: '2026-03-28', handler: '생활지도사 박수진', status: '완료' },
-  { id: '8', date: '2026-03-25', name: '오말순', room: '1관 105호', type: '외출지원', content: '병원 외래 후 마트 경유 요청', dueDate: '2026-03-27', handler: '생활지도사 최은영', status: '완료' },
-  { id: '9', date: '2026-03-25', name: '윤복순', room: '1관 302호', type: '택배', content: '지인에게 받은 택배 수령 전달', dueDate: '2026-03-25', handler: '생활지도사 박수진', status: '완료' },
-  { id: '10', date: '2026-03-24', name: '신영자', room: '2관 201호', type: '기타', content: 'TV 리모컨 고장 수리 요청', dueDate: '2026-03-26', handler: '시설관리 이동수', status: '취소' },
+  { id: '1', date: daysAgo(1), name: '김영순', room: '1관 101호', type: '이미용', content: '커트 및 염색 요청', dueDate: daysAgo(-2), handler: '외부업체 김미장', status: '대기' },
+  { id: '2', date: daysAgo(2), name: '이복자', room: '1관 103호', type: '세탁', content: '겨울 이불 세탁 요청', dueDate: daysAgo(0), handler: `생활지도사 ${staff[3].name}`, status: '진행중' },
+  { id: '3', date: daysAgo(2), name: '박정호', room: '1관 105호', type: '외출지원', content: '아들 집 방문 외출 지원 (보호자 동행)', dueDate: daysAgo(-4), handler: `생활지도사 ${staff[4].name}`, status: '대기' },
+  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', type: '택배', content: '손녀에게 보낼 택배 발송 요청', dueDate: daysAgo(2), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
+  { id: '5', date: daysAgo(3), name: '정기원', room: '1관 109호', type: '이미용', content: '파마 예약 요청', dueDate: daysAgo(-2), handler: '외부업체 김미장', status: '대기' },
+  { id: '6', date: daysAgo(4), name: '한말순', room: '2관 201호', type: '기타', content: '방 커튼 교체 요청', dueDate: daysAgo(-1), handler: '시설관리 이동수', status: '진행중' },
+  { id: '7', date: daysAgo(5), name: '오세진', room: '2관 203호', type: '세탁', content: '카디건 드라이클리닝 요청', dueDate: daysAgo(3), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
+  { id: '8', date: daysAgo(6), name: '윤태식', room: '2관 207호', type: '외출지원', content: '병원 외래 후 마트 경유 요청', dueDate: daysAgo(4), handler: `생활지도사 ${staff[4].name}`, status: '완료' },
+  { id: '9', date: daysAgo(6), name: '강옥희', room: '2관 209호', type: '택배', content: '지인에게 받은 택배 수령 전달', dueDate: daysAgo(6), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
+  { id: '10', date: daysAgo(7), name: '김영순', room: '1관 101호', type: '기타', content: 'TV 리모컨 고장 수리 요청', dueDate: daysAgo(5), handler: '시설관리 이동수', status: '취소' },
 ];
 
 const statusFilters = ['전체', '대기', '진행중', '완료', '취소'] as const;
@@ -54,23 +55,30 @@ const nextStatusMap: Record<string, string> = {
   '진행중': '완료',
 };
 
-const emptyForm = { name: '', type: '이미용', content: '', dueDate: '' };
+const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
+
+const emptyForm = { residentId: '', type: '이미용', content: '', dueDate: '' };
 
 export default function ServiceRequestPage() {
   const [data, setData] = useState<ServiceRequestItem[]>(initialData);
   const [filter, setFilter] = useState<string>('전체');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [search, setSearch] = useState('');
 
-  const filtered = filter === '전체' ? data : data.filter(d => d.status === filter);
+  const filtered = data
+    .filter(d => filter === '전체' || d.status === filter)
+    .filter(d => !search || d.name.includes(search) || d.content.includes(search));
 
   const handleSave = () => {
-    if (!formData.name || !formData.content) return;
+    if (!formData.residentId || !formData.content) return;
+    const res = residents.find(r => r.id === formData.residentId);
+    if (!res) return;
     const newItem: ServiceRequestItem = {
-      id: crypto.randomUUID(),
+      id: generateId('sr'),
       date: new Date().toISOString().slice(0, 10),
-      name: formData.name,
-      room: '',
+      name: res.name,
+      room: `${res.building} ${res.roomNumber}호`,
       type: formData.type,
       content: formData.content,
       dueDate: formData.dueDate,
@@ -124,6 +132,17 @@ export default function ServiceRequestPage() {
         ))}
       </div>
 
+      {/* Search */}
+      <div>
+        <input
+          type="text"
+          placeholder="입소자명 또는 내용 검색..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+        />
+      </div>
+
       <div className="bg-white rounded-lg shadow border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -175,6 +194,11 @@ export default function ServiceRequestPage() {
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">검색 결과가 없습니다.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -187,13 +211,17 @@ export default function ServiceRequestPage() {
             <h2 className="text-lg font-bold text-gray-900">서비스 신청</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
+                <select
+                  value={formData.residentId}
+                  onChange={e => setFormData({ ...formData, residentId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
-                />
+                >
+                  <option value="">-- 선택 --</option>
+                  {residentOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">서비스유형</label>

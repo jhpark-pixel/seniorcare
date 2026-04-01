@@ -1,103 +1,55 @@
 import React, { useState } from 'react';
+import { rooms as mockRooms, MockRoom } from '../../data/mockData';
 
-interface Room {
-  id: string;
-  building: string;
-  number: string;
-  resident: string | null;
-  status: '사용중' | '빈방' | '수리중';
-}
+type RoomStatus = '사용중' | '빈방' | '수리중';
 
-const makeRooms = (building: string, rooms: { number: string; resident: string | null; status: '사용중' | '빈방' | '수리중' }[]): Room[] =>
-  rooms.map(r => ({ id: `${building}-${r.number}`, building, ...r }));
+interface RoomState extends MockRoom {}
 
-const initialBuilding1: Room[] = makeRooms('1관', [
-  { number: '101', resident: '김영숙', status: '사용중' },
-  { number: '102', resident: '강순옥', status: '사용중' },
-  { number: '103', resident: '이말순', status: '사용중' },
-  { number: '104', resident: null, status: '빈방' },
-  { number: '105', resident: '박정희', status: '사용중' },
-  { number: '106', resident: '홍길자', status: '사용중' },
-  { number: '201', resident: '정복순', status: '사용중' },
-  { number: '202', resident: '오영자', status: '사용중' },
-  { number: '203', resident: '이순자', status: '사용중' },
-  { number: '204', resident: null, status: '수리중' },
-  { number: '205', resident: '배옥희', status: '사용중' },
-  { number: '206', resident: null, status: '빈방' },
-  { number: '301', resident: '장명숙', status: '사용중' },
-  { number: '302', resident: '최옥순', status: '사용중' },
-  { number: '303', resident: '신정옥', status: '사용중' },
-  { number: '304', resident: '서영희', status: '사용중' },
-  { number: '305', resident: null, status: '빈방' },
-  { number: '306', resident: '임복자', status: '사용중' },
-]);
-
-const initialBuilding2: Room[] = makeRooms('2관', [
-  { number: '101', resident: '한미경', status: '사용중' },
-  { number: '102', resident: '조순희', status: '사용중' },
-  { number: '103', resident: null, status: '빈방' },
-  { number: '104', resident: '유정숙', status: '사용중' },
-  { number: '105', resident: '송말자', status: '사용중' },
-  { number: '106', resident: '권옥자', status: '사용중' },
-  { number: '201', resident: '문정순', status: '사용중' },
-  { number: '202', resident: null, status: '수리중' },
-  { number: '203', resident: '양순자', status: '사용중' },
-  { number: '204', resident: '구정임', status: '사용중' },
-  { number: '205', resident: '안영숙', status: '사용중' },
-  { number: '206', resident: null, status: '빈방' },
-  { number: '301', resident: '황복순', status: '사용중' },
-  { number: '302', resident: '전옥희', status: '사용중' },
-  { number: '303', resident: '노정자', status: '사용중' },
-  { number: '304', resident: null, status: '빈방' },
-  { number: '305', resident: '백순옥', status: '사용중' },
-  { number: '306', resident: '차영자', status: '사용중' },
-]);
-
-const statusConfig: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+const statusConfig: Record<RoomStatus, { bg: string; border: string; text: string; dot: string }> = {
   '사용중': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', dot: 'bg-blue-500' },
   '빈방': { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-500', dot: 'bg-gray-400' },
   '수리중': { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', dot: 'bg-orange-500' },
 };
 
-function countByStatus(rooms: Room[]) {
-  const counts = { '사용중': 0, '빈방': 0, '수리중': 0 };
-  rooms.forEach(r => counts[r.status]++);
+function countByStatus(roomList: RoomState[]) {
+  const counts: Record<RoomStatus, number> = { '사용중': 0, '빈방': 0, '수리중': 0 };
+  roomList.forEach(r => counts[r.status as RoomStatus]++);
   return counts;
 }
 
 export default function RoomStatusPage() {
-  const [rooms, setRooms] = useState<Room[]>([...initialBuilding1, ...initialBuilding2]);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [newStatus, setNewStatus] = useState<Room['status']>('사용중');
+  const [rooms, setRooms] = useState<RoomState[]>(mockRooms.map(r => ({ ...r })));
+  const [selectedRoom, setSelectedRoom] = useState<RoomState | null>(null);
+  const [newStatus, setNewStatus] = useState<RoomStatus>('사용중');
 
   const building1 = rooms.filter(r => r.building === '1관');
   const building2 = rooms.filter(r => r.building === '2관');
-  const allRooms = rooms;
-  const total = allRooms.length;
-  const counts = countByStatus(allRooms);
+  const total = rooms.length;
+  const counts = countByStatus(rooms);
 
-  const openDetail = (room: Room) => {
+  const openDetail = (room: RoomState) => {
     setSelectedRoom(room);
-    setNewStatus(room.status);
+    setNewStatus(room.status as RoomStatus);
   };
 
   const handleStatusChange = () => {
     if (!selectedRoom) return;
     setRooms(prev => prev.map(r => {
       if (r.id !== selectedRoom.id) return r;
-      const updatedResident = newStatus === '빈방' || newStatus === '수리중' ? null : r.resident;
-      return { ...r, status: newStatus, resident: updatedResident };
+      const updatedResident = newStatus === '빈방' || newStatus === '수리중' ? undefined : r.residentName;
+      return { ...r, status: newStatus, residentName: updatedResident };
     }));
     setSelectedRoom(null);
   };
 
-  function RoomGrid({ title, roomList }: { title: string; roomList: Room[] }) {
+  function RoomGrid({ title, roomList }: { title: string; roomList: RoomState[] }) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
           {roomList.map(room => {
-            const cfg = statusConfig[room.status];
+            const status = room.status as RoomStatus;
+            const cfg = statusConfig[status];
             return (
               <div
                 key={room.id}
@@ -106,13 +58,14 @@ export default function RoomStatusPage() {
               >
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <span className={`w-2 h-2 rounded-full ${cfg.dot}`}></span>
-                  <span className="text-sm font-bold text-gray-900">{room.number}호</span>
+                  <span className="text-sm font-bold text-gray-900">{room.roomNumber}호</span>
                 </div>
-                {room.resident ? (
-                  <p className="text-xs font-medium text-gray-700 truncate">{room.resident}</p>
+                {room.residentName ? (
+                  <p className="text-xs font-medium text-gray-700 truncate">{room.residentName}</p>
                 ) : (
                   <p className={`text-xs font-medium ${cfg.text}`}>{room.status}</p>
                 )}
+                <p className="text-xs text-gray-400 mt-0.5">{room.type}</p>
               </div>
             );
           })}
@@ -153,24 +106,28 @@ export default function RoomStatusPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
-              {selectedRoom.building} {selectedRoom.number}호 상세
+              {selectedRoom.building} {selectedRoom.roomNumber}호 상세
             </h2>
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm">
+                <span className="text-gray-500">유형</span>
+                <span className="font-medium text-gray-700">{selectedRoom.type}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500">현재 상태</span>
-                <span className={`px-2 py-0.5 text-xs font-medium rounded ${statusConfig[selectedRoom.status].bg} ${statusConfig[selectedRoom.status].text}`}>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded ${statusConfig[selectedRoom.status as RoomStatus].bg} ${statusConfig[selectedRoom.status as RoomStatus].text}`}>
                   {selectedRoom.status}
                 </span>
               </div>
-              {selectedRoom.resident && (
+              {selectedRoom.residentName && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">입소자</span>
-                  <span className="font-medium text-gray-900">{selectedRoom.resident}</span>
+                  <span className="font-medium text-gray-900">{selectedRoom.residentName}</span>
                 </div>
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">상태 변경</label>
-                <select value={newStatus} onChange={e => setNewStatus(e.target.value as Room['status'])} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select value={newStatus} onChange={e => setNewStatus(e.target.value as RoomStatus)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option>사용중</option>
                   <option>빈방</option>
                   <option>수리중</option>

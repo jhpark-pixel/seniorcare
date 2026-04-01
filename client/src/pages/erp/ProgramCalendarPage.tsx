@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { staff, generateId } from '../../data/mockData';
 
 interface ProgramSlot {
   id: string;
@@ -13,17 +14,17 @@ interface ProgramSlot {
   category: '건강재활' | '운동' | '인지' | '문화' | '사회';
 }
 
-const programs: ProgramSlot[] = [
+const initialPrograms: ProgramSlot[] = [
   { id: '1', name: '물리치료 (상체)', day: 0, startHour: 9, endHour: 10, location: '1층 재활치료실', instructor: '정물리치료사', capacity: 8, enrolled: 7, category: '건강재활' },
-  { id: '2', name: '아침 체조', day: 0, startHour: 10, endHour: 11, location: '1층 대강당', instructor: '박생활지도사', capacity: 30, enrolled: 25, category: '운동' },
+  { id: '2', name: '아침 체조', day: 0, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staff[4].name}`, capacity: 30, enrolled: 25, category: '운동' },
   { id: '3', name: '인지훈련 (초급)', day: 1, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: '최작업치료사', capacity: 10, enrolled: 9, category: '인지' },
   { id: '4', name: '노래교실', day: 1, startHour: 14, endHour: 15, location: '1층 대강당', instructor: '김음악치료사', capacity: 25, enrolled: 22, category: '문화' },
   { id: '5', name: '물리치료 (하체)', day: 2, startHour: 9, endHour: 10, location: '1층 재활치료실', instructor: '정물리치료사', capacity: 8, enrolled: 8, category: '건강재활' },
   { id: '6', name: '미술치료', day: 2, startHour: 14, endHour: 16, location: '3층 프로그램실', instructor: '이미술치료사', capacity: 12, enrolled: 10, category: '문화' },
-  { id: '7', name: '치매예방 두뇌활동', day: 3, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: '최작업치료사', capacity: 10, enrolled: 8, category: '인지' },
-  { id: '8', name: '원예활동', day: 3, startHour: 14, endHour: 15, location: '옥상 정원', instructor: '박생활지도사', capacity: 15, enrolled: 12, category: '사회' },
-  { id: '9', name: '아침 체조', day: 4, startHour: 10, endHour: 11, location: '1층 대강당', instructor: '박생활지도사', capacity: 30, enrolled: 23, category: '운동' },
-  { id: '10', name: '영화 감상', day: 4, startHour: 14, endHour: 16, location: '1층 대강당', instructor: '최생활지도사', capacity: 30, enrolled: 28, category: '문화' },
+  { id: '7', name: '치매예방 두뇌활동', day: 3, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: `${staff[3].name}`, capacity: 10, enrolled: 8, category: '인지' },
+  { id: '8', name: '원예활동', day: 3, startHour: 14, endHour: 15, location: '옥상 정원', instructor: `${staff[4].name}`, capacity: 15, enrolled: 12, category: '사회' },
+  { id: '9', name: '아침 체조', day: 4, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staff[4].name}`, capacity: 30, enrolled: 23, category: '운동' },
+  { id: '10', name: '영화 감상', day: 4, startHour: 14, endHour: 16, location: '1층 대강당', instructor: `${staff[3].name}`, capacity: 30, enrolled: 28, category: '문화' },
 ];
 
 const dayNames = ['월', '화', '수', '목', '금'];
@@ -37,19 +38,18 @@ const categoryColors: Record<string, { bg: string; border: string; text: string 
   '사회': { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-800' },
 };
 
-function getProgram(day: number, hour: number): ProgramSlot | undefined {
-  return programs.find(p => p.day === day && p.startHour === hour);
-}
+const categoryOptions = ['건강재활', '운동', '인지', '문화', '사회'] as const;
 
-function isOccupied(day: number, hour: number): boolean {
-  return programs.some(p => p.day === day && hour > p.startHour && hour < p.endHour);
-}
-
-function getRowSpan(p: ProgramSlot): number {
-  return p.endHour - p.startHour;
-}
+const emptyForm = {
+  name: '', day: '0', startHour: '9', endHour: '10',
+  location: '', instructor: '', capacity: '10', category: '운동' as ProgramSlot['category'],
+};
 
 export default function ProgramCalendarPage() {
+  const [programs, setPrograms] = useState<ProgramSlot[]>(initialPrograms);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
+
   // Build a set of cells to skip (occupied by multi-hour programs)
   const skipCells = new Set<string>();
   programs.forEach(p => {
@@ -58,9 +58,45 @@ export default function ProgramCalendarPage() {
     }
   });
 
+  function getProgram(day: number, hour: number): ProgramSlot | undefined {
+    return programs.find(p => p.day === day && p.startHour === hour);
+  }
+
+  function getRowSpan(p: ProgramSlot): number {
+    return p.endHour - p.startHour;
+  }
+
+  const handleSave = () => {
+    if (!formData.name || !formData.location) return;
+    const newProg: ProgramSlot = {
+      id: generateId('pg'),
+      name: formData.name,
+      day: parseInt(formData.day),
+      startHour: parseInt(formData.startHour),
+      endHour: parseInt(formData.endHour),
+      location: formData.location,
+      instructor: formData.instructor,
+      capacity: parseInt(formData.capacity) || 10,
+      enrolled: 0,
+      category: formData.category,
+    };
+    setPrograms(prev => [...prev, newProg]);
+    setFormData(emptyForm);
+    setShowModal(false);
+  };
+
+  const handleDelete = (id: string) => {
+    setPrograms(prev => prev.filter(p => p.id !== id));
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">프로그램 일정표</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">프로그램 일정표</h1>
+        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-[#F0835A] text-white rounded-lg text-sm font-medium hover:bg-[#d9714d]">
+          + 프로그램 등록
+        </button>
+      </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mb-6">
@@ -72,7 +108,7 @@ export default function ProgramCalendarPage() {
       </div>
 
       {/* Schedule Grid */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -132,7 +168,7 @@ export default function ProgramCalendarPage() {
       </div>
 
       {/* Program Summary List */}
-      <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">프로그램 목록</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {programs.map(prog => {
@@ -152,11 +188,70 @@ export default function ProgramCalendarPage() {
                   </p>
                   <p className="text-xs text-gray-500">참여: {prog.enrolled}/{prog.capacity}명</p>
                 </div>
+                <button onClick={() => handleDelete(prog.id)} className="flex-shrink-0 px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400">삭제</button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">프로그램 등록</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">프로그램명</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">요일</label>
+                  <select value={formData.day} onChange={e => setFormData({ ...formData, day: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                    {dayNames.map((d, i) => <option key={i} value={i}>{d}요일</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">분류</label>
+                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value as ProgramSlot['category'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                    {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">시작 시간</label>
+                  <select value={formData.startHour} onChange={e => setFormData({ ...formData, startHour: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                    {hours.map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">종료 시간</label>
+                  <select value={formData.endHour} onChange={e => setFormData({ ...formData, endHour: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                    {hours.filter(h => h > parseInt(formData.startHour)).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
+                <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">강사</label>
+                <input type="text" value={formData.instructor} onChange={e => setFormData({ ...formData, instructor: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">정원</label>
+                <input type="number" min="1" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

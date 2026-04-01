@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, generateId } from '../../data/mockData';
 
 interface SettlementRecord {
   id: string;
@@ -20,26 +21,35 @@ const statusColor: Record<string, string> = {
   '환불완료': 'bg-gray-100 text-gray-800',
 };
 
+// 10명 입주자 기준 보증금 정산 데이터 (moveInDate 반영)
 const initialData: SettlementRecord[] = [
-  { id: '1', name: '김영순', room: '1관 301호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2025-01-10', status: '완납' },
-  { id: '2', name: '이순자', room: '2관 205호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2025-02-25', status: '완납' },
-  { id: '3', name: '박정희', room: '1관 402호', totalDeposit: 20000000, paid: 12000000, balance: 8000000, method: '분할납부 (6회)', lastPaidDate: '2026-03-05', status: '분할납부중' },
-  { id: '4', name: '최옥순', room: '2관 103호', totalDeposit: 35000000, paid: 35000000, balance: 0, method: '일시납', lastPaidDate: '2025-01-28', status: '완납' },
-  { id: '5', name: '정미숙', room: '1관 201호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2025-06-10', status: '완납' },
-  { id: '6', name: '한순이', room: '2관 302호', totalDeposit: 20000000, paid: 20000000, balance: 0, method: '분할납부 (4회)', lastPaidDate: '2025-12-15', status: '완납' },
-  { id: '7', name: '강말숙', room: '1관 105호', totalDeposit: 25000000, paid: 25000000, balance: 0, method: '일시납', lastPaidDate: '2024-08-20', status: '환불진행중' },
-  { id: '8', name: '서복순', room: '2관 401호', totalDeposit: 20000000, paid: 5000000, balance: 15000000, method: '분할납부 (10회)', lastPaidDate: '2025-08-01', status: '미납' },
+  { id: '1', name: '김영순', room: '1관 101호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2022-01-10', status: '완납' },
+  { id: '2', name: '이복자', room: '1관 103호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2021-06-15', status: '완납' },
+  { id: '3', name: '박정호', room: '1관 105호', totalDeposit: 25000000, paid: 25000000, balance: 0, method: '일시납', lastPaidDate: '2023-02-20', status: '완납' },
+  { id: '4', name: '최순남', room: '1관 107호', totalDeposit: 35000000, paid: 35000000, balance: 0, method: '일시납', lastPaidDate: '2022-09-05', status: '완납' },
+  { id: '5', name: '정기원', room: '1관 109호', totalDeposit: 30000000, paid: 20000000, balance: 10000000, method: '분할납부 (6회)', lastPaidDate: '2026-03-01', status: '분할납부중' },
+  { id: '6', name: '한말순', room: '2관 201호', totalDeposit: 20000000, paid: 20000000, balance: 0, method: '분할납부 (4회)', lastPaidDate: '2021-12-10', status: '완납' },
+  { id: '7', name: '오세진', room: '2관 203호', totalDeposit: 25000000, paid: 25000000, balance: 0, method: '일시납', lastPaidDate: '2024-01-15', status: '완납' },
+  { id: '8', name: '송미경', room: '2관 205호', totalDeposit: 30000000, paid: 10000000, balance: 20000000, method: '분할납부 (10회)', lastPaidDate: '2025-08-20', status: '미납' },
+  { id: '9', name: '윤태식', room: '2관 207호', totalDeposit: 30000000, paid: 30000000, balance: 0, method: '일시납', lastPaidDate: '2022-11-01', status: '완납' },
+  { id: '10', name: '강옥희', room: '2관 209호', totalDeposit: 25000000, paid: 25000000, balance: 0, method: '일시납', lastPaidDate: '2024-06-10', status: '완납' },
 ];
 
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 const emptyPayment = { amount: '', method: '계좌이체', date: '' };
 
+const residentOptions = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` }));
+
 export default function SettlementPage() {
   const [data, setData] = useState<SettlementRecord[]>(initialData);
-  const [showModal, setShowModal] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [payForm, setPayForm] = useState(emptyPayment);
+  const [addForm, setAddForm] = useState({ name: '', room: '', totalDeposit: '30000000', method: '일시납' });
 
   const totalDeposit = data.reduce((s, r) => s + r.totalDeposit, 0);
   const totalPaid = data.reduce((s, r) => s + r.paid, 0);
@@ -48,7 +58,7 @@ export default function SettlementPage() {
   const openPayModal = (id: string) => {
     setSelectedId(id);
     setPayForm(emptyPayment);
-    setShowModal(true);
+    setShowPayModal(true);
   };
 
   const handlePaySave = () => {
@@ -59,17 +69,50 @@ export default function SettlementPage() {
       const newPaid = r.paid + amount;
       const newBalance = Math.max(0, r.totalDeposit - newPaid);
       const newStatus: SettlementRecord['status'] = newBalance === 0 ? '완납' : r.status === '미납' || r.status === '분할납부중' ? '분할납부중' : r.status;
-      return { ...r, paid: newPaid, balance: newBalance, lastPaidDate: payForm.date || new Date().toISOString().slice(0, 10), status: newStatus };
+      return { ...r, paid: newPaid, balance: newBalance, lastPaidDate: payForm.date || new Date().toISOString().slice(0, 10), method: payForm.method || r.method, status: newStatus };
     }));
-    setShowModal(false);
+    setShowPayModal(false);
     setSelectedId(null);
+  };
+
+  const handleResidentSelect = (name: string) => {
+    const found = residentOptions.find(r => r.name === name);
+    if (found) {
+      setAddForm(prev => ({ ...prev, name: found.name, room: found.room }));
+    }
+  };
+
+  const handleAddSave = () => {
+    if (!addForm.name) return;
+    const newRecord: SettlementRecord = {
+      id: generateId('settle'),
+      name: addForm.name,
+      room: addForm.room,
+      totalDeposit: Number(addForm.totalDeposit) || 0,
+      paid: 0,
+      balance: Number(addForm.totalDeposit) || 0,
+      method: addForm.method,
+      lastPaidDate: '-',
+      status: '미납',
+    };
+    setData(prev => [newRecord, ...prev]);
+    setShowAddModal(false);
+    setAddForm({ name: '', room: '', totalDeposit: '30000000', method: '일시납' });
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">정산관리</h1>
-        <p className="mt-1 text-sm text-gray-500">입소자 보증금 납부 및 정산 현황을 관리합니다.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">정산관리</h1>
+          <p className="mt-1 text-sm text-gray-500">입소자 보증금 납부 및 정산 현황을 관리합니다.</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors"
+        >
+          + 정산 등록
+        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -132,18 +175,19 @@ export default function SettlementPage() {
         </div>
       </div>
 
-      {showModal && (
+      {/* 납부 등록 모달 */}
+      {showPayModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4">
             <h2 className="text-lg font-bold text-gray-900 mb-4">납부 등록</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">납부금액 (원)</label>
-                <input type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0" />
+                <input type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">납부방법</label>
-                <select value={payForm.method} onChange={e => setPayForm({ ...payForm, method: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select value={payForm.method} onChange={e => setPayForm({ ...payForm, method: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]">
                   <option>계좌이체</option>
                   <option>카드결제</option>
                   <option>현금</option>
@@ -152,12 +196,47 @@ export default function SettlementPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">납부일</label>
-                <input type="date" value={payForm.date} onChange={e => setPayForm({ ...payForm, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="date" value={payForm.date} onChange={e => setPayForm({ ...payForm, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setSelectedId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowPayModal(false); setSelectedId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handlePaySave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 정산 등록 모달 */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">정산 등록</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
+                <select value={addForm.name} onChange={e => handleResidentSelect(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]">
+                  <option value="">선택하세요</option>
+                  {residentOptions.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">보증금 총액</label>
+                <input type="number" value={addForm.totalDeposit} onChange={e => setAddForm({ ...addForm, totalDeposit: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">납부방법</label>
+                <select value={addForm.method} onChange={e => setAddForm({ ...addForm, method: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A]">
+                  <option>일시납</option>
+                  <option>분할납부 (4회)</option>
+                  <option>분할납부 (6회)</option>
+                  <option>분할납부 (10회)</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleAddSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
         </div>

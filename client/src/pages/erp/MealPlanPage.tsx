@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents } from '../../data/mockData';
 
 interface DayMeal {
   day: string;
@@ -25,18 +26,23 @@ interface DietAlert {
   note: string;
 }
 
-const dietAlerts: DietAlert[] = [
-  { resident: '김영숙', room: '101호', type: '저염식', note: '고혈압 관리 - 국물류 염분 50% 감량' },
-  { resident: '이순자', room: '203호', type: '저당식', note: '당뇨 관리 - 밥 2/3 배식, 과일 제한' },
-  { resident: '박정희', room: '105호', type: '연하곤란식', note: '삼킴장애 - 다진식/죽식 제공' },
-  { resident: '최옥순', room: '302호', type: '채식', note: '개인 요청 - 육류 대체 두부/콩 제공' },
-];
+// Build diet alerts from actual residents who have dietary restrictions
+const dietAlerts: DietAlert[] = residents
+  .filter(r => r.status !== 'DISCHARGED' && r.dietaryRestrictions.length > 0)
+  .map(r => ({
+    resident: r.name,
+    room: `${r.roomNumber}호`,
+    type: r.dietaryRestrictions[0],
+    note: r.dietaryRestrictions.join(', ') + ` (${r.diseases.slice(0, 2).join(', ')})`,
+  }));
 
 const alertTypeColors: Record<string, string> = {
   '저염식': 'bg-blue-100 text-blue-800',
   '저당식': 'bg-yellow-100 text-yellow-800',
-  '연하곤란식': 'bg-red-100 text-red-800',
-  '채식': 'bg-green-100 text-green-800',
+  '연하식(다진식)': 'bg-red-100 text-red-800',
+  '연하식(미음)': 'bg-red-100 text-red-800',
+  '저단백식': 'bg-purple-100 text-purple-800',
+  '저지방식': 'bg-green-100 text-green-800',
 };
 
 type MealType = 'breakfast' | 'lunch' | 'dinner';
@@ -86,13 +92,13 @@ export default function MealPlanPage() {
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
           <p className="text-sm text-gray-500">이번 주 식단</p>
-          <p className="text-2xl font-bold text-blue-600">3월 4주차</p>
+          <p className="text-2xl font-bold text-blue-600">4월 1주차</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">주간 식단표 (3/30 ~ 4/5)</h2>
+          <h2 className="text-lg font-semibold text-gray-900">주간 식단표 (4/1 ~ 4/7)</h2>
           <p className="text-xs text-gray-400 mt-1">셀을 클릭하면 식단을 수정할 수 있습니다.</p>
         </div>
         <div className="overflow-x-auto">
@@ -118,7 +124,11 @@ export default function MealPlanPage() {
                     </span>
                   </td>
                   {(['breakfast', 'lunch', 'dinner'] as MealType[]).map(mealType => (
-                    <td key={mealType} className="px-4 py-3 text-sm text-gray-700 cursor-pointer hover:bg-blue-50 transition-colors" onClick={() => startEdit(idx, mealType)}>
+                    <td
+                      key={mealType}
+                      className="px-4 py-3 text-sm text-gray-700 cursor-pointer hover:bg-blue-50 transition-colors"
+                      onClick={() => startEdit(idx, mealType)}
+                    >
                       {meal[mealType]}
                     </td>
                   ))}
@@ -130,7 +140,7 @@ export default function MealPlanPage() {
         </div>
       </div>
 
-      {/* Special Diet Alerts */}
+      {/* Special Diet Alerts - using real resident data */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">특별식 주의사항</h2>
         <div className="space-y-3">
@@ -141,7 +151,7 @@ export default function MealPlanPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-gray-900">{alert.resident}</span>
                   <span className="text-sm text-gray-500">{alert.room}</span>
-                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${alertTypeColors[alert.type]}`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${alertTypeColors[alert.type] ?? 'bg-gray-100 text-gray-700'}`}>
                     {alert.type}
                   </span>
                 </div>
@@ -161,7 +171,7 @@ export default function MealPlanPage() {
             </h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">메뉴</label>
-              <textarea value={editValue} onChange={e => setEditValue(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <textarea value={editValue} onChange={e => setEditValue(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={cancelEdit} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>

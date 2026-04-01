@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../App';
 import { Admin } from '../types';
 
 interface Tab {
@@ -46,6 +48,8 @@ interface TabNavigationProps {
 }
 
 export default function TabNavigation({ activeTab, onTabChange, admin }: TabNavigationProps) {
+  const nav = useNavigate();
+  const { logout } = useAuthContext();
   const visibleTabs = tabs.filter((tab) => {
     if (!tab.roles) return true;
     if (!admin) return false;
@@ -89,9 +93,18 @@ export default function TabNavigation({ activeTab, onTabChange, admin }: TabNavi
           })}
         </div>
 
-        {/* Right side: date */}
-        <div className="flex items-center px-4 flex-shrink-0">
+        {/* Right side: date + logout */}
+        <div className="flex items-center gap-3 px-4 flex-shrink-0">
           <span className="text-sm text-gray-500">{formatDate()}</span>
+          <button
+            onClick={() => {
+              logout();
+              nav('/login');
+            }}
+            className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          >
+            로그아웃
+          </button>
         </div>
       </div>
 

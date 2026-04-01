@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { residents } from '../../data/mockData';
 
 interface ResidentProfile {
   id: string;
@@ -18,14 +19,43 @@ interface ResidentProfile {
   careGrade: string;
 }
 
-const allResidents: ResidentProfile[] = [
-  { id: '1', name: '김영순', room: '1관 301호', age: 82, healthScore: 42, mobility: '보행보조기', cognition: '경도인지장애', fallRisk: '고위험', programParticipation: 60, monthlyCost: '340만원', diseases: '고혈압, 관절염', careGrade: 'A등급' },
-  { id: '2', name: '이순자', room: '2관 205호', age: 78, healthScore: 68, mobility: '자유보행', cognition: '정상', fallRisk: '저위험', programParticipation: 85, monthlyCost: '310만원', diseases: '당뇨', careGrade: 'C등급' },
-  { id: '3', name: '박정희', room: '1관 402호', age: 85, healthScore: 48, mobility: '휠체어', cognition: '중등도', fallRisk: '고위험', programParticipation: 35, monthlyCost: '475만원', diseases: '치매, 고혈압', careGrade: 'A등급' },
-  { id: '4', name: '최옥순', room: '2관 103호', age: 76, healthScore: 72, mobility: '자유보행', cognition: '정상', fallRisk: '저위험', programParticipation: 90, monthlyCost: '257만원', diseases: '없음', careGrade: 'D등급' },
-  { id: '5', name: '정미숙', room: '1관 201호', age: 80, healthScore: 52, mobility: '보행보조기', cognition: '경도인지장애', fallRisk: '중위험', programParticipation: 55, monthlyCost: '340만원', diseases: '당뇨, 고혈압', careGrade: 'B등급' },
-  { id: '6', name: '한순이', room: '2관 302호', age: 83, healthScore: 55, mobility: '지팡이', cognition: '정상', fallRisk: '중위험', programParticipation: 70, monthlyCost: '310만원', diseases: '심부전, 고혈압', careGrade: 'B등급' },
-];
+function getFallRisk(r: typeof residents[0]): string {
+  if (r.healthScore < 50 || r.mobilityLevel >= 4) return '고위험';
+  if (r.healthScore < 65 || r.mobilityLevel >= 3 || r.cognitiveLevel !== 'NORMAL') return '중위험';
+  return '저위험';
+}
+
+function getMonthlyCost(r: typeof residents[0]): string {
+  // Assign based on care grade
+  const costs: Record<string, string> = {
+    '1등급': '340만원',
+    '2등급': '310만원',
+    '3등급': '280만원',
+    '4등급': '257만원',
+  };
+  return costs[r.careGrade] ?? '280만원';
+}
+
+// Program participation % — inverse of health score danger (healthy = more participation)
+function getParticipation(r: typeof residents[0]): number {
+  if (r.status === 'HOSPITALIZED') return 0;
+  return Math.min(100, Math.round(r.healthScore * 1.1));
+}
+
+const allResidents: ResidentProfile[] = residents.map(r => ({
+  id: r.id,
+  name: r.name,
+  room: `${r.building} ${r.roomNumber}호`,
+  age: r.age,
+  healthScore: r.healthScore,
+  mobility: r.mobilityLabel,
+  cognition: r.cognitiveLabelKo,
+  fallRisk: getFallRisk(r),
+  programParticipation: getParticipation(r),
+  monthlyCost: getMonthlyCost(r),
+  diseases: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
+  careGrade: r.careGrade,
+}));
 
 const compareFields: { key: keyof ResidentProfile; label: string }[] = [
   { key: 'age', label: '나이' },
@@ -42,7 +72,7 @@ const compareFields: { key: keyof ResidentProfile; label: string }[] = [
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
 export default function ResidentComparisonPage() {
-  const [selected, setSelected] = useState<string[]>(['1', '3', '5']);
+  const [selected, setSelected] = useState<string[]>(['r1', 'r3', 'r6']);
 
   const selectedResidents = allResidents.filter((r) => selected.includes(r.id));
 

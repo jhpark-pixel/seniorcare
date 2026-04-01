@@ -2,6 +2,7 @@ import React from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { staff } from '../../data/mockData';
 
 const serviceRequestData = [
   { type: '시설보수', 건수: 18 },
@@ -13,29 +14,29 @@ const serviceRequestData = [
 ];
 
 const popularPrograms = [
-  { rank: 1, name: '실버체조교실', category: '운동', participants: 42, capacity: 50, rate: 84.0 },
-  { rank: 2, name: '미술치료', category: '인지', participants: 38, capacity: 45, rate: 84.4 },
-  { rank: 3, name: '음악감상회', category: '문화', participants: 35, capacity: 40, rate: 87.5 },
-  { rank: 4, name: '원예치료', category: '사회', participants: 30, capacity: 40, rate: 75.0 },
-  { rank: 5, name: '요가교실', category: '운동', participants: 28, capacity: 35, rate: 80.0 },
+  { rank: 1, name: '실버체조교실', category: '운동', participants: 8, capacity: 10, rate: 80.0 },
+  { rank: 2, name: '미술치료', category: '인지', participants: 7, capacity: 10, rate: 70.0 },
+  { rank: 3, name: '음악감상회', category: '문화', participants: 9, capacity: 10, rate: 90.0 },
+  { rank: 4, name: '원예치료', category: '사회', participants: 6, capacity: 10, rate: 60.0 },
+  { rank: 5, name: '요가교실', category: '운동', participants: 5, capacity: 10, rate: 50.0 },
 ];
 
-const staffWorkload = [
-  { name: '김간호', role: '간호사', residents: 18, counseling: 12, services: 45 },
-  { name: '이간호', role: '간호사', residents: 17, counseling: 10, services: 42 },
-  { name: '최생활', role: '생활지도사', residents: 16, counseling: 8, services: 38 },
-  { name: '박생활', role: '생활지도사', residents: 17, counseling: 9, services: 40 },
-  { name: '정요양', role: '요양보호사', residents: 15, counseling: 5, services: 52 },
-  { name: '한요양', role: '요양보호사', residents: 14, counseling: 4, services: 48 },
-];
+// Build workload from real staff data
+const staffWorkload = staff.map((s, i) => ({
+  name: s.name,
+  role: s.roleLabel,
+  residents: [5, 4, 4, 3, 3][i] ?? 3,
+  counseling: [5, 4, 3, 3, 2][i] ?? 2,
+  services: [20, 18, 15, 14, 12][i] ?? 10,
+}));
 
 const complaintTypes = [
-  { type: '식사', count: 12, percent: 30, avgTime: '1.2일' },
-  { type: '시설', count: 8, percent: 20, avgTime: '2.5일' },
-  { type: '소음', count: 7, percent: 17.5, avgTime: '0.8일' },
-  { type: '서비스', count: 6, percent: 15, avgTime: '1.5일' },
-  { type: '위생', count: 4, percent: 10, avgTime: '0.5일' },
-  { type: '기타', count: 3, percent: 7.5, avgTime: '1.0일' },
+  { type: '식사', count: 4, percent: 30, avgTime: '1.2일' },
+  { type: '시설', count: 3, percent: 20, avgTime: '2.5일' },
+  { type: '소음', count: 2, percent: 17.5, avgTime: '0.8일' },
+  { type: '서비스', count: 2, percent: 15, avgTime: '1.5일' },
+  { type: '위생', count: 1, percent: 10, avgTime: '0.5일' },
+  { type: '기타', count: 1, percent: 7.5, avgTime: '1.0일' },
 ];
 
 const complaintColors: Record<string, string> = {
@@ -127,8 +128,8 @@ export default function OperationStatsPage() {
           <tbody>
             {staffWorkload.map((s, i) => {
               const load = s.residents + s.counseling + s.services;
-              const loadLevel = load > 70 ? '높음' : load > 50 ? '보통' : '양호';
-              const loadColor = load > 70 ? 'text-red-600 bg-red-50' : load > 50 ? 'text-yellow-700 bg-yellow-50' : 'text-green-700 bg-green-50';
+              const loadLevel = load > 30 ? '높음' : load > 20 ? '보통' : '양호';
+              const loadColor = load > 30 ? 'text-red-600 bg-red-50' : load > 20 ? 'text-yellow-700 bg-yellow-50' : 'text-green-700 bg-green-50';
               return (
                 <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{s.name}</td>

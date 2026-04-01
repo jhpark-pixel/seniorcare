@@ -2,22 +2,47 @@ import React from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { residents } from '../../data/mockData';
 
-const diseaseData = [
-  { name: '고혈압', percent: 35, count: 24, color: 'bg-red-500' },
-  { name: '당뇨', percent: 28, count: 19, color: 'bg-orange-500' },
-  { name: '관절염', percent: 22, count: 15, color: 'bg-yellow-500' },
-  { name: '치매', percent: 18, count: 12, color: 'bg-purple-500' },
-  { name: '기타', percent: 12, count: 8, color: 'bg-gray-400' },
+// Derive disease distribution from real resident data
+const allDiseases = residents.flatMap(r => r.diseases);
+const diseaseCounts: Record<string, number> = {};
+allDiseases.forEach(d => { diseaseCounts[d] = (diseaseCounts[d] || 0) + 1; });
+
+// Group into categories
+const diseaseGroups = [
+  { name: '고혈압', aliases: ['고혈압'] },
+  { name: '당뇨병', aliases: ['당뇨병', '당뇨'] },
+  { name: '관절염', aliases: ['관절염'] },
+  { name: '치매', aliases: ['치매'] },
+  { name: '기타', aliases: [] },
 ];
+const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-purple-500', 'bg-gray-400'];
+const svgColors = ['#ef4444', '#f97316', '#eab308', '#a855f7', '#9ca3af'];
+
+const knownNames = new Set<string>();
+const diseaseData = diseaseGroups.map((g, i) => {
+  let count = 0;
+  if (g.aliases.length > 0) {
+    g.aliases.forEach(a => {
+      count += diseaseCounts[a] || 0;
+      knownNames.add(a);
+    });
+  } else {
+    // 기타: diseases not in known categories
+    count = allDiseases.filter(d => !knownNames.has(d)).length;
+  }
+  const percent = Math.round((count / residents.length) * 100);
+  return { name: g.name, percent, count, color: colors[i], svgColor: svgColors[i] };
+});
 
 const fallMonthlyData = [
-  { month: '2025.10', 건수: 5 },
-  { month: '2025.11', 건수: 3 },
-  { month: '2025.12', 건수: 7 },
-  { month: '2026.01', 건수: 4 },
-  { month: '2026.02', 건수: 6 },
-  { month: '2026.03', 건수: 4 },
+  { month: '2025.10', 건수: 2 },
+  { month: '2025.11', 건수: 1 },
+  { month: '2025.12', 건수: 3 },
+  { month: '2026.01', 건수: 1 },
+  { month: '2026.02', 건수: 2 },
+  { month: '2026.03', 건수: 1 },
 ];
 
 const fallLocations = [
@@ -27,19 +52,24 @@ const fallLocations = [
   { location: '기타', percent: 10, color: 'bg-gray-400' },
 ];
 
-const riskResidents = [
-  { name: '김영순', room: '1관 301호', score: 42, risk: '낙상 고위험', disease: '고혈압, 관절염', note: '보행보조기 사용' },
-  { name: '박정희', room: '1관 402호', score: 48, risk: '인지저하', disease: '치매(중등도)', note: '야간 배회 주의' },
-  { name: '정미숙', room: '1관 201호', score: 52, risk: '복합질환', disease: '당뇨, 고혈압', note: '인슐린 투여 중' },
-  { name: '한순이', room: '2관 302호', score: 55, risk: '심혈관', disease: '심부전, 고혈압', note: '활동 제한 필요' },
-  { name: '송복순', room: '2관 405호', score: 58, risk: '낙상 위험', disease: '골다공증', note: '최근 낙상 이력' },
-];
+// Residents with healthScore < 60
+const riskResidents = residents
+  .filter(r => r.healthScore < 60)
+  .sort((a, b) => a.healthScore - b.healthScore)
+  .map(r => ({
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    score: r.healthScore,
+    risk: r.healthScore < 50 ? '낙상 고위험' : r.cognitiveLevel !== 'NORMAL' ? '인지저하' : '복합질환',
+    disease: r.diseases.join(', '),
+    note: r.mobilityLevel >= 3 ? '이동 보조 필요' : r.cognitiveLevel === 'SEVERE' ? '야간 배회 주의' : '정기 모니터링',
+  }));
 
 const iotStats = {
-  dailyAvg: 3.2,
-  falsePositiveRate: 12,
-  totalAlerts: 96,
-  realAlerts: 84,
+  dailyAvg: 2.8,
+  falsePositiveRate: 10,
+  totalAlerts: 84,
+  realAlerts: 76,
 };
 
 export default function HealthStatsPage() {
@@ -54,13 +84,11 @@ export default function HealthStatsPage() {
         {/* 질환 분포 */}
         <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
           <h3 className="text-sm font-semibold text-gray-800 mb-4">질환 분포</h3>
-          {/* Donut-style display */}
           <div className="flex items-center gap-6">
             <div className="relative w-40 h-40 flex-shrink-0">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                 {(() => {
                   let offset = 0;
-                  const colors = ['#ef4444', '#f97316', '#eab308', '#a855f7', '#9ca3af'];
                   return diseaseData.map((d, i) => {
                     const dash = d.percent;
                     const gap = 100 - dash;
@@ -69,7 +97,7 @@ export default function HealthStatsPage() {
                         key={d.name}
                         cx="18" cy="18" r="15.915"
                         fill="none"
-                        stroke={colors[i]}
+                        stroke={d.svgColor}
                         strokeWidth="3.5"
                         strokeDasharray={`${dash} ${gap}`}
                         strokeDashoffset={`${-offset}`}
@@ -81,7 +109,7 @@ export default function HealthStatsPage() {
                 })()}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-gray-900">68</span>
+                <span className="text-2xl font-bold text-gray-900">{residents.length}</span>
                 <span className="text-xs text-gray-500">입주자</span>
               </div>
             </div>

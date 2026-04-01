@@ -1,22 +1,28 @@
 import React, { useState } from 'react';
+import { residents } from '../../data/mockData';
 
-const residents = ['김영순', '이순자', '박정희', '최옥순', '정미숙', '한순이', '서복순', '강말숙', '조순옥', '배영자'];
+const residentList = residents.map(r => r.name);
 
-function genRecords() {
-  const recorders = ['김간호', '이간호', '박간호'];
+function genRecords(residentName: string) {
+  const resident = residents.find(r => r.name === residentName);
+  const recorders = ['김서연', '이하은'];
   const moods = ['좋음', '보통', '우울', '불안'];
   const meals = ['양호', '보통', '소량', '거부'];
+  // seed-like deterministic values based on resident index for consistency
+  const baseIdx = residents.findIndex(r => r.name === residentName);
+  const bpBase = resident?.diseases.includes('고혈압') || resident?.diseases.includes('뇌졸중') ? 145 : 118;
+  const sugarBase = resident?.diseases.includes('당뇨병') ? 150 : 95;
   const rows = [];
   for (let i = 0; i < 20; i++) {
     const d = new Date(2026, 2, 30 - i);
-    const systolic = 110 + Math.floor(Math.random() * 50);
-    const diastolic = 60 + Math.floor(Math.random() * 30);
-    const glucose = 80 + Math.floor(Math.random() * 80);
-    const hr = 55 + Math.floor(Math.random() * 40);
-    const temp = +(36.0 + Math.random() * 1.5).toFixed(1);
-    const weight = +(52 + Math.random() * 5).toFixed(1);
-    const sleep = +(4 + Math.random() * 5).toFixed(1);
-    const water = 400 + Math.floor(Math.random() * 800);
+    const systolic = bpBase + ((i * 3 + baseIdx * 7) % 20) - 10;
+    const diastolic = 70 + ((i * 2 + baseIdx * 5) % 20) - 5;
+    const glucose = sugarBase + ((i * 5 + baseIdx * 11) % 40) - 20;
+    const hr = 65 + ((i * 4 + baseIdx * 3) % 30) - 10;
+    const temp = +(36.2 + ((i + baseIdx) % 10) * 0.1).toFixed(1);
+    const weight = resident ? +(resident.weight + ((i + baseIdx) % 5) * 0.2 - 0.4).toFixed(1) : 55.0;
+    const sleep = +(5 + ((i * 3 + baseIdx) % 40) * 0.1).toFixed(1);
+    const water = 450 + ((i * 50 + baseIdx * 30) % 600);
     rows.push({
       date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       bp: `${systolic}/${diastolic}`,
@@ -32,20 +38,19 @@ function genRecords() {
       sleepLow: sleep < 5,
       water,
       waterLow: water < 500,
-      meal: meals[Math.floor(Math.random() * meals.length)],
-      mood: moods[Math.floor(Math.random() * moods.length)],
-      recorder: recorders[Math.floor(Math.random() * recorders.length)],
+      meal: meals[(i + baseIdx) % meals.length],
+      mood: moods[(i * 2 + baseIdx) % moods.length],
+      recorder: recorders[(i + baseIdx) % recorders.length],
     });
   }
   return rows;
 }
 
-const records = genRecords();
-
 const red = 'text-red-600 font-semibold';
 
 export default function HealthRecordHistoryPage() {
-  const [selected, setSelected] = useState(residents[0]);
+  const [selected, setSelected] = useState(residentList[0]);
+  const records = genRecords(selected);
 
   return (
     <div className="space-y-6">
@@ -57,10 +62,24 @@ export default function HealthRecordHistoryPage() {
       <div className="flex items-center gap-4">
         <label className="text-sm font-medium text-gray-700">입주자 선택</label>
         <select value={selected} onChange={(e) => setSelected(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
-          {residents.map((r) => <option key={r} value={r}>{r}</option>)}
+          {residentList.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <span className="text-sm text-gray-500">최근 20건의 기록을 표시합니다.</span>
       </div>
+
+      {/* 선택된 입주자 기본 정보 */}
+      {(() => {
+        const r = residents.find(res => res.name === selected);
+        if (!r) return null;
+        return (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-wrap gap-4 text-sm">
+            <span className="text-gray-700"><span className="font-medium">호실:</span> {r.building} {r.roomNumber}호</span>
+            <span className="text-gray-700"><span className="font-medium">나이:</span> {r.age}세</span>
+            <span className="text-gray-700"><span className="font-medium">질환:</span> {r.diseases.join(', ')}</span>
+            <span className="text-gray-700"><span className="font-medium">케어등급:</span> {r.careGrade}</span>
+          </div>
+        );
+      })()}
 
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="overflow-x-auto">

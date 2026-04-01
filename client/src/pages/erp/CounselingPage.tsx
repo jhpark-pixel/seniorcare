@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { generateId } from '../../data/mockData';
 
 const statusColor: Record<string, string> = {
   '대기': 'bg-yellow-100 text-yellow-800',
@@ -25,16 +26,16 @@ interface CounselingItem {
 }
 
 const initialData: CounselingItem[] = [
-  { id: '1', date: '2026-03-28 10:00', name: '김영호', phone: '010-3456-7890', type: '전화', summary: '어머니 입소 관련 비용 및 시설 안내 요청', result: '자료 발송 완료', next: '2026-04-02 14:00', status: '완료' },
-  { id: '2', date: '2026-03-28 11:30', name: '이정숙', phone: '010-9876-5432', type: '방문', summary: '1인실 시설 견학 및 케어 프로그램 문의', result: '시설 투어 완료, 청약 안내', next: '2026-04-01 10:00', status: '완료' },
-  { id: '3', date: '2026-03-27 14:00', name: '박현우', phone: '010-1234-5678', type: '전화', summary: '아버지 치매 등급 관련 입소 가능 여부 문의', result: '등급 확인 후 회신 예정', next: '2026-03-31 09:00', status: '대기' },
-  { id: '4', date: '2026-03-27 16:00', name: '최미영', phone: '010-5555-1234', type: '온라인', summary: '2인실 비용 및 보증금 납부 조건 문의', result: '이메일 안내 발송', next: '-', status: '완료' },
-  { id: '5', date: '2026-03-26 09:30', name: '정대호', phone: '010-2222-3333', type: '방문', summary: '부모님 동반 입소 가능 여부 상담', result: '2인실 배정 가능 안내', next: '2026-04-03 11:00', status: '대기' },
-  { id: '6', date: '2026-03-25 13:00', name: '한서연', phone: '010-7777-8888', type: '전화', summary: '장기요양등급 신청 절차 안내 요청', result: '등급 신청 가이드 발송', next: '-', status: '완료' },
-  { id: '7', date: '2026-03-25 15:30', name: '윤재석', phone: '010-4444-5555', type: '온라인', summary: '입소 후 외부 병원 진료 동행 서비스 문의', result: '서비스 내용 안내 완료', next: '-', status: '완료' },
-  { id: '8', date: '2026-03-24 10:00', name: '송미라', phone: '010-6666-7777', type: '방문', summary: '어머니 단기 입소(1개월) 가능 여부 상담', result: '단기 입소 계약 조건 안내', next: '2026-03-30 14:00', status: '대기' },
-  { id: '9', date: '2026-03-23 11:00', name: '오성호', phone: '010-8888-9999', type: '전화', summary: '입소 대기 신청 및 예상 대기 기간 문의', result: '현재 대기 2명 안내', next: '-', status: '취소' },
-  { id: '10', date: '2026-03-22 14:30', name: '임지현', phone: '010-1111-2222', type: '방문', summary: '시설 식단 및 영양 관리 프로그램 문의', result: '주간 식단표 제공, 영양사 면담 안내', next: '2026-03-29 10:00', status: '완료' },
+  { id: '1', date: '2026-03-28 10:00', name: '김철수', phone: '010-9876-5432', type: '전화', summary: '어머니(김영순) 입소 관련 비용 및 시설 안내 요청', result: '자료 발송 완료', next: '2026-04-02 14:00', status: '완료' },
+  { id: '2', date: '2026-03-28 11:30', name: '이상훈', phone: '010-7654-3210', type: '방문', summary: '어머니(이복자) 1인실 시설 견학 및 케어 프로그램 문의', result: '시설 투어 완료, 청약 안내', next: '2026-04-01 10:00', status: '완료' },
+  { id: '3', date: '2026-03-27 14:00', name: '박미선', phone: '010-6543-2109', type: '전화', summary: '아버지(박정호) 관절염 등급 관련 입소 가능 여부 문의', result: '등급 확인 후 회신 예정', next: '2026-03-31 09:00', status: '대기' },
+  { id: '4', date: '2026-03-27 16:00', name: '최민호', phone: '010-4321-0987', type: '온라인', summary: '어머니(최순남) 뇌졸중 후 재활 케어 및 비용 문의', result: '이메일 안내 발송', next: '-', status: '완료' },
+  { id: '5', date: '2026-03-26 09:30', name: '정수진', phone: '010-3210-9876', type: '방문', summary: '아버지(정기원) 파킨슨병 케어 프로그램 상담', result: '2관 1인실 배정 가능 안내', next: '2026-04-03 11:00', status: '대기' },
+  { id: '6', date: '2026-03-25 13:00', name: '한지훈', phone: '010-1111-2222', type: '전화', summary: '할머니(한말순) 중증 치매 케어 가능 여부 문의', result: '장기요양 1등급 전문 케어 안내 발송', next: '-', status: '완료' },
+  { id: '7', date: '2026-03-25 15:30', name: '오수빈', phone: '010-3333-4444', type: '온라인', summary: '아버지(오세진) 입소 후 외부 병원 진료 동행 서비스 문의', result: '서비스 내용 안내 완료', next: '-', status: '완료' },
+  { id: '8', date: '2026-03-24 10:00', name: '송현우', phone: '010-5555-6666', type: '방문', summary: '어머니(송미경) 심부전 입원 후 시설 복귀 가능 여부 상담', result: '복귀 조건 및 의료 지원 안내', next: '2026-03-30 14:00', status: '대기' },
+  { id: '9', date: '2026-03-23 11:00', name: '윤지영', phone: '010-6666-7777', type: '전화', summary: '아버지(윤태식) 입소 대기 신청 및 예상 대기 기간 문의', result: '현재 대기 2명 안내', next: '-', status: '취소' },
+  { id: '10', date: '2026-03-22 14:30', name: '강준호', phone: '010-8888-9999', type: '방문', summary: '어머니(강옥희) 시설 식단 및 영양 관리 프로그램 문의', result: '주간 식단표 제공, 영양사 면담 안내', next: '2026-03-29 10:00', status: '완료' },
 ];
 
 const emptyForm = { date: '', name: '', phone: '', type: '전화', summary: '', result: '' };
@@ -46,13 +47,13 @@ export default function CounselingPage() {
   const [search, setSearch] = useState('');
 
   const filtered = search
-    ? data.filter(d => d.name.includes(search))
+    ? data.filter(d => d.name.includes(search) || d.summary.includes(search))
     : data;
 
   const handleSave = () => {
     if (!formData.name || !formData.date) return;
     const newItem: CounselingItem = {
-      id: crypto.randomUUID(),
+      id: generateId('counsel'),
       date: formData.date.replace('T', ' '),
       name: formData.name,
       phone: formData.phone,
@@ -95,7 +96,7 @@ export default function CounselingPage() {
       <div>
         <input
           type="text"
-          placeholder="상담자명으로 검색..."
+          placeholder="상담자명 또는 내용으로 검색..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A] focus:border-transparent"

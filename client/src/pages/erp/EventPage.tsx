@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { staff, generateId } from '../../data/mockData';
 
 interface CalendarEvent {
   id: string;
@@ -13,14 +14,14 @@ interface CalendarEvent {
 }
 
 const initialEvents: CalendarEvent[] = [
-  { id: '1', title: '봄맞이 야외 나들이', description: '', date: '2026-03-05', time: '10:00~15:00', location: '배곧 생태공원', target: '전체 입소자', department: '생활지도팀', status: '완료' },
-  { id: '2', title: '어르신 생신잔치 (3월)', description: '', date: '2026-03-10', time: '14:00~16:00', location: '1층 대강당', target: '3월 생일 어르신', department: '생활지도팀', status: '완료' },
-  { id: '3', title: '인플루엔자 예방접종', description: '', date: '2026-03-15', time: '09:00~12:00', location: '2층 의무실', target: '전체 입소자', department: '간호팀', status: '완료' },
-  { id: '4', title: '치매 예방 특강', description: '', date: '2026-03-18', time: '14:00~15:30', location: '3층 프로그램실', target: '인지 프로그램 참여자', department: '간호팀', status: '완료' },
-  { id: '5', title: '가족 면회의 날', description: '', date: '2026-03-22', time: '10:00~17:00', location: '1층 로비 및 각 호실', target: '전체 입소자 가족', department: '행정팀', status: '진행중' },
-  { id: '6', title: '낙상 예방 교육', description: '', date: '2026-03-25', time: '10:00~11:00', location: '1층 대강당', target: '전체 직원', department: '간호팀', status: '진행중' },
-  { id: '7', title: '4월 프로그램 설명회', description: '', date: '2026-03-28', time: '15:00~16:00', location: '3층 프로그램실', target: '전체 입소자', department: '생활지도팀', status: '계획' },
-  { id: '8', title: '시설 소방 훈련', description: '', date: '2026-03-31', time: '14:00~15:00', location: '전체 시설', target: '전체 직원 및 입소자', department: '행정팀', status: '계획' },
+  { id: '1', title: '봄맞이 야외 나들이', description: '', date: '2026-04-05', time: '10:00~15:00', location: '배곧 생태공원', target: '전체 입소자', department: '생활지도팀', status: '계획' },
+  { id: '2', title: '어르신 생신잔치 (4월)', description: '', date: '2026-04-10', time: '14:00~16:00', location: '1층 대강당', target: '4월 생일 어르신', department: '생활지도팀', status: '계획' },
+  { id: '3', title: '인플루엔자 예방접종', description: '', date: '2026-04-05', time: '09:00~12:00', location: '2층 의무실', target: '전체 입소자', department: '간호팀', status: '계획' },
+  { id: '4', title: '치매 예방 특강', description: '', date: '2026-04-08', time: '14:00~15:30', location: '3층 프로그램실', target: '인지 프로그램 참여자', department: '간호팀', status: '계획' },
+  { id: '5', title: '가족 면회의 날', description: '', date: '2026-04-12', time: '10:00~17:00', location: '1층 로비 및 각 호실', target: '전체 입소자 가족', department: '행정팀', status: '계획' },
+  { id: '6', title: '낙상 예방 교육', description: '', date: '2026-04-15', time: '10:00~11:00', location: '1층 대강당', target: '전체 직원', department: '간호팀', status: '계획' },
+  { id: '7', title: '4월 프로그램 설명회', description: '', date: '2026-04-03', time: '15:00~16:00', location: '3층 프로그램실', target: '전체 입소자', department: '생활지도팀', status: '진행중' },
+  { id: '8', title: '시설 소방 훈련', description: '', date: '2026-04-20', time: '14:00~15:00', location: '전체 시설', target: '전체 직원 및 입소자', department: '행정팀', status: '계획' },
 ];
 
 const statusColors: Record<string, string> = {
@@ -32,12 +33,14 @@ const statusColors: Record<string, string> = {
 const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
+const departmentOptions = ['생활지도팀', '간호팀', '행정팀', '영양팀', '시설관리팀'];
+
 const emptyForm = { title: '', description: '', date: '', time: '', location: '', target: '', department: '' };
 
 export default function EventPage() {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
-  const [year] = useState(2026);
-  const [month] = useState(2);
+  const [year, setYear] = useState(2026);
+  const [month, setMonth] = useState(3); // April = index 3
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
 
@@ -47,16 +50,19 @@ export default function EventPage() {
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= totalDays; d++) cells.push(d);
 
+  const monthStr = String(month + 1).padStart(2, '0');
+
   const getEventsForDay = (day: number) => {
-    const dateStr = `2026-03-${String(day).padStart(2, '0')}`;
+    const dateStr = `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
     return events.filter(e => e.date === dateStr);
   };
 
   const upcoming = events.filter(e => e.status !== '완료');
 
   const handleSave = () => {
+    if (!formData.title || !formData.date) return;
     const newEvent: CalendarEvent = {
-      id: crypto.randomUUID(),
+      id: generateId('ev'),
       title: formData.title,
       description: formData.description,
       date: formData.date,
@@ -75,10 +81,23 @@ export default function EventPage() {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, status: newStatus } : e));
   };
 
+  const handleDelete = (id: string) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+  };
+
   const nextStatus = (current: CalendarEvent['status']): CalendarEvent['status'] | null => {
     if (current === '계획') return '진행중';
     if (current === '진행중') return '완료';
     return null;
+  };
+
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
   };
 
   return (
@@ -91,7 +110,11 @@ export default function EventPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">2026년 3월</h2>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200">이전</button>
+          <h2 className="text-lg font-semibold text-gray-900">{year}년 {month + 1}월</h2>
+          <button onClick={nextMonth} className="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200">다음</button>
+        </div>
         <div className="grid grid-cols-7 gap-1 mb-1">
           {dayNames.map((d, i) => (
             <div key={d} className={`text-center text-sm font-medium py-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'}`}>
@@ -130,15 +153,16 @@ export default function EventPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">예정 행사</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">예정/진행 행사</h2>
         <div className="space-y-3">
           {upcoming.map(ev => {
             const next = nextStatus(ev.status);
+            const evMonth = new Date(ev.date).getMonth() + 1;
             return (
               <div key={ev.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex-shrink-0 w-14 h-14 bg-blue-600 text-white rounded-lg flex flex-col items-center justify-center">
                   <span className="text-lg font-bold">{ev.date.split('-')[2]}</span>
-                  <span className="text-[10px]">3월</span>
+                  <span className="text-[10px]">{evMonth}월</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -154,14 +178,22 @@ export default function EventPage() {
                     <span>주관: {ev.department}</span>
                   </div>
                 </div>
-                {next && (
-                  <button onClick={() => handleStatusChange(ev.id, next)} className="flex-shrink-0 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">
-                    {next}으로 변경
+                <div className="flex gap-1">
+                  {next && (
+                    <button onClick={() => handleStatusChange(ev.id, next)} className="flex-shrink-0 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">
+                      {next}으로 변경
+                    </button>
+                  )}
+                  <button onClick={() => handleDelete(ev.id)} className="flex-shrink-0 px-2 py-1.5 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">
+                    삭제
                   </button>
-                )}
+                </div>
               </div>
             );
           })}
+          {upcoming.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-6">예정된 행사가 없습니다.</p>
+          )}
         </div>
       </div>
 
@@ -172,33 +204,36 @@ export default function EventPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-                <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">일시</label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
-                  <input type="text" placeholder="10:00~15:00" value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input type="text" placeholder="10:00~15:00" value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
-                <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
-                <input type="text" value={formData.target} onChange={e => setFormData({ ...formData, target: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.target} onChange={e => setFormData({ ...formData, target: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">주관부서</label>
-                <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <select value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                  <option value="">-- 선택 --</option>
+                  {departmentOptions.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

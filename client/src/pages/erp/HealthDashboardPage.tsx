@@ -1,25 +1,64 @@
 import React, { useState } from 'react';
+import { residents, getStatusColor } from '../../data/mockData';
 
-type FilterType = '전체' | '위험군' | '주의군';
+type FilterType = '전체' | '위험군' | '주의군' | '양호';
+
+interface ResidentHealthRow {
+  name: string;
+  room: string;
+  score: number;
+  tags: string[];
+  status: string;
+  diseases: string[];
+}
+
+function buildTags(diseases: string[], mobilityLevel: number): string[] {
+  const tags: string[] = [];
+  if (diseases.some(d => d.includes('고혈압'))) tags.push('고혈압 주의');
+  if (diseases.some(d => d.includes('당뇨'))) tags.push('혈당 경계');
+  if (diseases.some(d => d.includes('치매'))) tags.push('치매 관리');
+  if (diseases.some(d => d.includes('파킨슨'))) tags.push('파킨슨 관리');
+  if (diseases.some(d => d.includes('뇌졸중'))) tags.push('뇌졸중 주의');
+  if (diseases.some(d => d.includes('심부전'))) tags.push('심부전 모니터링');
+  if (diseases.some(d => d.includes('만성폐쇄성'))) tags.push('COPD 주의');
+  if (diseases.some(d => d.includes('우울증'))) tags.push('우울증 관찰');
+  if (diseases.some(d => d.includes('관절염'))) tags.push('관절 보호');
+  if (diseases.some(d => d.includes('골다공증'))) tags.push('골다공증 주의');
+  if (mobilityLevel >= 3) tags.push('낙상 고위험');
+  return tags;
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case 'ACTIVE': return '입주중';
+    case 'HOSPITALIZED': return '입원중';
+    case 'OUTING': return '외출중';
+    case 'DISCHARGED': return '퇴소';
+    default: return status;
+  }
+}
+
+const residentRows: ResidentHealthRow[] = residents
+  .filter(r => r.status !== 'DISCHARGED')
+  .map(r => ({
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    score: r.healthScore,
+    tags: buildTags(r.diseases, r.mobilityLevel),
+    status: statusLabel(r.status),
+    diseases: r.diseases,
+  }));
+
+const totalCount = residentRows.length;
+const dangerCount = residentRows.filter(r => r.score < 60).length;
+const cautionCount = residentRows.filter(r => r.score >= 60 && r.score < 80).length;
+const goodCount = residentRows.filter(r => r.score >= 80).length;
 
 const summaryCards = [
-  { label: '총 입주자', value: 38, color: 'text-gray-900', bg: 'bg-blue-50' },
-  { label: '위험군', value: 5, color: 'text-red-600', bg: 'bg-red-50' },
-  { label: '주의군', value: 12, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { label: '양호', value: 21, color: 'text-green-600', bg: 'bg-green-50' },
-];
-
-const residents = [
-  { name: '김영순', room: '1관 301호', score: 75, tags: ['고혈압 주의'], status: '입주중' },
-  { name: '이순자', room: '2관 205호', score: 82, tags: [], status: '입주중' },
-  { name: '박정희', room: '1관 402호', score: 45, tags: ['낙상 고위험', '치매 초기'], status: '입주중' },
-  { name: '최옥순', room: '2관 103호', score: 68, tags: ['당뇨 주의'], status: '입주중' },
-  { name: '정미숙', room: '1관 201호', score: 88, tags: [], status: '입주중' },
-  { name: '한순이', room: '2관 302호', score: 55, tags: ['저체중', '수면장애'], status: '입주중' },
-  { name: '서복순', room: '2관 401호', score: 92, tags: [], status: '입주중' },
-  { name: '강말숙', room: '1관 105호', score: 50, tags: ['고혈압', '낙상 위험'], status: '외출중' },
-  { name: '조순옥', room: '1관 203호', score: 72, tags: ['혈당 경계'], status: '입주중' },
-  { name: '배영자', room: '2관 104호', score: 38, tags: ['고혈압 위험', '저활동'], status: '입원중' },
+  { label: '총 입주자', value: totalCount, color: 'text-gray-900', bg: 'bg-blue-50' },
+  { label: '위험군', value: dangerCount, color: 'text-red-600', bg: 'bg-red-50' },
+  { label: '주의군', value: cautionCount, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  { label: '양호', value: goodCount, color: 'text-green-600', bg: 'bg-green-50' },
 ];
 
 function getScoreColor(score: number) {
@@ -34,19 +73,17 @@ function getScoreBg(score: number) {
   return 'bg-red-100';
 }
 
-function getGroup(score: number): FilterType {
-  if (score < 60) return '위험군';
-  if (score < 80) return '주의군';
-  return '전체';
-}
-
 export default function HealthDashboardPage() {
   const [filter, setFilter] = useState<FilterType>('전체');
+  const [search, setSearch] = useState('');
 
-  const filtered = residents.filter((r) => {
+  const filtered = residentRows.filter((r) => {
+    const matchesSearch = search === '' || r.name.includes(search);
+    if (!matchesSearch) return false;
     if (filter === '전체') return true;
     if (filter === '위험군') return r.score < 60;
     if (filter === '주의군') return r.score >= 60 && r.score < 80;
+    if (filter === '양호') return r.score >= 80;
     return true;
   });
 
@@ -67,17 +104,26 @@ export default function HealthDashboardPage() {
         ))}
       </div>
 
-      {/* 필터 */}
-      <div className="flex gap-2">
-        {(['전체', '위험군', '주의군'] as FilterType[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 text-sm font-medium rounded-md border ${filter === f ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-          >
-            {f}
-          </button>
-        ))}
+      {/* 필터 + 검색 */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex gap-2">
+          {(['전체', '위험군', '주의군', '양호'] as FilterType[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 text-sm font-medium rounded-md border ${filter === f ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <input
+          type="text"
+          placeholder="입주자명 검색..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="ml-auto border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 w-48"
+        />
       </div>
 
       {/* 입주자 테이블 */}
@@ -86,7 +132,7 @@ export default function HealthDashboardPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['이름', '호실', '건강점수', '위험태그', '상태'].map((h) => (
+                {['이름', '호실', '질환', '건강점수', '위험태그', '상태'].map((h) => (
                   <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
@@ -96,6 +142,13 @@ export default function HealthDashboardPage() {
                 <tr key={i} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{r.room}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    <div className="flex gap-1 flex-wrap">
+                      {r.diseases.map(d => (
+                        <span key={d} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{d}</span>
+                      ))}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getScoreBg(r.score)} ${getScoreColor(r.score)}`}>
                       {r.score}점
@@ -108,7 +161,11 @@ export default function HealthDashboardPage() {
                       )) : <span className="text-gray-400">-</span>}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{r.status}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(r.status === '입주중' ? 'ACTIVE' : r.status === '입원중' ? 'HOSPITALIZED' : r.status === '외출중' ? 'OUTING' : 'DISCHARGED')}`}>
+                      {r.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

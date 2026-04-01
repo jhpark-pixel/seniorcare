@@ -1,33 +1,47 @@
 import React, { useState } from 'react';
+import { residents, activeResidents, generateId } from '../../data/mockData';
 
 interface SpecialDiet {
   id: string;
+  residentId: string;
   residentName: string;
   room: string;
-  dietType: '저염식' | '저당식' | '연하곤란식' | '저단백식' | '채식';
+  dietType: string;
   reason: string;
   startDate: string;
   note: string;
   status: '활성' | '종료';
 }
 
-const initialDiets: SpecialDiet[] = [
-  { id: '1', residentName: '김영숙', room: '101호', dietType: '저염식', reason: '고혈압 (150/95mmHg)', startDate: '2025-06-15', note: '국물류 염분 50% 감량', status: '활성' },
-  { id: '2', residentName: '이순자', room: '203호', dietType: '저당식', reason: '제2형 당뇨 (HbA1c 7.2%)', startDate: '2025-08-20', note: '밥 2/3 배식, 과일 1회/일 제한', status: '활성' },
-  { id: '3', residentName: '박정희', room: '105호', dietType: '연하곤란식', reason: '뇌졸중 후유증 삼킴장애', startDate: '2025-11-03', note: '다진식 또는 죽식, 물 토로미 첨가', status: '활성' },
-  { id: '4', residentName: '최옥순', room: '302호', dietType: '채식', reason: '개인 신념 (불교)', startDate: '2025-03-01', note: '육류 대체 두부/콩류 제공', status: '활성' },
-  { id: '5', residentName: '한미경', room: '207호', dietType: '저단백식', reason: '만성신부전 3기', startDate: '2025-09-10', note: '단백질 40g/일 이하, 칼륨 제한', status: '활성' },
-  { id: '6', residentName: '윤정자', room: '304호', dietType: '저염식', reason: '심부전 관리', startDate: '2025-07-22', note: '나트륨 2g/일 이하', status: '활성' },
-  { id: '7', residentName: '강순옥', room: '102호', dietType: '저당식', reason: '제2형 당뇨 (식이요법)', startDate: '2025-04-18', note: '간식 제한, 잡곡밥 제공', status: '활성' },
-  { id: '8', residentName: '정복순', room: '201호', dietType: '연하곤란식', reason: '파킨슨병 진행', startDate: '2025-10-05', note: '2026-02-28 일반식 전환 완료', status: '종료' },
-];
+// Build initial diets from residents' actual dietaryRestrictions
+const buildInitialDiets = (): SpecialDiet[] => {
+  const result: SpecialDiet[] = [];
+  residents.forEach(r => {
+    if (r.dietaryRestrictions.length === 0) return;
+    r.dietaryRestrictions.forEach((diet, idx) => {
+      result.push({
+        id: `init-${r.id}-${idx}`,
+        residentId: r.id,
+        residentName: r.name,
+        room: `${r.building} ${r.roomNumber}호`,
+        dietType: diet,
+        reason: r.diseases.slice(0, 2).join(', ') || '개인 요청',
+        startDate: r.moveInDate,
+        note: idx === 0 ? `${r.dietaryRestrictions.join(' + ')} 적용` : '',
+        status: r.status === 'DISCHARGED' ? '종료' : '활성',
+      });
+    });
+  });
+  return result;
+};
 
 const dietTypeColors: Record<string, string> = {
   '저염식': 'bg-blue-100 text-blue-800',
   '저당식': 'bg-yellow-100 text-yellow-800',
-  '연하곤란식': 'bg-red-100 text-red-800',
+  '연하식(다진식)': 'bg-red-100 text-red-800',
+  '연하식(미음)': 'bg-red-200 text-red-900',
   '저단백식': 'bg-purple-100 text-purple-800',
-  '채식': 'bg-green-100 text-green-800',
+  '저지방식': 'bg-green-100 text-green-800',
 };
 
 const statusColors: Record<string, string> = {
@@ -35,27 +49,36 @@ const statusColors: Record<string, string> = {
   '종료': 'bg-gray-100 text-gray-500',
 };
 
-const emptyForm = { residentName: '', room: '', dietType: '저염식' as SpecialDiet['dietType'], reason: '', startDate: '' };
+const dietTypeOptions = ['저염식', '저당식', '연하식(다진식)', '연하식(미음)', '저단백식', '저지방식'];
+
+const emptyForm = { residentId: '', dietType: '저염식', reason: '', startDate: '' };
 
 export default function SpecialDietPage() {
-  const [diets, setDiets] = useState<SpecialDiet[]>(initialDiets);
+  const [diets, setDiets] = useState<SpecialDiet[]>(buildInitialDiets());
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [filterStatus, setFilterStatus] = useState<'전체' | '활성' | '종료'>('전체');
 
   const activeDiets = diets.filter(d => d.status === '활성');
+  const filteredDiets = filterStatus === '전체' ? diets : diets.filter(d => d.status === filterStatus);
+
   const typeCounts: Record<string, number> = {};
   activeDiets.forEach(d => {
     typeCounts[d.dietType] = (typeCounts[d.dietType] || 0) + 1;
   });
 
   const handleSave = () => {
+    if (!formData.residentId || !formData.dietType) return;
+    const res = residents.find(r => r.id === formData.residentId);
+    if (!res) return;
     const newDiet: SpecialDiet = {
-      id: crypto.randomUUID(),
-      residentName: formData.residentName,
-      room: formData.room,
+      id: generateId('sd'),
+      residentId: res.id,
+      residentName: res.name,
+      room: `${res.building} ${res.roomNumber}호`,
       dietType: formData.dietType,
       reason: formData.reason,
-      startDate: formData.startDate,
+      startDate: formData.startDate || new Date().toISOString().slice(0, 10),
       note: '',
       status: '활성',
     };
@@ -65,7 +88,13 @@ export default function SpecialDietPage() {
   };
 
   const handleEnd = (id: string) => {
-    setDiets(prev => prev.map(d => d.id === id ? { ...d, status: '종료' as const, note: `${new Date().toISOString().slice(0, 10)} 종료` } : d));
+    setDiets(prev => prev.map(d =>
+      d.id === id ? { ...d, status: '종료' as const, note: `${new Date().toISOString().slice(0, 10)} 종료` } : d
+    ));
+  };
+
+  const handleDelete = (id: string) => {
+    setDiets(prev => prev.filter(d => d.id !== id));
   };
 
   return (
@@ -77,10 +106,11 @@ export default function SpecialDietPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        {Object.entries(dietTypeColors).map(([type, color]) => (
+      {/* Type summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+        {dietTypeOptions.map(type => (
           <div key={type} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
-            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 ${color}`}>{type}</span>
+            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 ${dietTypeColors[type] ?? 'bg-gray-100 text-gray-700'}`}>{type}</span>
             <p className="text-3xl font-bold text-gray-900">{typeCounts[type] || 0}<span className="text-base font-normal text-gray-500">명</span></p>
           </div>
         ))}
@@ -89,6 +119,24 @@ export default function SpecialDietPage() {
       <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-center gap-3">
         <span className="text-2xl font-bold text-orange-700">{activeDiets.length}</span>
         <span className="text-sm text-orange-700">명의 입소자가 현재 특별식을 제공받고 있습니다.</span>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 mb-4">
+        {(['전체', '활성', '종료'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setFilterStatus(s)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filterStatus === s ? 'bg-[#F0835A] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {s}
+            <span className="ml-1 text-xs opacity-70">
+              ({s === '전체' ? diets.length : diets.filter(d => d.status === s).length})
+            </span>
+          </button>
+        ))}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -107,12 +155,12 @@ export default function SpecialDietPage() {
               </tr>
             </thead>
             <tbody>
-              {diets.map(diet => (
+              {filteredDiets.map(diet => (
                 <tr key={diet.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{diet.residentName}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{diet.room}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded ${dietTypeColors[diet.dietType]}`}>
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded ${dietTypeColors[diet.dietType] ?? 'bg-gray-100 text-gray-700'}`}>
                       {diet.dietType}
                     </span>
                   </td>
@@ -125,12 +173,20 @@ export default function SpecialDietPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {diet.status === '활성' && (
-                      <button onClick={() => handleEnd(diet.id)} className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">종료</button>
-                    )}
+                    <div className="flex justify-center gap-1">
+                      {diet.status === '활성' && (
+                        <button onClick={() => handleEnd(diet.id)} className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">종료</button>
+                      )}
+                      <button onClick={() => handleDelete(diet.id)} className="px-2 py-1 text-xs bg-red-400 text-white rounded hover:bg-red-500">삭제</button>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {filteredDiets.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400 text-sm">해당하는 특별식 항목이 없습니다.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -142,30 +198,55 @@ export default function SpecialDietPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-4">특별식 등록</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input type="text" value={formData.residentName} onChange={e => setFormData({ ...formData, residentName: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">호실</label>
-                <input type="text" value={formData.room} onChange={e => setFormData({ ...formData, room: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
+                <select
+                  value={formData.residentId}
+                  onChange={e => setFormData({ ...formData, residentId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">-- 선택 --</option>
+                  {activeResidents.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>
+                  ))}
+                </select>
+                {formData.residentId && (() => {
+                  const res = residents.find(r => r.id === formData.residentId);
+                  if (!res || res.dietaryRestrictions.length === 0) return null;
+                  return (
+                    <p className="mt-1 text-xs text-blue-600">
+                      기존 식이제한: {res.dietaryRestrictions.join(', ')}
+                    </p>
+                  );
+                })()}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">특별식 유형</label>
-                <select value={formData.dietType} onChange={e => setFormData({ ...formData, dietType: e.target.value as SpecialDiet['dietType'] })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>저염식</option>
-                  <option>저당식</option>
-                  <option>연하곤란식</option>
-                  <option>저단백식</option>
-                  <option>채식</option>
+                <select
+                  value={formData.dietType}
+                  onChange={e => setFormData({ ...formData, dietType: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  {dietTypeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">사유</label>
-                <input type="text" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input
+                  type="text"
+                  value={formData.reason}
+                  onChange={e => setFormData({ ...formData, reason: e.target.value })}
+                  placeholder="진단명 또는 사유"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

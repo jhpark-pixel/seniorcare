@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, staff } from '../../data/mockData';
 
 const today = '2026-03-30';
 
@@ -14,21 +15,24 @@ interface HealthCounselingItem {
 }
 
 const initialData: HealthCounselingItem[] = [
-  { id: '1', datetime: '2026-03-30 09:00', name: '김영순', room: '1관 301호', type: '일반건강', counselor: '간호사 김미영', summary: '혈압 상승 경향에 대한 생활습관 상담', status: '완료' },
-  { id: '2', datetime: '2026-03-30 10:00', name: '이순자', room: '2관 205호', type: '투약', counselor: '간호사 이정은', summary: '당뇨약 변경 후 부작용 여부 확인', status: '완료' },
-  { id: '3', datetime: '2026-03-30 11:00', name: '박정희', room: '1관 402호', type: '정기검진', counselor: '간호사 김미영', summary: '정기검진 결과 안내 및 후속 조치 상담', status: '예약' },
-  { id: '4', datetime: '2026-03-30 14:00', name: '최옥순', room: '2관 103호', type: '운동', counselor: '생활지도사 최은영', summary: '관절염 완화를 위한 운동 프로그램 상담', status: '예약' },
-  { id: '5', datetime: '2026-03-30 15:00', name: '한순이', room: '2관 302호', type: '외래', counselor: '간호사 이정은', summary: '심장내과 외래 진료 결과 상담', status: '예약' },
-  { id: '6', datetime: '2026-03-29 09:30', name: '정미숙', room: '1관 201호', type: '일반건강', counselor: '간호사 김미영', summary: '수면 장애 관련 상담 및 생활 지도', status: '완료' },
-  { id: '7', datetime: '2026-03-29 11:00', name: '오말순', room: '1관 105호', type: '투약', counselor: '간호사 이정은', summary: '고혈압약 복용 시간 조정 상담', status: '완료' },
-  { id: '8', datetime: '2026-03-28 14:00', name: '강순덕', room: '2관 401호', type: '정기검진', counselor: '간호사 김미영', summary: '혈액검사 결과 이상 소견 상담', status: '완료' },
-  { id: '9', datetime: '2026-03-31 10:00', name: '윤복순', room: '1관 302호', type: '운동', counselor: '생활지도사 최은영', summary: '낙상 예방 운동 프로그램 안내', status: '예약' },
-  { id: '10', datetime: '2026-03-28 09:00', name: '신영자', room: '2관 201호', type: '외래', counselor: '간호사 이정은', summary: '안과 외래 진료 결과 및 안약 사용법 안내', status: '취소' },
+  { id: '1', datetime: '2026-03-30 09:00', name: '김영순', room: '1관 101호', type: '일반건강', counselor: '간호사 김서연', summary: '혈압 상승 경향에 대한 생활습관 상담', status: '완료' },
+  { id: '2', datetime: '2026-03-30 10:00', name: '이복자', room: '1관 103호', type: '투약', counselor: '간호사 이하은', summary: '도네페질 복용 후 부작용 여부 확인 및 치매 진행 상담', status: '완료' },
+  { id: '3', datetime: '2026-03-30 11:00', name: '최순남', room: '1관 107호', type: '정기검진', counselor: '간호사 김서연', summary: '뇌졸중 후 재활 경과 및 혈압 약 조절 상담', status: '예약' },
+  { id: '4', datetime: '2026-03-30 14:00', name: '박정호', room: '1관 105호', type: '운동', counselor: '생활지도사 최민정', summary: '관절염 완화를 위한 운동 프로그램 상담', status: '예약' },
+  { id: '5', datetime: '2026-03-30 15:00', name: '윤태식', room: '2관 207호', type: '외래', counselor: '간호사 이하은', summary: '와파린 복용 중 심장내과 외래 진료 결과 상담', status: '예약' },
+  { id: '6', datetime: '2026-03-29 09:30', name: '정기원', room: '1관 109호', type: '일반건강', counselor: '간호사 김서연', summary: '파킨슨병 약 복용 및 우울증 증상 모니터링 상담', status: '완료' },
+  { id: '7', datetime: '2026-03-29 11:00', name: '오세진', room: '2관 203호', type: '투약', counselor: '간호사 이하은', summary: 'COPD 흡입기 사용법 및 고혈압약 복용 시간 조정 상담', status: '완료' },
+  { id: '8', datetime: '2026-03-28 14:00', name: '한말순', room: '2관 201호', type: '정기검진', counselor: '간호사 김서연', summary: '중증 치매 진행 상태 및 골다공증 관련 혈액검사 결과 상담', status: '완료' },
+  { id: '9', datetime: '2026-03-31 10:00', name: '강옥희', room: '2관 209호', type: '운동', counselor: '생활지도사 박은지', summary: '관절염 및 우울증 완화를 위한 낙상 예방 운동 프로그램 안내', status: '예약' },
+  { id: '10', datetime: '2026-03-28 09:00', name: '송미경', room: '2관 205호', type: '외래', counselor: '간호사 이하은', summary: '입원 중 심부전 경과 보고 및 보호자 연락 사항 전달', status: '취소' },
 ];
 
-const residentOptions = ['김영순', '이순자', '박정희', '최옥순', '정미숙', '한순이', '강순덕', '오말순', '윤복순', '신영자'];
+const residentOptions = residents.map(r => r.name);
 const typeOptions = ['일반건강', '투약', '정기검진', '운동', '외래'];
-const counselorOptions = ['간호사 김미영', '간호사 이정은', '생활지도사 최은영'];
+const counselorOptions = [
+  ...staff.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
+  ...staff.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
+];
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -50,7 +54,7 @@ const typeBadge = (type: string) => {
   return map[type] || 'bg-gray-100 text-gray-600';
 };
 
-const emptyForm = { name: '김영순', type: '일반건강', datetime: '', counselor: '간호사 김미영', summary: '' };
+const emptyForm = { name: residentOptions[0], type: '일반건강', datetime: '', counselor: counselorOptions[0], summary: '' };
 
 export default function HealthCounselingPage() {
   const [data, setData] = useState<HealthCounselingItem[]>(initialData);
@@ -66,11 +70,12 @@ export default function HealthCounselingPage() {
 
   const handleSave = () => {
     if (!formData.name || !formData.datetime) return;
+    const resident = residents.find(r => r.name === formData.name);
     const newItem: HealthCounselingItem = {
       id: crypto.randomUUID(),
       datetime: formData.datetime.replace('T', ' '),
       name: formData.name,
-      room: '',
+      room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
       type: formData.type,
       counselor: formData.counselor,
       summary: formData.summary,

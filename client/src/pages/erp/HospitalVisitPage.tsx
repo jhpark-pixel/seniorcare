@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { residents, staff, generateId, daysAgo } from '../../data/mockData';
 
 interface HospitalVisit {
   id: string;
@@ -13,14 +14,14 @@ interface HospitalVisit {
 }
 
 const initialData: HospitalVisit[] = [
-  { id: '1', date: '2026-04-01', name: '김영순', room: '1관 301호', hospital: '배곧서울병원', dept: '내과', companion: '간호사 김미영', note: '혈압약 처방 변경 상담', status: '예약' },
-  { id: '2', date: '2026-04-02', name: '이순자', room: '2관 205호', hospital: '시화병원', dept: '내분비내과', companion: '간호사 이정은', note: '인슐린 용량 조정 외래', status: '예약' },
-  { id: '3', date: '2026-04-05', name: '박정희', room: '1관 402호', hospital: '분당서울대병원', dept: '신경과', companion: '간호사 김미영', note: '치매 정기 외래 (보호자 동행)', status: '예약' },
-  { id: '4', date: '2026-03-28', name: '최옥순', room: '2관 103호', hospital: '배곧서울병원', dept: '정형외과', companion: '생활지도사 최은영', note: '무릎 관절 통증 진료', status: '완료' },
-  { id: '5', date: '2026-03-26', name: '한순이', room: '2관 302호', hospital: '시화병원', dept: '심장내과', companion: '간호사 이정은', note: 'INR 수치 확인 및 와파린 조절', status: '완료' },
-  { id: '6', date: '2026-03-25', name: '정미숙', room: '1관 201호', hospital: '밝은눈안과', dept: '안과', companion: '생활지도사 박수진', note: '안압 검사 및 안약 처방', status: '완료' },
-  { id: '7', date: '2026-03-22', name: '오말순', room: '1관 105호', hospital: '배곧좋은치과', dept: '치과', companion: '생활지도사 최은영', note: '틀니 수리 완료 수령', status: '완료' },
-  { id: '8', date: '2026-04-03', name: '강순덕', room: '2관 401호', hospital: '배곧서울병원', dept: '재활의학과', companion: '간호사 이정은', note: '퇴원 후 재활치료 경과 확인', status: '예약' },
+  { id: '1', date: daysAgo(-1), name: '김영순', room: '1관 101호', hospital: '배곧서울병원', dept: '내과', companion: `간호사 ${staff[1].name}`, note: '혈압약 처방 변경 상담', status: '예약' },
+  { id: '2', date: daysAgo(-2), name: '송미경', room: '2관 205호', hospital: '시화병원', dept: '심장내과', companion: `간호사 ${staff[2].name}`, note: '심부전 외래 진료 및 약 조정', status: '예약' },
+  { id: '3', date: daysAgo(-5), name: '이복자', room: '1관 103호', hospital: '분당서울대병원', dept: '신경과', companion: `간호사 ${staff[1].name}`, note: '치매 정기 외래 (보호자 동행)', status: '예약' },
+  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', hospital: '배곧서울병원', dept: '신경과', companion: `생활지도사 ${staff[4].name}`, note: '뇌졸중 재활 경과 확인', status: '완료' },
+  { id: '5', date: daysAgo(5), name: '윤태식', room: '2관 207호', hospital: '시화병원', dept: '신경과', companion: `간호사 ${staff[2].name}`, note: 'INR 수치 확인 및 와파린 조절', status: '완료' },
+  { id: '6', date: daysAgo(6), name: '정기원', room: '1관 109호', hospital: '배곧서울병원', dept: '정신건강의학과', companion: `생활지도사 ${staff[3].name}`, note: '우울증 약 처방 및 상담', status: '완료' },
+  { id: '7', date: daysAgo(9), name: '박정호', room: '1관 105호', hospital: '배곧좋은치과', dept: '치과', companion: `생활지도사 ${staff[4].name}`, note: '틀니 수리 완료 수령', status: '완료' },
+  { id: '8', date: daysAgo(-3), name: '강옥희', room: '2관 209호', hospital: '배곧서울병원', dept: '정형외과', companion: `간호사 ${staff[2].name}`, note: '관절염 진료 및 약 처방', status: '예약' },
 ];
 
 const statusBadge = (status: string) => {
@@ -32,7 +33,8 @@ const statusBadge = (status: string) => {
   return map[status] || 'bg-gray-100 text-gray-600';
 };
 
-const emptyForm = { name: '', hospital: '', dept: '', date: '', companion: '', note: '' };
+const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
+const emptyForm = { residentId: '', hospital: '', dept: '', date: '', companionId: '', note: '' };
 
 export default function HospitalVisitPage() {
   const [data, setData] = useState<HospitalVisit[]>(initialData);
@@ -43,14 +45,18 @@ export default function HospitalVisitPage() {
   const completed = data.filter(d => d.status === '완료');
 
   const handleSave = () => {
+    if (!formData.residentId || !formData.hospital || !formData.date) return;
+    const res = residents.find(r => r.id === formData.residentId);
+    if (!res) return;
+    const companion = staff.find(s => s.id === formData.companionId);
     const newRecord: HospitalVisit = {
-      id: crypto.randomUUID(),
+      id: generateId('hv'),
       date: formData.date,
-      name: formData.name,
-      room: '',
+      name: res.name,
+      room: `${res.building} ${res.roomNumber}호`,
       hospital: formData.hospital,
       dept: formData.dept,
-      companion: formData.companion,
+      companion: companion ? `${companion.roleLabel} ${companion.name}` : '-',
       note: formData.note,
       status: '예약',
     };
@@ -140,28 +146,46 @@ export default function HospitalVisitPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-4">동행 예약</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
+                <select
+                  value={formData.residentId}
+                  onChange={e => setFormData({ ...formData, residentId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">-- 선택 --</option>
+                  {residentOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">병원명</label>
-                <input type="text" value={formData.hospital} onChange={e => setFormData({ ...formData, hospital: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.hospital} onChange={e => setFormData({ ...formData, hospital: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">진료과</label>
-                <input type="text" value={formData.dept} onChange={e => setFormData({ ...formData, dept: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.dept} onChange={e => setFormData({ ...formData, dept: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">예정일</label>
-                <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">동행자</label>
-                <input type="text" value={formData.companion} onChange={e => setFormData({ ...formData, companion: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <select
+                  value={formData.companionId}
+                  onChange={e => setFormData({ ...formData, companionId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">-- 선택 --</option>
+                  {staff.map(s => (
+                    <option key={s.id} value={s.id}>{s.roleLabel} {s.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">비고</label>
-                <input type="text" value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

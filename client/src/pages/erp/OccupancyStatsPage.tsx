@@ -2,40 +2,67 @@ import React from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { rooms, residents } from '../../data/mockData';
 
-const kpiCards = [
-  { label: '총 세대수', value: '89', unit: '실', color: 'bg-blue-50 text-blue-700', icon: '🏠' },
-  { label: '계약세대', value: '72', unit: '세대', color: 'bg-green-50 text-green-700', icon: '📝' },
-  { label: '입주세대', value: '68', unit: '세대', color: 'bg-indigo-50 text-indigo-700', icon: '🧑‍🤝‍🧑' },
-  { label: '공실', value: '21', unit: '실', color: 'bg-red-50 text-red-700', icon: '🚪' },
-  { label: '입주율', value: '76.4', unit: '%', color: 'bg-amber-50 text-amber-700', icon: '📊' },
-];
+// Derived stats from mockData
+const totalRooms = rooms.length; // 36
+const occupiedRooms = rooms.filter(r => r.status === '사용중').length;
+const emptyRooms = rooms.filter(r => r.status === '빈방').length;
+const activeResidents = residents.filter(r => r.status !== 'DISCHARGED').length;
+const occupancyRate = ((occupiedRooms / totalRooms) * 100).toFixed(1);
+
+const bldg1Rooms = rooms.filter(r => r.building === '1관');
+const bldg2Rooms = rooms.filter(r => r.building === '2관');
 
 const buildingData = [
-  { building: '1관', total: 40, single: 24, double: 16, contracted: 33, occupied: 31, vacancy: 9 },
-  { building: '2관', total: 49, single: 30, double: 19, contracted: 39, occupied: 37, vacancy: 12 },
+  {
+    building: '1관',
+    total: bldg1Rooms.length,
+    single: bldg1Rooms.filter(r => r.type === '1인실').length,
+    double: bldg1Rooms.filter(r => r.type === '2인실').length,
+    contracted: bldg1Rooms.filter(r => r.status === '사용중').length,
+    occupied: bldg1Rooms.filter(r => r.status === '사용중').length,
+    vacancy: bldg1Rooms.filter(r => r.status !== '사용중').length,
+  },
+  {
+    building: '2관',
+    total: bldg2Rooms.length,
+    single: bldg2Rooms.filter(r => r.type === '1인실').length,
+    double: bldg2Rooms.filter(r => r.type === '2인실').length,
+    contracted: bldg2Rooms.filter(r => r.status === '사용중').length,
+    occupied: bldg2Rooms.filter(r => r.status === '사용중').length,
+    vacancy: bldg2Rooms.filter(r => r.status !== '사용중').length,
+  },
+];
+
+const kpiCards = [
+  { label: '총 호실수', value: String(totalRooms), unit: '실', color: 'bg-blue-50 text-blue-700', icon: '🏠' },
+  { label: '계약세대', value: String(occupiedRooms), unit: '세대', color: 'bg-green-50 text-green-700', icon: '📝' },
+  { label: '입주세대', value: String(activeResidents), unit: '세대', color: 'bg-indigo-50 text-indigo-700', icon: '🧑‍🤝‍🧑' },
+  { label: '공실', value: String(emptyRooms), unit: '실', color: 'bg-red-50 text-red-700', icon: '🚪' },
+  { label: '입주율', value: occupancyRate, unit: '%', color: 'bg-amber-50 text-amber-700', icon: '📊' },
 ];
 
 const trendData = [
-  { month: '2025.04', 입주율: 68.5 },
-  { month: '2025.05', 입주율: 70.2 },
-  { month: '2025.06', 입주율: 71.0 },
-  { month: '2025.07', 입주율: 69.8 },
-  { month: '2025.08', 입주율: 72.5 },
-  { month: '2025.09', 입주율: 73.1 },
-  { month: '2025.10', 입주율: 74.0 },
-  { month: '2025.11', 입주율: 72.8 },
-  { month: '2025.12', 입주율: 73.5 },
-  { month: '2026.01', 입주율: 74.2 },
-  { month: '2026.02', 입주율: 75.1 },
-  { month: '2026.03', 입주율: 76.4 },
+  { month: '2025.04', 입주율: 18.5 },
+  { month: '2025.05', 입주율: 20.2 },
+  { month: '2025.06', 입주율: 21.0 },
+  { month: '2025.07', 입주율: 19.8 },
+  { month: '2025.08', 입주율: 22.5 },
+  { month: '2025.09', 입주율: 23.1 },
+  { month: '2025.10', 입주율: 24.0 },
+  { month: '2025.11', 입주율: 22.8 },
+  { month: '2025.12', 입주율: 23.5 },
+  { month: '2026.01', 입주율: 24.2 },
+  { month: '2026.02', 입주율: 25.1 },
+  { month: '2026.03', 입주율: parseFloat(occupancyRate) },
 ];
 
 const funnelSteps = [
-  { label: '상담', value: 45, color: 'bg-blue-500' },
-  { label: '청약', value: 28, color: 'bg-indigo-500' },
-  { label: '계약', value: 22, color: 'bg-purple-500' },
-  { label: '입소', value: 18, color: 'bg-green-500' },
+  { label: '상담', value: 18, color: 'bg-blue-500' },
+  { label: '청약', value: 14, color: 'bg-indigo-500' },
+  { label: '계약', value: 11, color: 'bg-purple-500' },
+  { label: '입소', value: activeResidents, color: 'bg-green-500' },
 ];
 
 export default function OccupancyStatsPage() {
@@ -96,13 +123,13 @@ export default function OccupancyStatsPage() {
               ))}
               <tr className="bg-gray-50 font-semibold">
                 <td className="px-4 py-3 text-gray-900">합계</td>
-                <td className="px-4 py-3 text-center">89실</td>
-                <td className="px-4 py-3 text-center">54실</td>
-                <td className="px-4 py-3 text-center">35실</td>
-                <td className="px-4 py-3 text-center">72세대</td>
-                <td className="px-4 py-3 text-center">68세대</td>
-                <td className="px-4 py-3 text-center text-red-600">21실</td>
-                <td className="px-4 py-3 text-center text-blue-600">76.4%</td>
+                <td className="px-4 py-3 text-center">{totalRooms}실</td>
+                <td className="px-4 py-3 text-center">{rooms.filter(r => r.type === '1인실').length}실</td>
+                <td className="px-4 py-3 text-center">{rooms.filter(r => r.type === '2인실').length}실</td>
+                <td className="px-4 py-3 text-center">{occupiedRooms}세대</td>
+                <td className="px-4 py-3 text-center">{activeResidents}세대</td>
+                <td className="px-4 py-3 text-center text-red-600">{emptyRooms}실</td>
+                <td className="px-4 py-3 text-center text-blue-600">{occupancyRate}%</td>
               </tr>
             </tbody>
           </table>
@@ -116,7 +143,7 @@ export default function OccupancyStatsPage() {
           <LineChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-            <YAxis domain={[60, 85]} tick={{ fontSize: 12 }} unit="%" />
+            <YAxis domain={[0, 50]} tick={{ fontSize: 12 }} unit="%" />
             <Tooltip formatter={(value: number) => [`${value}%`, '입주율']} />
             <Legend />
             <Line type="monotone" dataKey="입주율" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />

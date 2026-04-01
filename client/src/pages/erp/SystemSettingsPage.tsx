@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
+import { staff } from '../../data/mockData';
 
 const tabs = ['기본정보', '코드관리', '요금설정', '알림설정'] as const;
 type Tab = typeof tabs[number];
 
+const director = staff.find(s => s.role === 'DIRECTOR');
+
 const facilityInfo = {
   name: '케어닥 케어홈 배곧신도시점',
   address: '경기도 시흥시 배곧신도시로 123, 케어닥빌딩',
-  ceo: '홍길동',
+  ceo: director?.name ?? '박준혁',
   bizNumber: '123-45-67890',
-  phone: '031-123-4567',
-  fax: '031-123-4568',
-  email: 'baegot@caredoc.kr',
-  capacity: '89',
-  openDate: '2023-06-01',
+  phone: director?.phone ?? '031-431-7700',
+  fax: '031-431-7701',
+  email: director?.email ?? 'director@caredochome.co.kr',
+  capacity: '36',
+  openDate: '2021-01-10',
 };
 
 const feeTable = [
@@ -30,10 +33,12 @@ const codeCategories = [
   { category: '서비스 요청', codes: ['시설보수', '의료요청', '식사변경', '외출신청', '물품요청'] },
 ];
 
+const nurse1 = staff.find(s => s.role === 'NURSE')?.name ?? '김서연';
+
 const alertSettings = [
-  { name: '낙상 감지 알림', target: '간호사, 시설장', method: '앱 푸시 + SMS', enabled: true },
-  { name: '바이탈 이상 알림', target: '담당 간호사', method: '앱 푸시', enabled: true },
-  { name: '미납 알림', target: '시설장', method: '이메일', enabled: true },
+  { name: '낙상 감지 알림', target: `${nurse1}, ${director?.name ?? '박준혁'}`, method: '앱 푸시 + SMS', enabled: true },
+  { name: '바이탈 이상 알림', target: `담당 ${nurse1}`, method: '앱 푸시', enabled: true },
+  { name: '미납 알림', target: director?.name ?? '박준혁', method: '이메일', enabled: true },
   { name: '입퇴소 알림', target: '전체 직원', method: '앱 푸시', enabled: false },
   { name: '프로그램 알림', target: '생활지도사', method: '앱 푸시', enabled: true },
   { name: '야간 이상행동 알림', target: '야간 당직자', method: '앱 푸시 + SMS', enabled: true },
@@ -50,6 +55,10 @@ export default function SystemSettingsPage() {
 
   const toggleAlert = (index: number) => {
     setAlerts((prev) => prev.map((a, i) => i === index ? { ...a, enabled: !a.enabled } : a));
+  };
+
+  const handleSave = () => {
+    alert('설정이 저장되었습니다.');
   };
 
   return (
@@ -98,7 +107,7 @@ export default function SystemSettingsPage() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">{item.label}</label>
                 <input
                   type="text"
-                  value={(form as any)[item.field]}
+                  value={(form as Record<string, string>)[item.field]}
                   onChange={(e) => handleChange(item.field, e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#F0835A] focus:border-[#F0835A] outline-none"
                 />
@@ -106,7 +115,7 @@ export default function SystemSettingsPage() {
             ))}
           </div>
           <div className="mt-6 flex justify-end">
-            <button className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
+            <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
               저장
             </button>
           </div>
@@ -207,6 +216,11 @@ export default function SystemSettingsPage() {
               ))}
             </tbody>
           </table>
+          <div className="px-4 py-3 border-t border-gray-100 flex justify-end">
+            <button onClick={handleSave} className="px-6 py-2 bg-[#F0835A] text-white rounded-lg hover:bg-[#d9714d] font-medium text-sm transition-colors">
+              저장
+            </button>
+          </div>
         </div>
       )}
     </div>
