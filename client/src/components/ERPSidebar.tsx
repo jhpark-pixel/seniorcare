@@ -14,6 +14,22 @@ interface MenuGroup {
 
 const menuStructure: Record<string, MenuGroup[]> = {
   home: [],
+  consultation: [
+    { title: '전화상담', icon: '📞', items: [
+      { path: '/consultation/phone/register', label: '전화상담 접수' },
+      { path: '/consultation/phone/list', label: '전화상담 내역' },
+      { path: '/consultation/phone/callback', label: '콜백 관리' },
+    ]},
+    { title: '방문상담', icon: '🏠', items: [
+      { path: '/consultation/visit/schedule', label: '방문상담 예약' },
+      { path: '/consultation/visit/list', label: '방문상담 내역' },
+      { path: '/consultation/visit/tour', label: '시설견학 관리' },
+    ]},
+    { title: '상담현황', icon: '📊', items: [
+      { path: '/consultation/status/pipeline', label: '입주 파이프라인' },
+      { path: '/consultation/status/stats', label: '상담 통계' },
+    ]},
+  ],
   resident: [
     { title: '상담관리', icon: '📋', items: [
       { path: '/resident/counseling/register', label: '상담등록' },

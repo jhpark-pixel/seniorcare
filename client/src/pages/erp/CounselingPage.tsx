@@ -79,27 +79,56 @@ export default function CounselingPage() {
   const [data, setData] = useCollection<CounselingItem>('counselings', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const filtered = search
     ? data.filter(d => d.name.includes(search) || d.summary.includes(search))
     : data;
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({
+      date: item.date.replace(' ', 'T'),
+      name: item.name,
+      phone: item.phone,
+      type: item.type,
+      summary: item.summary,
+      result: item.result,
+    });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.date) return;
-    const newItem: CounselingItem = {
-      id: generateId('counsel'),
-      date: formData.date.replace('T', ' '),
-      name: formData.name,
-      phone: formData.phone,
-      type: formData.type,
-      summary: formData.summary,
-      result: formData.result,
-      next: '-',
-      status: '대기',
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        date: formData.date.replace('T', ' '),
+        name: formData.name,
+        phone: formData.phone,
+        type: formData.type,
+        summary: formData.summary,
+        result: formData.result,
+      } : d));
+    } else {
+      const newItem: CounselingItem = {
+        id: generateId('counsel'),
+        date: formData.date.replace('T', ' '),
+        name: formData.name,
+        phone: formData.phone,
+        type: formData.type,
+        summary: formData.summary,
+        result: formData.result,
+        next: '-',
+        status: '대기',
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -373,6 +402,12 @@ export default function CounselingPage() {
                             </>
                           )}
                           <button
+                            onClick={() => handleEdit(row.id)}
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            수정
+                          </button>
+                          <button
                             onClick={() => handleDelete(row.id)}
                             className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
                           >
@@ -472,7 +507,7 @@ export default function CounselingPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">신규 상담등록</h2>
+            <h2 className="text-lg font-bold text-gray-900">{editingId ? '수정' : '신규 상담등록'}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">상담일시</label>
@@ -535,7 +570,7 @@ export default function CounselingPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => { setShowModal(false); setFormData(emptyForm); }}
+                onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }}
                 className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 취소

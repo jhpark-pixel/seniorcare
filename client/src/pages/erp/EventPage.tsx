@@ -53,6 +53,7 @@ export default function EventPage() {
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(3); // April = index 3
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const totalDays = daysInMonth(year, month);
   const firstDay = new Date(year, month, 1).getDay();
@@ -69,20 +70,42 @@ export default function EventPage() {
 
   const upcoming = events.filter(e => e.status !== '완료');
 
+  const handleEdit = (id: string) => {
+    const item = events.find(e => e.id === id);
+    if (!item) return;
+    setFormData({ title: item.title, description: item.description, date: item.date, time: item.time, location: item.location, target: item.target, department: item.department });
+    setEditingId(id);
+    navigate('/community/event/register');
+  };
+
   const handleSave = () => {
     if (!formData.title || !formData.date) return;
-    const newEvent: CalendarEvent = {
-      id: generateId('ev'),
-      title: formData.title,
-      description: formData.description,
-      date: formData.date,
-      time: formData.time,
-      location: formData.location,
-      target: formData.target,
-      department: formData.department,
-      status: '계획',
-    };
-    setEvents(prev => [...prev, newEvent]);
+    if (editingId) {
+      setEvents(prev => prev.map(e => e.id === editingId ? {
+        ...e,
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+        target: formData.target,
+        department: formData.department,
+      } : e));
+      setEditingId(null);
+    } else {
+      const newEvent: CalendarEvent = {
+        id: generateId('ev'),
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+        target: formData.target,
+        department: formData.department,
+        status: '계획',
+      };
+      setEvents(prev => [...prev, newEvent]);
+    }
     setFormData(emptyForm);
     navigate('/community/event/status');
   };
@@ -131,7 +154,7 @@ export default function EventPage() {
       {/* register: 행사 계획 등록 폼 */}
       {segment === 'register' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">행사 계획 등록</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{editingId ? '행사 수정' : '행사 계획 등록'}</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">행사명</label>
@@ -167,7 +190,7 @@ export default function EventPage() {
               </select>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setFormData(emptyForm); navigate('/community/event/status'); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setFormData(emptyForm); setEditingId(null); navigate('/community/event/status'); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-6 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d] font-medium">등록</button>
             </div>
           </div>
@@ -265,6 +288,9 @@ export default function EventPage() {
                       </div>
                     </div>
                     <div className="flex gap-1">
+                      <button onClick={() => handleEdit(ev.id)} className="flex-shrink-0 px-2 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">
+                        수정
+                      </button>
                       {next && (
                         <button onClick={() => handleStatusChange(ev.id, next)} className="flex-shrink-0 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">
                           {next}으로 변경

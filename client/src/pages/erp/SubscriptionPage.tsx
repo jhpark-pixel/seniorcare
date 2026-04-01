@@ -64,6 +64,7 @@ export default function SubscriptionPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyFormBase);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [depositFilter, setDepositFilter] = useState('전체');
 
@@ -84,21 +85,41 @@ export default function SubscriptionPage() {
     totalUnpaid: data.filter(d => d.deposit === '미납').reduce((s, d) => s + d.amount, 0),
   };
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, phone: item.phone, room: item.room, wishDate: item.wishDate, amount: String(item.amount) });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.wishDate) return;
-    const newItem: SubscriptionItem = {
-      id: generateId('sub'),
-      date: new Date().toISOString().slice(0, 10),
-      name: formData.name,
-      phone: formData.phone,
-      room: formData.room,
-      wishDate: formData.wishDate,
-      amount: Number(formData.amount) || 5000000,
-      deposit: '미납',
-      progress: '접수',
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: formData.name,
+        phone: formData.phone,
+        room: formData.room,
+        wishDate: formData.wishDate,
+        amount: Number(formData.amount) || 5000000,
+      } : d));
+    } else {
+      const newItem: SubscriptionItem = {
+        id: generateId('sub'),
+        date: new Date().toISOString().slice(0, 10),
+        name: formData.name,
+        phone: formData.phone,
+        room: formData.room,
+        wishDate: formData.wishDate,
+        amount: Number(formData.amount) || 5000000,
+        deposit: '미납',
+        progress: '접수',
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -228,6 +249,7 @@ export default function SubscriptionPage() {
                               <button onClick={() => handleCancel(row.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">취소</button>
                             </>
                           )}
+                          <button onClick={() => handleEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                           <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">삭제</button>
                         </div>
                       </td>
@@ -395,7 +417,7 @@ export default function SubscriptionPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">신규 청약 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900">{editingId ? '수정' : '신규 청약 등록'}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">신청자명</label>
@@ -427,7 +449,7 @@ export default function SubscriptionPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }}
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }}
                 className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave}
                 className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>

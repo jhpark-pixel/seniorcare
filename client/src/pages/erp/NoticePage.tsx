@@ -55,6 +55,7 @@ export default function NoticePage() {
   const [notices, setNotices] = useCollection<Notice>('notices', initialNotices);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
@@ -65,19 +66,37 @@ export default function NoticePage() {
   const pinned = filtered.filter(n => n.pinned);
   const regular = filtered.filter(n => !n.pinned);
 
+  const handleEdit = (id: string) => {
+    const item = notices.find(n => n.id === id);
+    if (!item) return;
+    setFormData({ title: item.title, category: item.category, content: item.content });
+    setEditingId(id);
+    navigate('/community/notice/register');
+  };
+
   const handleSave = () => {
     if (!formData.title) return;
-    const newNotice: Notice = {
-      id: generateId('nt'),
-      title: formData.title,
-      category: formData.category,
-      content: formData.content,
-      author: staff[0].name,
-      date: new Date().toISOString().slice(0, 10),
-      views: 0,
-      pinned: false,
-    };
-    setNotices(prev => [newNotice, ...prev]);
+    if (editingId) {
+      setNotices(prev => prev.map(n => n.id === editingId ? {
+        ...n,
+        title: formData.title,
+        category: formData.category,
+        content: formData.content,
+      } : n));
+      setEditingId(null);
+    } else {
+      const newNotice: Notice = {
+        id: generateId('nt'),
+        title: formData.title,
+        category: formData.category,
+        content: formData.content,
+        author: staff[0].name,
+        date: new Date().toISOString().slice(0, 10),
+        views: 0,
+        pinned: false,
+      };
+      setNotices(prev => [newNotice, ...prev]);
+    }
     setFormData(emptyForm);
     navigate('/community/notice/list');
   };
@@ -116,7 +135,7 @@ export default function NoticePage() {
       {/* register: 공지사항 작성 폼 */}
       {segment === 'register' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">공지사항 작성</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{editingId ? '공지사항 수정' : '공지사항 작성'}</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
@@ -153,7 +172,7 @@ export default function NoticePage() {
             </div>
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => { setFormData(emptyForm); navigate('/community/notice/list'); }}
+                onClick={() => { setFormData(emptyForm); setEditingId(null); navigate('/community/notice/list'); }}
                 className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 취소
@@ -207,6 +226,7 @@ export default function NoticePage() {
                   </span>
                 </div>
                 <div className="flex gap-1">
+                  <button onClick={() => handleEdit(notice.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                   <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">고정해제</button>
                   <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
                 </div>
@@ -248,6 +268,7 @@ export default function NoticePage() {
                     <td className="px-5 py-3 text-sm text-gray-500 text-right">{notice.views}</td>
                     <td className="px-5 py-3 text-center">
                       <div className="flex justify-center gap-1">
+                        <button onClick={() => handleEdit(notice.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                         <button onClick={() => handleTogglePin(notice.id)} className="px-2 py-1 text-xs bg-yellow-400 text-yellow-900 rounded hover:bg-yellow-500">고정</button>
                         <button onClick={() => handleDelete(notice.id)} className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">삭제</button>
                       </div>

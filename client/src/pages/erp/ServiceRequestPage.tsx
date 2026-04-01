@@ -87,29 +87,51 @@ export default function ServiceRequestPage() {
   const [filter, setFilter] = useState<string>('전체');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const filtered = data
     .filter(d => filter === '전체' || d.status === filter)
     .filter(d => !search || d.name.includes(search) || d.content.includes(search));
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    const res = residents.find(r => r.name === item.name);
+    setFormData({ residentId: res?.id || '', type: item.type, content: item.content, dueDate: item.dueDate });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.residentId || !formData.content) return;
     const res = residents.find(r => r.id === formData.residentId);
     if (!res) return;
-    const newItem: ServiceRequestItem = {
-      id: generateId('sr'),
-      date: new Date().toISOString().slice(0, 10),
-      name: res.name,
-      room: `${res.building} ${res.roomNumber}호`,
-      type: formData.type,
-      content: formData.content,
-      dueDate: formData.dueDate,
-      handler: '-',
-      status: '대기',
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: res.name,
+        room: `${res.building} ${res.roomNumber}호`,
+        type: formData.type,
+        content: formData.content,
+        dueDate: formData.dueDate,
+      } : d));
+    } else {
+      const newItem: ServiceRequestItem = {
+        id: generateId('sr'),
+        date: new Date().toISOString().slice(0, 10),
+        name: res.name,
+        room: `${res.building} ${res.roomNumber}호`,
+        type: formData.type,
+        content: formData.content,
+        dueDate: formData.dueDate,
+        handler: '-',
+        status: '대기',
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -324,6 +346,12 @@ export default function ServiceRequestPage() {
                             </button>
                           )}
                           <button
+                            onClick={() => handleEdit(row.id)}
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            수정
+                          </button>
+                          <button
                             onClick={() => handleDelete(row.id)}
                             className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500"
                           >
@@ -340,6 +368,62 @@ export default function ServiceRequestPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showModal && editingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">수정</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
+                <select
+                  value={formData.residentId}
+                  onChange={e => setFormData({ ...formData, residentId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  <option value="">-- 선택 --</option>
+                  {residentOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">서비스유형</label>
+                <select
+                  value={formData.type}
+                  onChange={e => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                >
+                  {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <textarea
+                  value={formData.content}
+                  onChange={e => setFormData({ ...formData, content: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">예정일</label>
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
         </div>

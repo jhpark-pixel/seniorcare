@@ -64,6 +64,7 @@ export default function MaintenancePage() {
   const [requests, setRequests] = useState<MaintenanceRequest[]>(initialRequests);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [completeId, setCompleteId] = useState<string | null>(null);
   const [completeCost, setCompleteCost] = useState('');
 
@@ -73,20 +74,38 @@ export default function MaintenancePage() {
   const inProgressRequests = requests.filter(r => r.status !== '완료');
   const historyRequests = requests.filter(r => r.status === '완료');
 
+  const handleEdit = (id: string) => {
+    const item = requests.find(r => r.id === id);
+    if (!item) return;
+    setFormData({ location: item.location, description: item.description, priority: item.priority });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
-    const newReq: MaintenanceRequest = {
-      id: crypto.randomUUID(),
-      requestDate: new Date().toISOString().slice(0, 10),
-      requester: director,
-      location: formData.location,
-      description: formData.description,
-      priority: formData.priority,
-      status: '요청',
-      completionDate: null,
-      cost: null,
-    };
-    setRequests(prev => [newReq, ...prev]);
+    if (editingId) {
+      setRequests(prev => prev.map(r => r.id === editingId ? {
+        ...r,
+        location: formData.location,
+        description: formData.description,
+        priority: formData.priority,
+      } : r));
+    } else {
+      const newReq: MaintenanceRequest = {
+        id: crypto.randomUUID(),
+        requestDate: new Date().toISOString().slice(0, 10),
+        requester: director,
+        location: formData.location,
+        description: formData.description,
+        priority: formData.priority,
+        status: '요청',
+        completionDate: null,
+        cost: null,
+      };
+      setRequests(prev => [newReq, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -148,6 +167,9 @@ export default function MaintenancePage() {
                     )}
                     {req.status === '진행중' && (
                       <button onClick={() => openComplete(req.id)} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
+                    )}
+                    {req.status !== '완료' && (
+                      <button onClick={() => handleEdit(req.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                     )}
                   </div>
                 </td>
@@ -272,7 +294,7 @@ export default function MaintenancePage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">요청 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? '수정' : '요청 등록'}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">위치</label>
@@ -293,7 +315,7 @@ export default function MaintenancePage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

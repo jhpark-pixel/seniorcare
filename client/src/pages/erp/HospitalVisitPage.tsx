@@ -56,27 +56,54 @@ export default function HospitalVisitPage() {
 
   const [data, setData] = useCollection<HospitalVisit>('hospitalVisits', initialData);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const upcoming = data.filter(d => d.status === '예약');
   const completed = data.filter(d => d.status === '완료');
+
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    const res = residents.find(r => r.name === item.name);
+    const comp = staff.find(s => item.companion.includes(s.name));
+    setFormData({ residentId: res?.id || '', hospital: item.hospital, dept: item.dept, date: item.date, companionId: comp?.id || '', note: item.note });
+    setEditingId(id);
+    setShowEditModal(true);
+  };
 
   const handleSave = () => {
     if (!formData.residentId || !formData.hospital || !formData.date) return;
     const res = residents.find(r => r.id === formData.residentId);
     if (!res) return;
     const companion = staff.find(s => s.id === formData.companionId);
-    const newRecord: HospitalVisit = {
-      id: generateId('hv'),
-      date: formData.date,
-      name: res.name,
-      room: `${res.building} ${res.roomNumber}호`,
-      hospital: formData.hospital,
-      dept: formData.dept,
-      companion: companion ? `${companion.roleLabel} ${companion.name}` : '-',
-      note: formData.note,
-      status: '예약',
-    };
-    setData(prev => [newRecord, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        date: formData.date,
+        name: res.name,
+        room: `${res.building} ${res.roomNumber}호`,
+        hospital: formData.hospital,
+        dept: formData.dept,
+        companion: companion ? `${companion.roleLabel} ${companion.name}` : '-',
+        note: formData.note,
+      } : d));
+      setEditingId(null);
+      setShowEditModal(false);
+    } else {
+      const newRecord: HospitalVisit = {
+        id: generateId('hv'),
+        date: formData.date,
+        name: res.name,
+        room: `${res.building} ${res.roomNumber}호`,
+        hospital: formData.hospital,
+        dept: formData.dept,
+        companion: companion ? `${companion.roleLabel} ${companion.name}` : '-',
+        note: formData.note,
+        status: '예약',
+      };
+      setData(prev => [newRecord, ...prev]);
+    }
     setFormData(emptyForm);
   };
 
@@ -206,6 +233,7 @@ export default function HospitalVisitPage() {
                       {row.note && <p className="text-xs text-gray-400 mt-1">{row.note}</p>}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => handleEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                       <button onClick={() => handleStatusChange(row.id, '완료')} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
                       <button onClick={() => handleStatusChange(row.id, '취소')} className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">취소</button>
                     </div>
@@ -213,6 +241,53 @@ export default function HospitalVisitPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showEditModal && editingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">수정</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택</label>
+                <select value={formData.residentId} onChange={e => setFormData({ ...formData, residentId: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                  <option value="">-- 선택 --</option>
+                  {residentOptions.map(r => (<option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">병원명</label>
+                  <input type="text" value={formData.hospital} onChange={e => setFormData({ ...formData, hospital: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">진료과</label>
+                  <input type="text" value={formData.dept} onChange={e => setFormData({ ...formData, dept: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">예정일</label>
+                  <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">동행자</label>
+                  <select value={formData.companionId} onChange={e => setFormData({ ...formData, companionId: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]">
+                    <option value="">-- 선택 --</option>
+                    {staff.map(s => (<option key={s.id} value={s.id}>{s.roleLabel} {s.name}</option>))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">비고</label>
+                <input type="text" value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowEditModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
+            </div>
           </div>
         </div>
       )}

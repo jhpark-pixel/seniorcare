@@ -95,6 +95,7 @@ export default function ContractPage() {
   const [depData, setDepData] = useCollection<DepositRecord>('contractDeposits', depositRecordsInit);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedDepId, setSelectedDepId] = useState<string | null>(null);
@@ -121,23 +122,45 @@ export default function ContractPage() {
     }
   };
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, room: item.room, type: item.type, startDate: item.startDate, endDate: item.endDate, monthly: String(item.monthly), deposit: String(item.deposit) });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.startDate || !formData.endDate) return;
-    const newItem: ContractItem = {
-      id: generateId('contract'),
-      contractNo: nextContractNo(),
-      name: formData.name,
-      room: formData.room,
-      type: formData.type,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      monthly: Number(formData.monthly) || 0,
-      deposit: Number(formData.deposit) || 0,
-      depositStatus: '미납',
-      status: '계약중',
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: formData.name,
+        room: formData.room,
+        type: formData.type,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        monthly: Number(formData.monthly) || 0,
+        deposit: Number(formData.deposit) || 0,
+      } : d));
+    } else {
+      const newItem: ContractItem = {
+        id: generateId('contract'),
+        contractNo: nextContractNo(),
+        name: formData.name,
+        room: formData.room,
+        type: formData.type,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        monthly: Number(formData.monthly) || 0,
+        deposit: Number(formData.deposit) || 0,
+        depositStatus: '미납',
+        status: '계약중',
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -257,6 +280,7 @@ export default function ContractPage() {
                             className={`px-2 py-1 text-xs rounded text-white ${row.status === '계약중' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'}`}>
                             {row.status === '계약중' ? '만료' : '계약중'}
                           </button>
+                          <button onClick={() => handleEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                           <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">삭제</button>
                         </div>
                       </td>
@@ -444,7 +468,7 @@ export default function ContractPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">신규 계약 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900">{editingId ? '수정' : '신규 계약 등록'}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
@@ -490,7 +514,7 @@ export default function ContractPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }}
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }}
                 className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave}
                 className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>

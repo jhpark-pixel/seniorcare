@@ -91,6 +91,7 @@ export default function IntensiveCarePage() {
   const [data, setData] = useCollection<IntensiveCareRecord>('intensiveCare', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [devices, setDevices] = useCollection<Device>('intensiveCareDevices', initialDevices);
   const [deviceFilter, setDeviceFilter] = useState('전체');
 
@@ -98,22 +99,43 @@ export default function IntensiveCarePage() {
   const gradeCount = { '상': 0, '중': 0, '하': 0 };
   activeData.forEach(d => { gradeCount[d.grade as keyof typeof gradeCount]++; });
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, reason: item.reason, grade: item.grade, manager: item.manager });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.reason) return;
-    const resident = residents.find(r => r.name === formData.name);
-    const newRecord: IntensiveCareRecord = {
-      id: crypto.randomUUID(),
-      name: formData.name,
-      room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
-      reason: formData.reason,
-      grade: formData.grade,
-      period: `${new Date().toISOString().slice(0, 10)} ~ 현재`,
-      manager: formData.manager,
-      active: true,
-      vitals: { bp: '-', hr: '-', temp: '-', sugar: '-' },
-    };
-    setData(prev => [...prev, newRecord]);
+    if (editingId) {
+      const resident = residents.find(r => r.name === formData.name);
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: formData.name,
+        room: resident ? `${resident.building} ${resident.roomNumber}호` : d.room,
+        reason: formData.reason,
+        grade: formData.grade,
+        manager: formData.manager,
+      } : d));
+    } else {
+      const resident = residents.find(r => r.name === formData.name);
+      const newRecord: IntensiveCareRecord = {
+        id: crypto.randomUUID(),
+        name: formData.name,
+        room: resident ? `${resident.building} ${resident.roomNumber}호` : '',
+        reason: formData.reason,
+        grade: formData.grade,
+        period: `${new Date().toISOString().slice(0, 10)} ~ 현재`,
+        manager: formData.manager,
+        active: true,
+        vitals: { bp: '-', hr: '-', temp: '-', sugar: '-' },
+      };
+      setData(prev => [...prev, newRecord]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -354,10 +376,16 @@ export default function IntensiveCarePage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2 border-t">
+                  <div className="mt-3 pt-2 border-t flex gap-1">
+                    <button
+                      onClick={() => handleEdit(resident.id)}
+                      className="flex-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 font-medium"
+                    >
+                      수정
+                    </button>
                     <button
                       onClick={() => handleComplete(resident.id)}
-                      className="w-full px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 font-medium"
+                      className="flex-1 px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 font-medium"
                     >
                       완료
                     </button>
@@ -622,7 +650,7 @@ export default function IntensiveCarePage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">대상자 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? '수정' : '대상자 등록'}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
@@ -650,7 +678,7 @@ export default function IntensiveCarePage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

@@ -10,7 +10,7 @@ function getTabFromPath(pathname: string): string {
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length === 0) return 'home';
   const first = segments[0];
-  const tabIds = ['resident', 'health', 'concierge', 'community', 'meal', 'facility', 'stats', 'admin'];
+  const tabIds = ['consultation', 'resident', 'health', 'concierge', 'community', 'meal', 'facility', 'stats', 'admin'];
   if (tabIds.includes(first)) return first;
   if (first === 'residents') return 'resident';
   if (first === 'health-records') return 'health';
@@ -50,6 +50,7 @@ export default function ERPLayout() {
 
   const defaultPaths: Record<string, string> = {
     home: '/home',
+    consultation: '/consultation/phone/register',
     resident: '/resident/counseling/register',
     health: '/health/records/daily',
     concierge: '/concierge/service/register',

@@ -126,6 +126,7 @@ export default function ComplaintPage() {
   const [data, setData] = useCollection<ComplaintItem>('complaints', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [ratingId, setRatingId] = useState<string | null>(null);
   const [ratingValue, setRatingValue] = useState(0);
   const [search, setSearch] = useState('');
@@ -140,23 +141,44 @@ export default function ComplaintPage() {
     .filter(d => statusFilter === '전체' || d.processStatus === statusFilter)
     .filter(d => !search || d.complainant.includes(search) || d.content.includes(search));
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    // Try to find resident from complainant string
+    const res = residents.find(r => item.complainant.includes(r.name));
+    setFormData({ residentId: res?.id || '', type: item.type, content: item.content });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.residentId || !formData.content) return;
     const res = residents.find(r => r.id === formData.residentId);
     if (!res) return;
-    const newItem: ComplaintItem = {
-      id: generateId('cp'),
-      date: new Date().toISOString().slice(0, 10),
-      complainant: `${res.emergencyContact.name} (${res.name} ${res.emergencyContact.relationship})`,
-      phone: res.emergencyContact.phone,
-      type: formData.type,
-      content: formData.content,
-      processStatus: '접수',
-      processDate: '-',
-      satisfaction: null,
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        complainant: `${res.emergencyContact.name} (${res.name} ${res.emergencyContact.relationship})`,
+        phone: res.emergencyContact.phone,
+        type: formData.type,
+        content: formData.content,
+      } : d));
+    } else {
+      const newItem: ComplaintItem = {
+        id: generateId('cp'),
+        date: new Date().toISOString().slice(0, 10),
+        complainant: `${res.emergencyContact.name} (${res.name} ${res.emergencyContact.relationship})`,
+        phone: res.emergencyContact.phone,
+        type: formData.type,
+        content: formData.content,
+        processStatus: '접수',
+        processDate: '-',
+        satisfaction: null,
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -412,6 +434,7 @@ export default function ComplaintPage() {
                           {(row.processStatus === '접수' || row.processStatus === '처리중') && (
                             <button onClick={() => changeStatus(row.id, '완료')} className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">완료</button>
                           )}
+                          <button onClick={() => handleEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                           <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">삭제</button>
                         </div>
                       </td>
@@ -491,6 +514,38 @@ export default function ComplaintPage() {
                   <div className="text-xs text-gray-400 mt-1">{total > 0 ? Math.round((item.count / total) * 100) : 0}%</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showModal && editingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">수정</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">입소자 선택 (보호자 자동 연결)</label>
+                <select value={formData.residentId} onChange={e => setFormData({ ...formData, residentId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]">
+                  <option value="">-- 입소자 선택 --</option>
+                  {residentOptions.map(r => (<option key={r.id} value={r.id}>{r.name} ({r.building} {r.roomNumber}호)</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>
+                <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]">
+                  {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F0835A]" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
         </div>

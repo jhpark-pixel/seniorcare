@@ -82,6 +82,7 @@ export default function SettlementPage() {
     .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` })), [residents]);
   const [showPayModal, setShowPayModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [payForm, setPayForm] = useState(emptyPayment);
   const [addForm, setAddForm] = useState({ name: '', room: '', totalDeposit: '30000000', method: '일시납' });
@@ -130,21 +131,41 @@ export default function SettlementPage() {
     if (found) setAddForm(prev => ({ ...prev, name: found.name, room: found.room }));
   };
 
+  const handleEditSettlement = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setAddForm({ name: item.name, room: item.room, totalDeposit: String(item.totalDeposit), method: item.method });
+    setEditingId(id);
+    setShowAddModal(true);
+  };
+
   const handleAddSave = () => {
     if (!addForm.name) return;
-    const newRecord: SettlementRecord = {
-      id: generateId('settle'),
-      name: addForm.name,
-      room: addForm.room,
-      totalDeposit: Number(addForm.totalDeposit) || 0,
-      paid: 0,
-      balance: Number(addForm.totalDeposit) || 0,
-      method: addForm.method,
-      lastPaidDate: '-',
-      status: '미납',
-    };
-    setData(prev => [newRecord, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: addForm.name,
+        room: addForm.room,
+        totalDeposit: Number(addForm.totalDeposit) || 0,
+        balance: Math.max(0, (Number(addForm.totalDeposit) || 0) - d.paid),
+        method: addForm.method,
+      } : d));
+    } else {
+      const newRecord: SettlementRecord = {
+        id: generateId('settle'),
+        name: addForm.name,
+        room: addForm.room,
+        totalDeposit: Number(addForm.totalDeposit) || 0,
+        paid: 0,
+        balance: Number(addForm.totalDeposit) || 0,
+        method: addForm.method,
+        lastPaidDate: '-',
+        status: '미납',
+      };
+      setData(prev => [newRecord, ...prev]);
+    }
     setShowAddModal(false);
+    setEditingId(null);
     setAddForm({ name: '', room: '', totalDeposit: '30000000', method: '일시납' });
   };
 
@@ -254,9 +275,12 @@ export default function SettlementPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {row.balance > 0 && (
-                          <button onClick={() => openPayModal(row.id)} className="px-2 py-1 text-xs bg-[#F0835A] text-white rounded hover:bg-[#d9714d]">납부등록</button>
-                        )}
+                        <div className="flex gap-1">
+                          {row.balance > 0 && (
+                            <button onClick={() => openPayModal(row.id)} className="px-2 py-1 text-xs bg-[#F0835A] text-white rounded hover:bg-[#d9714d]">납부등록</button>
+                          )}
+                          <button onClick={() => handleEditSettlement(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -368,7 +392,7 @@ export default function SettlementPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">정산 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? '수정' : '정산 등록'}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
@@ -395,7 +419,7 @@ export default function SettlementPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleAddSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

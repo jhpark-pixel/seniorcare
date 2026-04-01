@@ -62,6 +62,7 @@ import IoTAlertSettingsPage from './pages/erp/IoTAlertSettingsPage';
 import ResidentDataPage from './pages/erp/ResidentDataPage';
 import ExcelExportPage from './pages/erp/ExcelExportPage';
 import PermissionsPage from './pages/erp/PermissionsPage';
+import AdmissionCounselingPage from './pages/erp/AdmissionCounselingPage';
 
 export const AuthContext = createContext<ReturnType<typeof useAuth> | null>(null);
 export const SocketContext = createContext<ReturnType<typeof useSocket> | null>(null);
@@ -98,6 +99,19 @@ function App() {
               {/* HOME */}
               <Route index element={<Navigate to="/home" replace />} />
               <Route path="home" element={<ERPHome />} />
+
+              {/* 입주상담 */}
+              <Route path="consultation">
+                <Route index element={<Navigate to="/consultation/phone/register" replace />} />
+                <Route path="phone/register" element={<AdmissionCounselingPage />} />
+                <Route path="phone/list" element={<AdmissionCounselingPage />} />
+                <Route path="phone/callback" element={<AdmissionCounselingPage />} />
+                <Route path="visit/schedule" element={<AdmissionCounselingPage />} />
+                <Route path="visit/list" element={<AdmissionCounselingPage />} />
+                <Route path="visit/tour" element={<AdmissionCounselingPage />} />
+                <Route path="status/pipeline" element={<AdmissionCounselingPage />} />
+                <Route path="status/stats" element={<AdmissionCounselingPage />} />
+              </Route>
 
               {/* 입소자관리 */}
               <Route path="resident">

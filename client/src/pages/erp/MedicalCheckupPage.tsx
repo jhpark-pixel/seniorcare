@@ -68,6 +68,7 @@ export default function MedicalCheckupPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [resultName, setResultName] = useState(residentOptions[0]);
   const [historySearch, setHistorySearch] = useState('');
   const [historyType, setHistoryType] = useState('전체');
@@ -76,9 +77,30 @@ export default function MedicalCheckupPage() {
   const upcoming = data.filter(d => new Date(d.date) >= today);
   const past = data.filter(d => new Date(d.date) < today);
 
+  const handleFullEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, type: item.type, hospital: item.hospital, doctor: item.doctor, date: item.date, result: item.result === '-' ? '' : item.result });
+    setEditingId(id);
+    setEditId(null);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (editId) {
       setData(prev => prev.map(r => r.id === editId ? { ...r, result: formData.result } : r));
+    } else if (editingId) {
+      const resident = residents.find(r => r.name === formData.name);
+      setData(prev => prev.map(r => r.id === editingId ? {
+        ...r,
+        name: formData.name,
+        room: resident ? `${resident.building} ${resident.roomNumber}호` : r.room,
+        type: formData.type,
+        hospital: formData.hospital,
+        doctor: formData.doctor,
+        date: formData.date,
+        result: formData.result || '-',
+      } : r));
     } else {
       const resident = residents.find(r => r.name === formData.name);
       const newRecord: Checkup = {
@@ -96,6 +118,7 @@ export default function MedicalCheckupPage() {
     }
     setFormData(emptyForm);
     setEditId(null);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -335,7 +358,8 @@ export default function MedicalCheckupPage() {
                       </td>
                       <td className="px-4 py-2.5 text-gray-600">{row.nextDate || '-'}</td>
                       <td className="px-4 py-2.5">
-                        <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">결과수정</button>
+                        <button onClick={() => handleFullEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
+                          <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600">결과수정</button>
                       </td>
                     </tr>
                   ))}
@@ -422,7 +446,8 @@ export default function MedicalCheckupPage() {
                         </td>
                         <td className="px-4 py-2.5 text-gray-600">{row.nextDate || '-'}</td>
                         <td className="px-4 py-2.5">
-                          <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">결과수정</button>
+                          <button onClick={() => handleFullEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
+                          <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600">결과수정</button>
                         </td>
                       </tr>
                     );
@@ -498,7 +523,8 @@ export default function MedicalCheckupPage() {
                         <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate">{row.result || '-'}</td>
                         <td className="px-4 py-2.5 text-gray-600">{row.nextDate}</td>
                         <td className="px-4 py-2.5">
-                          <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">결과수정</button>
+                          <button onClick={() => handleFullEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
+                          <button onClick={() => openEdit(row)} className="px-2 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600">결과수정</button>
                         </td>
                       </tr>
                     );
@@ -513,7 +539,7 @@ export default function MedicalCheckupPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{editId ? '결과 수정' : '검진 등록'}</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editId ? '결과 수정' : editingId ? '수정' : '검진 등록'}</h2>
             <div className="space-y-3">
               {!editId && (
                 <>
@@ -553,7 +579,7 @@ export default function MedicalCheckupPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setEditId(null); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowModal(false); setEditId(null); setEditingId(null); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

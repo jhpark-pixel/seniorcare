@@ -63,6 +63,7 @@ export default function BillingPage() {
   const [payModalId, setPayModalId] = useState<string | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [addForm, setAddForm] = useState({ name: '', room: '', month: '2026-03', admin: '1800000', meal: '450000', utility: '180000', service: '120000' });
 
   const filtered = monthFilter === '전체' ? data : data.filter(d => d.month === monthFilter);
@@ -93,22 +94,44 @@ export default function BillingPage() {
     if (found) setAddForm(prev => ({ ...prev, name: found.name, room: found.room }));
   };
 
+  const handleEditBilling = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setAddForm({ name: item.name, room: item.room, month: item.month, admin: String(item.admin), meal: String(item.meal), utility: String(item.utility), service: String(item.service) });
+    setEditingId(id);
+    setShowAddModal(true);
+  };
+
   const handleAddSave = () => {
     if (!addForm.name || !addForm.month) return;
-    const newItem: BillingItem = {
-      id: generateId('bill'),
-      month: addForm.month,
-      name: addForm.name,
-      room: addForm.room,
-      admin: Number(addForm.admin) || 0,
-      meal: Number(addForm.meal) || 0,
-      utility: Number(addForm.utility) || 0,
-      service: Number(addForm.service) || 0,
-      paid: 0,
-      status: '대기',
-    };
-    setData(prev => [newItem, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        month: addForm.month,
+        name: addForm.name,
+        room: addForm.room,
+        admin: Number(addForm.admin) || 0,
+        meal: Number(addForm.meal) || 0,
+        utility: Number(addForm.utility) || 0,
+        service: Number(addForm.service) || 0,
+      } : d));
+    } else {
+      const newItem: BillingItem = {
+        id: generateId('bill'),
+        month: addForm.month,
+        name: addForm.name,
+        room: addForm.room,
+        admin: Number(addForm.admin) || 0,
+        meal: Number(addForm.meal) || 0,
+        utility: Number(addForm.utility) || 0,
+        service: Number(addForm.service) || 0,
+        paid: 0,
+        status: '대기',
+      };
+      setData(prev => [newItem, ...prev]);
+    }
     setShowAddModal(false);
+    setEditingId(null);
     setAddForm({ name: '', room: '', month: '2026-03', admin: '1800000', meal: '450000', utility: '180000', service: '120000' });
   };
 
@@ -209,6 +232,8 @@ export default function BillingPage() {
                               <button onClick={() => { setPayModalId(row.id); setPayAmount(''); }}
                                 className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">납부처리</button>
                             )}
+                            <button onClick={() => handleEditBilling(row.id)}
+                              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                             <button onClick={() => handleDelete(row.id)}
                               className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500">삭제</button>
                           </div>
@@ -453,7 +478,7 @@ export default function BillingPage() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">청구 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900">{editingId ? '수정' : '청구 등록'}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
@@ -486,7 +511,7 @@ export default function BillingPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowAddModal(false); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleAddSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

@@ -12,6 +12,7 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: 'home', label: 'HOME', icon: '🏠' },
+  { id: 'consultation', label: '입주상담', icon: '🤝' },
   { id: 'resident', label: '입소자관리', icon: '📋' },
   { id: 'health', label: '건강관리', icon: '❤️' },
   { id: 'concierge', label: '컨시어지', icon: '🛎️' },

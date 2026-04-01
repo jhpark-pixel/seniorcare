@@ -75,6 +75,7 @@ export default function LeavePage() {
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleResidentSelect = (name: string) => {
     const found = residentOptions.find(r => r.name === name);
@@ -89,22 +90,44 @@ export default function LeavePage() {
     }
   };
 
+  const handleEdit = (id: string) => {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, room: item.room, reason: item.reason, startDate: item.startDate, endDate: item.endDate, guardian: item.guardian, guardianPhone: item.guardianPhone });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.startDate || !formData.endDate) return;
-    const newRecord: LeaveRecord = {
-      id: generateId('leave'),
-      applyDate: new Date().toISOString().slice(0, 10),
-      name: formData.name,
-      room: formData.room,
-      reason: formData.reason,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      guardian: formData.guardian,
-      guardianPhone: formData.guardianPhone,
-      status: '신청',
-    };
-    setData(prev => [newRecord, ...prev]);
+    if (editingId) {
+      setData(prev => prev.map(d => d.id === editingId ? {
+        ...d,
+        name: formData.name,
+        room: formData.room,
+        reason: formData.reason,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        guardian: formData.guardian,
+        guardianPhone: formData.guardianPhone,
+      } : d));
+    } else {
+      const newRecord: LeaveRecord = {
+        id: generateId('leave'),
+        applyDate: new Date().toISOString().slice(0, 10),
+        name: formData.name,
+        room: formData.room,
+        reason: formData.reason,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        guardian: formData.guardian,
+        guardianPhone: formData.guardianPhone,
+        status: '신청',
+      };
+      setData(prev => [newRecord, ...prev]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -197,6 +220,7 @@ export default function LeavePage() {
                       {row.status === '승인' && (
                         <button onClick={() => handleStatusChange(row.id, '복귀')} className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">복귀</button>
                       )}
+                      <button onClick={() => handleEdit(row.id)} className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                       <button onClick={() => handleDelete(row.id)} className="px-2 py-1 text-xs bg-red-400 text-white rounded hover:bg-red-500">삭제</button>
                     </div>
                   </td>
@@ -210,7 +234,7 @@ export default function LeavePage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">외출 신청</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? '수정' : '외출 신청'}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">입소자명</label>
@@ -253,7 +277,7 @@ export default function LeavePage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>

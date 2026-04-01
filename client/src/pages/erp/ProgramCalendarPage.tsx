@@ -54,6 +54,7 @@ export default function ProgramCalendarPage() {
   const [programs, setPrograms] = useCollection<ProgramSlot>('programSlots', initialPrograms);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Build a set of cells to skip (occupied by multi-hour programs)
   const skipCells = new Set<string>();
@@ -71,22 +72,45 @@ export default function ProgramCalendarPage() {
     return p.endHour - p.startHour;
   }
 
+  const handleEdit = (id: string) => {
+    const item = programs.find(p => p.id === id);
+    if (!item) return;
+    setFormData({ name: item.name, day: String(item.day), startHour: String(item.startHour), endHour: String(item.endHour), location: item.location, instructor: item.instructor, capacity: String(item.capacity), category: item.category });
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.location) return;
-    const newProg: ProgramSlot = {
-      id: generateId('pg'),
-      name: formData.name,
-      day: parseInt(formData.day),
-      startHour: parseInt(formData.startHour),
-      endHour: parseInt(formData.endHour),
-      location: formData.location,
-      instructor: formData.instructor,
-      capacity: parseInt(formData.capacity) || 10,
-      enrolled: 0,
-      category: formData.category,
-    };
-    setPrograms(prev => [...prev, newProg]);
+    if (editingId) {
+      setPrograms(prev => prev.map(p => p.id === editingId ? {
+        ...p,
+        name: formData.name,
+        day: parseInt(formData.day),
+        startHour: parseInt(formData.startHour),
+        endHour: parseInt(formData.endHour),
+        location: formData.location,
+        instructor: formData.instructor,
+        capacity: parseInt(formData.capacity) || 10,
+        category: formData.category,
+      } : p));
+    } else {
+      const newProg: ProgramSlot = {
+        id: generateId('pg'),
+        name: formData.name,
+        day: parseInt(formData.day),
+        startHour: parseInt(formData.startHour),
+        endHour: parseInt(formData.endHour),
+        location: formData.location,
+        instructor: formData.instructor,
+        capacity: parseInt(formData.capacity) || 10,
+        enrolled: 0,
+        category: formData.category,
+      };
+      setPrograms(prev => [...prev, newProg]);
+    }
     setFormData(emptyForm);
+    setEditingId(null);
     setShowModal(false);
   };
 
@@ -193,6 +217,7 @@ export default function ProgramCalendarPage() {
                   </p>
                   <p className="text-xs text-gray-500">참여: {prog.enrolled}/{prog.capacity}명</p>
                 </div>
+                <button onClick={() => handleEdit(prog.id)} className="flex-shrink-0 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">수정</button>
                 <button onClick={() => handleDelete(prog.id)} className="flex-shrink-0 px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400">삭제</button>
               </div>
             );
@@ -203,7 +228,7 @@ export default function ProgramCalendarPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">프로그램 등록</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{editingId ? '수정' : '프로그램 등록'}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">프로그램명</label>
@@ -251,7 +276,7 @@ export default function ProgramCalendarPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowModal(false); setFormData(emptyForm); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => { setShowModal(false); setFormData(emptyForm); setEditingId(null); }} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm text-white bg-[#F0835A] rounded-lg hover:bg-[#d9714d]">저장</button>
             </div>
           </div>
