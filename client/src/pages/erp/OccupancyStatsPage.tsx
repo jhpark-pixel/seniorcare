@@ -1,82 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { rooms, residents } from '../../data/mockData';
-
-const totalRooms = rooms.length;
-const occupiedRooms = rooms.filter(r => r.status === '사용중').length;
-const emptyRooms = rooms.filter(r => r.status === '빈방').length;
-const activeResidentsCount = residents.filter(r => r.status !== 'DISCHARGED').length;
-const occupancyRate = ((occupiedRooms / totalRooms) * 100).toFixed(1);
-
-const bldg1Rooms = rooms.filter(r => r.building === '1관');
-const bldg2Rooms = rooms.filter(r => r.building === '2관');
-
-const buildingData = [
-  {
-    building: '1관',
-    total: bldg1Rooms.length,
-    single: bldg1Rooms.filter(r => r.type === '1인실').length,
-    double: bldg1Rooms.filter(r => r.type === '2인실').length,
-    contracted: bldg1Rooms.filter(r => r.status === '사용중').length,
-    occupied: bldg1Rooms.filter(r => r.status === '사용중').length,
-    vacancy: bldg1Rooms.filter(r => r.status !== '사용중').length,
-  },
-  {
-    building: '2관',
-    total: bldg2Rooms.length,
-    single: bldg2Rooms.filter(r => r.type === '1인실').length,
-    double: bldg2Rooms.filter(r => r.type === '2인실').length,
-    contracted: bldg2Rooms.filter(r => r.status === '사용중').length,
-    occupied: bldg2Rooms.filter(r => r.status === '사용중').length,
-    vacancy: bldg2Rooms.filter(r => r.status !== '사용중').length,
-  },
-];
-
-const kpiCards = [
-  { label: '총 호실수', value: String(totalRooms), unit: '실', color: 'bg-blue-50 text-blue-700', icon: '🏠' },
-  { label: '계약세대', value: String(occupiedRooms), unit: '세대', color: 'bg-green-50 text-green-700', icon: '📝' },
-  { label: '입주세대', value: String(activeResidentsCount), unit: '세대', color: 'bg-indigo-50 text-indigo-700', icon: '🧑‍🤝‍🧑' },
-  { label: '공실', value: String(emptyRooms), unit: '실', color: 'bg-red-50 text-red-700', icon: '🚪' },
-  { label: '입주율', value: occupancyRate, unit: '%', color: 'bg-amber-50 text-amber-700', icon: '📊' },
-];
-
-const trendData = [
-  { month: '2025.04', 입주율: 18.5, 입소: 2, 퇴소: 1 },
-  { month: '2025.05', 입주율: 20.2, 입소: 3, 퇴소: 1 },
-  { month: '2025.06', 입주율: 21.0, 입소: 2, 퇴소: 2 },
-  { month: '2025.07', 입주율: 19.8, 입소: 1, 퇴소: 2 },
-  { month: '2025.08', 입주율: 22.5, 입소: 4, 퇴소: 1 },
-  { month: '2025.09', 입주율: 23.1, 입소: 2, 퇴소: 1 },
-  { month: '2025.10', 입주율: 24.0, 입소: 3, 퇴소: 1 },
-  { month: '2025.11', 입주율: 22.8, 입소: 1, 퇴소: 2 },
-  { month: '2025.12', 입주율: 23.5, 입소: 2, 퇴소: 1 },
-  { month: '2026.01', 입주율: 24.2, 입소: 3, 퇴소: 2 },
-  { month: '2026.02', 입주율: 25.1, 입소: 2, 퇴소: 1 },
-  { month: '2026.03', 입주율: parseFloat(occupancyRate), 입소: 1, 퇴소: 0 },
-];
-
-const funnelSteps = [
-  { label: '상담', value: 18, color: 'bg-blue-500' },
-  { label: '청약', value: 14, color: 'bg-indigo-500' },
-  { label: '계약', value: 11, color: 'bg-purple-500' },
-  { label: '입소', value: activeResidentsCount, color: 'bg-green-500' },
-];
-
-const ageGroups = [
-  { range: '65-69세', count: residents.filter(r => r.age >= 65 && r.age < 70).length },
-  { range: '70-74세', count: residents.filter(r => r.age >= 70 && r.age < 75).length },
-  { range: '75-79세', count: residents.filter(r => r.age >= 75 && r.age < 80).length },
-  { range: '80-84세', count: residents.filter(r => r.age >= 80 && r.age < 85).length },
-  { range: '85세 이상', count: residents.filter(r => r.age >= 85).length },
-];
-
-const genderCount = {
-  male: residents.filter(r => r.gender === 'MALE').length,
-  female: residents.filter(r => r.gender === 'FEMALE').length,
-};
+import { useRooms, useResidents } from '../../context/AppStateContext';
 
 const tabs = [
   { id: 'overview', label: '거주자 종합현황', path: '/erp/occupancy-stats/overview' },
@@ -89,6 +16,67 @@ export default function OccupancyStatsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [rooms] = useRooms();
+  const [residents] = useResidents();
+
+  const totalRooms = rooms.length;
+  const occupiedRooms = useMemo(() => rooms.filter(r => r.status === '사용중').length, [rooms]);
+  const emptyRooms = useMemo(() => rooms.filter(r => r.status === '빈방').length, [rooms]);
+  const activeResidentsCount = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED').length, [residents]);
+  const occupancyRate = useMemo(() => ((occupiedRooms / totalRooms) * 100).toFixed(1), [occupiedRooms, totalRooms]);
+
+  const buildingData = useMemo(() => {
+    const bldg1Rooms = rooms.filter(r => r.building === '1관');
+    const bldg2Rooms = rooms.filter(r => r.building === '2관');
+    return [
+      { building: '1관', total: bldg1Rooms.length, single: bldg1Rooms.filter(r => r.type === '1인실').length, double: bldg1Rooms.filter(r => r.type === '2인실').length, contracted: bldg1Rooms.filter(r => r.status === '사용중').length, occupied: bldg1Rooms.filter(r => r.status === '사용중').length, vacancy: bldg1Rooms.filter(r => r.status !== '사용중').length },
+      { building: '2관', total: bldg2Rooms.length, single: bldg2Rooms.filter(r => r.type === '1인실').length, double: bldg2Rooms.filter(r => r.type === '2인실').length, contracted: bldg2Rooms.filter(r => r.status === '사용중').length, occupied: bldg2Rooms.filter(r => r.status === '사용중').length, vacancy: bldg2Rooms.filter(r => r.status !== '사용중').length },
+    ];
+  }, [rooms]);
+
+  const kpiCards = useMemo(() => [
+    { label: '총 호실수', value: String(totalRooms), unit: '실', color: 'bg-blue-50 text-blue-700', icon: '🏠' },
+    { label: '계약세대', value: String(occupiedRooms), unit: '세대', color: 'bg-green-50 text-green-700', icon: '📝' },
+    { label: '입주세대', value: String(activeResidentsCount), unit: '세대', color: 'bg-indigo-50 text-indigo-700', icon: '🧑‍🤝‍🧑' },
+    { label: '공실', value: String(emptyRooms), unit: '실', color: 'bg-red-50 text-red-700', icon: '🚪' },
+    { label: '입주율', value: occupancyRate, unit: '%', color: 'bg-amber-50 text-amber-700', icon: '📊' },
+  ], [totalRooms, occupiedRooms, activeResidentsCount, emptyRooms, occupancyRate]);
+
+  const trendData = useMemo(() => [
+    { month: '2025.04', 입주율: 18.5, 입소: 2, 퇴소: 1 },
+    { month: '2025.05', 입주율: 20.2, 입소: 3, 퇴소: 1 },
+    { month: '2025.06', 입주율: 21.0, 입소: 2, 퇴소: 2 },
+    { month: '2025.07', 입주율: 19.8, 입소: 1, 퇴소: 2 },
+    { month: '2025.08', 입주율: 22.5, 입소: 4, 퇴소: 1 },
+    { month: '2025.09', 입주율: 23.1, 입소: 2, 퇴소: 1 },
+    { month: '2025.10', 입주율: 24.0, 입소: 3, 퇴소: 1 },
+    { month: '2025.11', 입주율: 22.8, 입소: 1, 퇴소: 2 },
+    { month: '2025.12', 입주율: 23.5, 입소: 2, 퇴소: 1 },
+    { month: '2026.01', 입주율: 24.2, 입소: 3, 퇴소: 2 },
+    { month: '2026.02', 입주율: 25.1, 입소: 2, 퇴소: 1 },
+    { month: '2026.03', 입주율: parseFloat(occupancyRate), 입소: 1, 퇴소: 0 },
+  ], [occupancyRate]);
+
+  const funnelSteps = useMemo(() => [
+    { label: '상담', value: 18, color: 'bg-blue-500' },
+    { label: '청약', value: 14, color: 'bg-indigo-500' },
+    { label: '계약', value: 11, color: 'bg-purple-500' },
+    { label: '입소', value: activeResidentsCount, color: 'bg-green-500' },
+  ], [activeResidentsCount]);
+
+  const ageGroups = useMemo(() => [
+    { range: '65-69세', count: residents.filter(r => r.age >= 65 && r.age < 70).length },
+    { range: '70-74세', count: residents.filter(r => r.age >= 70 && r.age < 75).length },
+    { range: '75-79세', count: residents.filter(r => r.age >= 75 && r.age < 80).length },
+    { range: '80-84세', count: residents.filter(r => r.age >= 80 && r.age < 85).length },
+    { range: '85세 이상', count: residents.filter(r => r.age >= 85).length },
+  ], [residents]);
+
+  const genderCount = useMemo(() => ({
+    male: residents.filter(r => r.gender === 'MALE').length,
+    female: residents.filter(r => r.gender === 'FEMALE').length,
+  }), [residents]);
 
   return (
     <div className="space-y-6">

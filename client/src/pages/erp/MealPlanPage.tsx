@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 interface DayMeal {
   day: string;
@@ -27,15 +27,6 @@ interface DietAlert {
   note: string;
 }
 
-const dietAlerts: DietAlert[] = residents
-  .filter(r => r.status !== 'DISCHARGED' && r.dietaryRestrictions.length > 0)
-  .map(r => ({
-    resident: r.name,
-    room: `${r.roomNumber}호`,
-    type: r.dietaryRestrictions[0],
-    note: r.dietaryRestrictions.join(', ') + ` (${r.diseases.slice(0, 2).join(', ')})`,
-  }));
-
 const alertTypeColors: Record<string, string> = {
   '저염식': 'bg-blue-100 text-blue-800',
   '저당식': 'bg-yellow-100 text-yellow-800',
@@ -57,6 +48,19 @@ export default function MealPlanPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [residents] = useResidents();
+  const dietAlerts = useMemo<DietAlert[]>(() =>
+    residents
+      .filter(r => r.status !== 'DISCHARGED' && r.dietaryRestrictions.length > 0)
+      .map(r => ({
+        resident: r.name,
+        room: `${r.roomNumber}호`,
+        type: r.dietaryRestrictions[0],
+        note: r.dietaryRestrictions.join(', ') + ` (${r.diseases.slice(0, 2).join(', ')})`,
+      })),
+    [residents],
+  );
 
   const [meals, setMeals] = useState<DayMeal[]>(initialMeals);
   const [editCell, setEditCell] = useState<{ dayIdx: number; meal: MealType } | null>(null);

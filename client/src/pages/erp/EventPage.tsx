@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { staff, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection } from '../../context/AppStateContext';
 
 interface CalendarEvent {
   id: string;
@@ -48,7 +49,7 @@ export default function EventPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+  const [events, setEvents] = useCollection<CalendarEvent>('events', initialEvents);
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(3); // April = index 3
   const [formData, setFormData] = useState(emptyForm);

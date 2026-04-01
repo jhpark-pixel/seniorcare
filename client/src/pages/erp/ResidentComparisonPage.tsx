@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { residents } from '../../data/mockData';
+import { type MockResident } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 interface ResidentProfile {
   id: string;
@@ -19,13 +20,13 @@ interface ResidentProfile {
   careGrade: string;
 }
 
-function getFallRisk(r: typeof residents[0]): string {
+function getFallRisk(r: MockResident): string {
   if (r.healthScore < 50 || r.mobilityLevel >= 4) return '고위험';
   if (r.healthScore < 65 || r.mobilityLevel >= 3 || r.cognitiveLevel !== 'NORMAL') return '중위험';
   return '저위험';
 }
 
-function getMonthlyCost(r: typeof residents[0]): string {
+function getMonthlyCost(r: MockResident): string {
   // Assign based on care grade
   const costs: Record<string, string> = {
     '1등급': '340만원',
@@ -37,25 +38,10 @@ function getMonthlyCost(r: typeof residents[0]): string {
 }
 
 // Program participation % — inverse of health score danger (healthy = more participation)
-function getParticipation(r: typeof residents[0]): number {
+function getParticipation(r: MockResident): number {
   if (r.status === 'HOSPITALIZED') return 0;
   return Math.min(100, Math.round(r.healthScore * 1.1));
 }
-
-const allResidents: ResidentProfile[] = residents.map(r => ({
-  id: r.id,
-  name: r.name,
-  room: `${r.building} ${r.roomNumber}호`,
-  age: r.age,
-  healthScore: r.healthScore,
-  mobility: r.mobilityLabel,
-  cognition: r.cognitiveLabelKo,
-  fallRisk: getFallRisk(r),
-  programParticipation: getParticipation(r),
-  monthlyCost: getMonthlyCost(r),
-  diseases: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
-  careGrade: r.careGrade,
-}));
 
 const compareFields: { key: keyof ResidentProfile; label: string }[] = [
   { key: 'age', label: '나이' },
@@ -72,6 +58,23 @@ const compareFields: { key: keyof ResidentProfile; label: string }[] = [
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
 export default function ResidentComparisonPage() {
+  const [residents] = useResidents();
+
+  const allResidents = useMemo<ResidentProfile[]>(() => residents.map(r => ({
+    id: r.id,
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    age: r.age,
+    healthScore: r.healthScore,
+    mobility: r.mobilityLabel,
+    cognition: r.cognitiveLabelKo,
+    fallRisk: getFallRisk(r),
+    programParticipation: getParticipation(r),
+    monthlyCost: getMonthlyCost(r),
+    diseases: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
+    careGrade: r.careGrade,
+  })), [residents]);
+
   const [selected, setSelected] = useState<string[]>(['r1', 'r3', 'r6']);
 
   const selectedResidents = allResidents.filter((r) => selected.includes(r.id));

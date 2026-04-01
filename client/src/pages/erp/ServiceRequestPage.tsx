@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, staff, generateId, daysAgo } from '../../data/mockData';
+import { generateId, daysAgo } from '../../data/mockData';
+import { useCollection, useResidents, useStaff } from '../../context/AppStateContext';
 
 interface ServiceRequestItem {
   id: string;
@@ -14,16 +15,16 @@ interface ServiceRequestItem {
   status: string;
 }
 
-const initialData: ServiceRequestItem[] = [
+const buildInitialData = (staffList: any[]): ServiceRequestItem[] => [
   { id: '1', date: daysAgo(1), name: '김영순', room: '1관 101호', type: '이미용', content: '커트 및 염색 요청', dueDate: daysAgo(-2), handler: '외부업체 김미장', status: '대기' },
-  { id: '2', date: daysAgo(2), name: '이복자', room: '1관 103호', type: '세탁', content: '겨울 이불 세탁 요청', dueDate: daysAgo(0), handler: `생활지도사 ${staff[3].name}`, status: '진행중' },
-  { id: '3', date: daysAgo(2), name: '박정호', room: '1관 105호', type: '외출지원', content: '아들 집 방문 외출 지원 (보호자 동행)', dueDate: daysAgo(-4), handler: `생활지도사 ${staff[4].name}`, status: '대기' },
-  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', type: '택배', content: '손녀에게 보낼 택배 발송 요청', dueDate: daysAgo(2), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
+  { id: '2', date: daysAgo(2), name: '이복자', room: '1관 103호', type: '세탁', content: '겨울 이불 세탁 요청', dueDate: daysAgo(0), handler: `생활지도사 ${staffList[3]?.name ?? ''}`, status: '진행중' },
+  { id: '3', date: daysAgo(2), name: '박정호', room: '1관 105호', type: '외출지원', content: '아들 집 방문 외출 지원 (보호자 동행)', dueDate: daysAgo(-4), handler: `생활지도사 ${staffList[4]?.name ?? ''}`, status: '대기' },
+  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', type: '택배', content: '손녀에게 보낼 택배 발송 요청', dueDate: daysAgo(2), handler: `생활지도사 ${staffList[3]?.name ?? ''}`, status: '완료' },
   { id: '5', date: daysAgo(3), name: '정기원', room: '1관 109호', type: '이미용', content: '파마 예약 요청', dueDate: daysAgo(-2), handler: '외부업체 김미장', status: '대기' },
   { id: '6', date: daysAgo(4), name: '한말순', room: '2관 201호', type: '기타', content: '방 커튼 교체 요청', dueDate: daysAgo(-1), handler: '시설관리 이동수', status: '진행중' },
-  { id: '7', date: daysAgo(5), name: '오세진', room: '2관 203호', type: '세탁', content: '카디건 드라이클리닝 요청', dueDate: daysAgo(3), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
-  { id: '8', date: daysAgo(6), name: '윤태식', room: '2관 207호', type: '외출지원', content: '병원 외래 후 마트 경유 요청', dueDate: daysAgo(4), handler: `생활지도사 ${staff[4].name}`, status: '완료' },
-  { id: '9', date: daysAgo(6), name: '강옥희', room: '2관 209호', type: '택배', content: '지인에게 받은 택배 수령 전달', dueDate: daysAgo(6), handler: `생활지도사 ${staff[3].name}`, status: '완료' },
+  { id: '7', date: daysAgo(5), name: '오세진', room: '2관 203호', type: '세탁', content: '카디건 드라이클리닝 요청', dueDate: daysAgo(3), handler: `생활지도사 ${staffList[3]?.name ?? ''}`, status: '완료' },
+  { id: '8', date: daysAgo(6), name: '윤태식', room: '2관 207호', type: '외출지원', content: '병원 외래 후 마트 경유 요청', dueDate: daysAgo(4), handler: `생활지도사 ${staffList[4]?.name ?? ''}`, status: '완료' },
+  { id: '9', date: daysAgo(6), name: '강옥희', room: '2관 209호', type: '택배', content: '지인에게 받은 택배 수령 전달', dueDate: daysAgo(6), handler: `생활지도사 ${staffList[3]?.name ?? ''}`, status: '완료' },
   { id: '10', date: daysAgo(7), name: '김영순', room: '1관 101호', type: '기타', content: 'TV 리모컨 고장 수리 요청', dueDate: daysAgo(5), handler: '시설관리 이동수', status: '취소' },
 ];
 
@@ -56,7 +57,6 @@ const nextStatusMap: Record<string, string> = {
   '진행중': '완료',
 };
 
-const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
 const emptyForm = { residentId: '', type: '이미용', content: '', dueDate: '' };
 
 const tabs = [
@@ -65,20 +65,25 @@ const tabs = [
   { id: 'types', label: '서비스 유형 관리', path: '/concierge/service/types' },
 ];
 
-const serviceTypeDetails = [
-  { type: '이미용', description: '커트, 염색, 파마 등 이미용 서비스', provider: '외부업체 김미장', schedule: '매주 화, 목', count: 2 },
-  { type: '세탁', description: '일반 세탁 및 드라이클리닝 서비스', provider: `생활지도사 ${staff[3].name}`, schedule: '매주 월, 수, 금', count: 2 },
-  { type: '외출지원', description: '병원, 마트 등 외출 시 동행 지원', provider: `생활지도사 ${staff[4].name}`, schedule: '사전 예약 필요', count: 2 },
-  { type: '택배', description: '택배 발송 및 수령 대행', provider: `생활지도사 ${staff[3].name}`, schedule: '수시', count: 2 },
-  { type: '기타', description: '시설 수리, 물품 교체 등 기타 서비스', provider: '시설관리 이동수', schedule: '수시', count: 2 },
-];
-
 export default function ServiceRequestPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<ServiceRequestItem[]>(initialData);
+  const [residents] = useResidents();
+  const [staff] = useStaff();
+
+  const initialData = useMemo(() => buildInitialData(staff), [staff]);
+  const residentOptions = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+  const serviceTypeDetails = useMemo(() => [
+    { type: '이미용', description: '커트, 염색, 파마 등 이미용 서비스', provider: '외부업체 김미장', schedule: '매주 화, 목', count: 2 },
+    { type: '세탁', description: '일반 세탁 및 드라이클리닝 서비스', provider: `생활지도사 ${staff[3]?.name ?? ''}`, schedule: '매주 월, 수, 금', count: 2 },
+    { type: '외출지원', description: '병원, 마트 등 외출 시 동행 지원', provider: `생활지도사 ${staff[4]?.name ?? ''}`, schedule: '사전 예약 필요', count: 2 },
+    { type: '택배', description: '택배 발송 및 수령 대행', provider: `생활지도사 ${staff[3]?.name ?? ''}`, schedule: '수시', count: 2 },
+    { type: '기타', description: '시설 수리, 물품 교체 등 기타 서비스', provider: '시설관리 이동수', schedule: '수시', count: 2 },
+  ], [staff]);
+
+  const [data, setData] = useCollection<ServiceRequestItem>('serviceRequests', initialData);
   const [filter, setFilter] = useState<string>('전체');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);

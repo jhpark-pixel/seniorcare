@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 const contractStatusColor: Record<string, string> = {
   '계약중': 'bg-green-100 text-green-800',
@@ -57,22 +58,6 @@ interface DepositRecord {
   paidDate: string;
 }
 
-const depositRecords: DepositRecord[] = initialData.map(c => ({
-  id: c.id,
-  name: c.name,
-  room: c.room,
-  contractNo: c.contractNo,
-  total: c.deposit,
-  paid: c.depositStatus === '완납' ? c.deposit : c.depositStatus === '분할납부중' ? Math.round(c.deposit * 0.67) : 0,
-  balance: c.depositStatus === '완납' ? 0 : c.depositStatus === '분할납부중' ? Math.round(c.deposit * 0.33) : c.deposit,
-  depositStatus: c.depositStatus,
-  paidDate: c.depositStatus !== '미납' ? c.startDate : '-',
-}));
-
-const residentOptions = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호`, type: '1인실' }));
-
 const emptyForm = { name: '', room: '', type: '1인실', startDate: '', endDate: '', monthly: '2200000', deposit: '30000000' };
 
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
@@ -88,8 +73,26 @@ export default function ContractPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'register';
 
-  const [data, setData] = useState<ContractItem[]>(initialData);
-  const [depData, setDepData] = useState<DepositRecord[]>(depositRecords);
+  const [residents] = useResidents();
+  const [data, setData] = useCollection<ContractItem>('contracts', initialData);
+
+  const depositRecordsInit = useMemo(() => initialData.map(c => ({
+    id: c.id,
+    name: c.name,
+    room: c.room,
+    contractNo: c.contractNo,
+    total: c.deposit,
+    paid: c.depositStatus === '완납' ? c.deposit : c.depositStatus === '분할납부중' ? Math.round(c.deposit * 0.67) : 0,
+    balance: c.depositStatus === '완납' ? 0 : c.depositStatus === '분할납부중' ? Math.round(c.deposit * 0.33) : c.deposit,
+    depositStatus: c.depositStatus,
+    paidDate: c.depositStatus !== '미납' ? c.startDate : '-',
+  })), []);
+
+  const residentOptions = useMemo(() => residents
+    .filter(r => r.status !== 'DISCHARGED')
+    .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호`, type: '1인실' })), [residents]);
+
+  const [depData, setDepData] = useCollection<DepositRecord>('contractDeposits', depositRecordsInit);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');

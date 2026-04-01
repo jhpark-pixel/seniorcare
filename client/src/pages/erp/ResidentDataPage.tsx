@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { residents } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 type SortKey = 'name' | 'room' | 'age' | 'gender' | 'admitDate' | 'healthScore' | 'mobility' | 'cognition' | 'status';
 
@@ -24,20 +24,6 @@ const statusLabel: Record<string, string> = {
   DISCHARGED: '퇴소',
 };
 
-const allResidents: ResidentRow[] = residents.map(r => ({
-  name: r.name,
-  room: `${r.building} ${r.roomNumber}호`,
-  age: r.age,
-  gender: r.gender === 'MALE' ? '남' : '여',
-  admitDate: r.moveInDate,
-  healthScore: r.healthScore,
-  mobility: r.mobilityLabel,
-  cognition: r.cognitiveLabelKo,
-  disease: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
-  status: statusLabel[r.status] ?? r.status,
-  careGrade: r.careGrade,
-}));
-
 function getScoreColor(score: number) {
   if (score >= 80) return 'text-green-600 bg-green-100';
   if (score >= 60) return 'text-yellow-600 bg-yellow-100';
@@ -45,6 +31,22 @@ function getScoreColor(score: number) {
 }
 
 export default function ResidentDataPage() {
+  const [residents] = useResidents();
+
+  const allResidents = useMemo<ResidentRow[]>(() => residents.map(r => ({
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+    age: r.age,
+    gender: r.gender === 'MALE' ? '남' : '여',
+    admitDate: r.moveInDate,
+    healthScore: r.healthScore,
+    mobility: r.mobilityLabel,
+    cognition: r.cognitiveLabelKo,
+    disease: r.diseases.length > 0 ? r.diseases.join(', ') : '없음',
+    status: statusLabel[r.status] ?? r.status,
+    careGrade: r.careGrade,
+  })), [residents]);
+
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');

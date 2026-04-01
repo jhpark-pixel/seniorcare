@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 const statusColor: Record<string, string> = {
   '대기': 'bg-yellow-100 text-yellow-800',
@@ -38,10 +39,6 @@ const initialData: BillingItem[] = [
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
 const monthOptions = ['전체', '2026-01', '2026-02', '2026-03'];
 
-const residentOptions = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` }));
-
 const tabs = [
   { id: 'monthly', label: '월청구내역', path: '/resident/billing/monthly' },
   { id: 'management', label: '관리비', path: '/resident/billing/management' },
@@ -55,7 +52,13 @@ export default function BillingPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'monthly';
 
-  const [data, setData] = useState<BillingItem[]>(initialData);
+  const [residents] = useResidents();
+  const [data, setData] = useCollection<BillingItem>('billings', initialData);
+
+  const residentOptions = useMemo(() => residents
+    .filter(r => r.status !== 'DISCHARGED')
+    .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` })), [residents]);
+
   const [monthFilter, setMonthFilter] = useState('전체');
   const [payModalId, setPayModalId] = useState<string | null>(null);
   const [payAmount, setPayAmount] = useState('');

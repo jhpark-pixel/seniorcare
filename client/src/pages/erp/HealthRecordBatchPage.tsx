@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
-import { residents, staff } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { useResidents, useStaff } from '../../context/AppStateContext';
 
 const fields = ['혈압(수축)', '혈압(이완)', '혈당', '심박', '체온', '체중', '수면(h)', '수분(ml)', '식사량', '기분'];
 
-// Use active residents (not DISCHARGED) for batch entry
-const activeResidents = residents.filter(r => r.status !== 'DISCHARGED');
-
 // Pre-populate some sample values based on resident conditions
-function getInitialValues(residentName: string): string[] {
-  const r = residents.find(res => res.name === residentName);
+function getInitialValues(residentName: string, residents: any[]): string[] {
+  const r = residents.find((res: any) => res.name === residentName);
   if (!r) return Array(10).fill('');
-  const hasBP = r.diseases.some(d => d.includes('고혈압') || d.includes('뇌졸중'));
-  const hasDiabetes = r.diseases.some(d => d.includes('당뇨'));
+  const hasBP = r.diseases.some((d: string) => d.includes('고혈압') || d.includes('뇌졸중'));
+  const hasDiabetes = r.diseases.some((d: string) => d.includes('당뇨'));
   return [
     hasBP ? '145' : '120',
     hasBP ? '90' : '76',
@@ -26,16 +23,18 @@ function getInitialValues(residentName: string): string[] {
   ];
 }
 
-const nurseOptions = staff.filter(s => s.role === 'NURSE').map(s => s.name);
-
 export default function HealthRecordBatchPage() {
+  const [residents] = useResidents();
+  const [staff] = useStaff();
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+  const nurseOptions = useMemo(() => staff.filter(s => s.role === 'NURSE').map(s => s.name), [staff]);
   const [recordDate, setRecordDate] = useState('2026-03-30');
   const [recorder, setRecorder] = useState(nurseOptions[0]);
   const [data, setData] = useState(() =>
     activeResidents.map(r => ({
       name: r.name,
       room: `${r.building} ${r.roomNumber}호`,
-      values: getInitialValues(r.name),
+      values: getInitialValues(r.name, residents),
     }))
   );
   const [saved, setSaved] = useState(false);

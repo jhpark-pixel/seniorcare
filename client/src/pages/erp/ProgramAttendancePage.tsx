@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { residents, generateId } from '../../data/mockData';
+import React, { useState, useMemo, useCallback } from 'react';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 const programOptions = [
   { id: 1, name: '치매예방 인지훈련' },
@@ -9,9 +10,6 @@ const programOptions = [
   { id: 5, name: '원예치료' },
 ];
 
-// Use real residents from mock data (active only)
-const activeResidents = residents.filter(r => r.status !== 'DISCHARGED');
-
 interface MemberAttendance {
   residentId: string;
   name: string;
@@ -20,19 +18,25 @@ interface MemberAttendance {
   attended: boolean;
 }
 
-const buildInitialMembers = (): MemberAttendance[] =>
-  activeResidents.map((r, i) => ({
-    residentId: r.id,
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    enrolled: true,
-    attended: i % 3 !== 2, // roughly 2/3 attendance
-  }));
-
 export default function ProgramAttendancePage() {
+  const [residents] = useResidents();
+
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
+  const buildInitialMembers = useCallback((): MemberAttendance[] =>
+    activeResidents.map((r, i) => ({
+      residentId: r.id,
+      name: r.name,
+      room: `${r.building} ${r.roomNumber}호`,
+      enrolled: true,
+      attended: i % 3 !== 2, // roughly 2/3 attendance
+    })), [activeResidents]);
+
+  const initialMembers = useMemo(() => buildInitialMembers(), [buildInitialMembers]);
+
   const [selectedProgram, setSelectedProgram] = useState(programOptions[0].id);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [members, setMembers] = useState<MemberAttendance[]>(buildInitialMembers());
+  const [members, setMembers] = useCollection<MemberAttendance>('programAttendance', initialMembers);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saved, setSaved] = useState(false);
 

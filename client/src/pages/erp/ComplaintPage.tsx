@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId, daysAgo } from '../../data/mockData';
+import { generateId, daysAgo } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 interface ComplaintItem {
   id: string;
@@ -15,53 +16,53 @@ interface ComplaintItem {
 }
 
 // Use actual emergency contacts from residents
-const initialData: ComplaintItem[] = [
+const buildInitialData = (resList: any[]): ComplaintItem[] => [
   {
     id: '1', date: daysAgo(1),
-    complainant: `${residents[0].emergencyContact.name} (${residents[0].name} ${residents[0].emergencyContact.relationship})`,
-    phone: residents[0].emergencyContact.phone,
+    complainant: `${resList[0]?.emergencyContact?.name ?? ''} (${resList[0]?.name ?? ''} ${resList[0]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[0]?.emergencyContact?.phone ?? '',
     type: '서비스', content: '야간 순회 시 소음이 크다는 불만', processStatus: '접수', processDate: '-', satisfaction: null,
   },
   {
     id: '2', date: daysAgo(2),
-    complainant: `${residents[1].emergencyContact.name} (${residents[1].name} ${residents[1].emergencyContact.relationship})`,
-    phone: residents[1].emergencyContact.phone,
+    complainant: `${resList[1]?.emergencyContact?.name ?? ''} (${resList[1]?.name ?? ''} ${resList[1]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[1]?.emergencyContact?.phone ?? '',
     type: '식사', content: '저녁 식사 연하식 메뉴가 단조롭다는 의견', processStatus: '처리중', processDate: '-', satisfaction: null,
   },
   {
     id: '3', date: daysAgo(3),
-    complainant: `${residents[2].emergencyContact.name} (${residents[2].name} ${residents[2].emergencyContact.relationship})`,
-    phone: residents[2].emergencyContact.phone,
+    complainant: `${resList[2]?.emergencyContact?.name ?? ''} (${resList[2]?.name ?? ''} ${resList[2]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[2]?.emergencyContact?.phone ?? '',
     type: '시설', content: '2층 복도 조명이 어두워 위험하다는 지적', processStatus: '완료', processDate: daysAgo(2), satisfaction: 4,
   },
   {
     id: '4', date: daysAgo(4),
-    complainant: `${residents[3].emergencyContact.name} (${residents[3].name} ${residents[3].emergencyContact.relationship})`,
-    phone: residents[3].emergencyContact.phone,
+    complainant: `${resList[3]?.emergencyContact?.name ?? ''} (${resList[3]?.name ?? ''} ${resList[3]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[3]?.emergencyContact?.phone ?? '',
     type: '서비스', content: '세탁물 분실 건 확인 요청', processStatus: '완료', processDate: daysAgo(3), satisfaction: 3,
   },
   {
     id: '5', date: daysAgo(6),
-    complainant: `${residents[4].emergencyContact.name} (${residents[4].name} ${residents[4].emergencyContact.relationship})`,
-    phone: residents[4].emergencyContact.phone,
+    complainant: `${resList[4]?.emergencyContact?.name ?? ''} (${resList[4]?.name ?? ''} ${resList[4]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[4]?.emergencyContact?.phone ?? '',
     type: '기타', content: '면회 시간 연장 요청', processStatus: '완료', processDate: daysAgo(5), satisfaction: 5,
   },
   {
     id: '6', date: daysAgo(8),
-    complainant: `${residents[5].emergencyContact.name} (${residents[5].name} ${residents[5].emergencyContact.relationship})`,
-    phone: residents[5].emergencyContact.phone,
+    complainant: `${resList[5]?.emergencyContact?.name ?? ''} (${resList[5]?.name ?? ''} ${resList[5]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[5]?.emergencyContact?.phone ?? '',
     type: '식사', content: '연하식(미음) 온도 관련 개선 요청', processStatus: '완료', processDate: daysAgo(6), satisfaction: 4,
   },
   {
     id: '7', date: daysAgo(11),
-    complainant: `${residents[6].emergencyContact.name} (${residents[6].name} ${residents[6].emergencyContact.relationship})`,
-    phone: residents[6].emergencyContact.phone,
+    complainant: `${resList[6]?.emergencyContact?.name ?? ''} (${resList[6]?.name ?? ''} ${resList[6]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[6]?.emergencyContact?.phone ?? '',
     type: '시설', content: '화장실 온수 온도 불안정 신고', processStatus: '완료', processDate: daysAgo(10), satisfaction: 5,
   },
   {
     id: '8', date: daysAgo(13),
-    complainant: `${residents[7].emergencyContact.name} (${residents[7].name} ${residents[7].emergencyContact.relationship})`,
-    phone: residents[7].emergencyContact.phone,
+    complainant: `${resList[7]?.emergencyContact?.name ?? ''} (${resList[7]?.name ?? ''} ${resList[7]?.emergencyContact?.relationship ?? ''})`,
+    phone: resList[7]?.emergencyContact?.phone ?? '',
     type: '서비스', content: '입원 중 시설 연락 미흡 건', processStatus: '완료', processDate: daysAgo(12), satisfaction: 2,
   },
 ];
@@ -104,7 +105,6 @@ const renderStars = (score: number | null, onClick?: (v: number) => void) => {
   );
 };
 
-const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
 const emptyForm = { residentId: '', type: '서비스', content: '' };
 
 const tabs = [
@@ -118,7 +118,12 @@ export default function ComplaintPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<ComplaintItem[]>(initialData);
+  const [residents] = useResidents();
+
+  const initialData = useMemo(() => buildInitialData(residents), [residents]);
+  const residentOptions = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
+  const [data, setData] = useCollection<ComplaintItem>('complaints', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [ratingId, setRatingId] = useState<string | null>(null);

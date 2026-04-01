@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, staff } from '../../data/mockData';
+import { useCollection, useResidents, useStaff } from '../../context/AppStateContext';
 
 interface IntensiveCareRecord {
   id: string;
@@ -62,19 +62,6 @@ const deviceStatusStyle = (status: string) => {
   return map[status] || 'bg-gray-100 text-gray-600';
 };
 
-const residentOptions = residents.map(r => r.name);
-const managerOptions = [
-  ...staff.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
-  ...staff.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
-];
-
-const emptyForm: { name: string; reason: string; grade: '상' | '중' | '하'; manager: string } = {
-  name: residentOptions[0],
-  reason: '',
-  grade: '상',
-  manager: managerOptions[0],
-};
-
 const tabs = [
   { id: 'register', label: '대상자 등록', path: '/erp/intensive-care/register' },
   { id: 'status', label: '대상자 현황', path: '/erp/intensive-care/status' },
@@ -86,10 +73,25 @@ export default function IntensiveCarePage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<IntensiveCareRecord[]>(initialData);
+  const [residents] = useResidents();
+  const [staffList] = useStaff();
+
+  const residentOptions = useMemo(() => residents.map(r => r.name), [residents]);
+  const managerOptions = useMemo(() => [
+    ...staffList.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
+    ...staffList.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
+  ], [staffList]);
+  const emptyForm = useMemo<{ name: string; reason: string; grade: '상' | '중' | '하'; manager: string }>(() => ({
+    name: residentOptions[0],
+    reason: '',
+    grade: '상',
+    manager: managerOptions[0],
+  }), [residentOptions, managerOptions]);
+
+  const [data, setData] = useCollection<IntensiveCareRecord>('intensiveCare', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
-  const [devices, setDevices] = useState<Device[]>(initialDevices);
+  const [devices, setDevices] = useCollection<Device>('intensiveCareDevices', initialDevices);
   const [deviceFilter, setDeviceFilter] = useState('전체');
 
   const activeData = data.filter(d => d.active);

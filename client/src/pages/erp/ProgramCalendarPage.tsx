@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { staff, generateId } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { generateId } from '../../data/mockData';
+import { useCollection, useStaff } from '../../context/AppStateContext';
 
 interface ProgramSlot {
   id: string;
@@ -14,17 +15,17 @@ interface ProgramSlot {
   category: '건강재활' | '운동' | '인지' | '문화' | '사회';
 }
 
-const initialPrograms: ProgramSlot[] = [
+const buildInitialPrograms = (staffList: any[]): ProgramSlot[] => [
   { id: '1', name: '물리치료 (상체)', day: 0, startHour: 9, endHour: 10, location: '1층 재활치료실', instructor: '정물리치료사', capacity: 8, enrolled: 7, category: '건강재활' },
-  { id: '2', name: '아침 체조', day: 0, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staff[4].name}`, capacity: 30, enrolled: 25, category: '운동' },
+  { id: '2', name: '아침 체조', day: 0, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staffList[4]?.name ?? ''}`, capacity: 30, enrolled: 25, category: '운동' },
   { id: '3', name: '인지훈련 (초급)', day: 1, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: '최작업치료사', capacity: 10, enrolled: 9, category: '인지' },
   { id: '4', name: '노래교실', day: 1, startHour: 14, endHour: 15, location: '1층 대강당', instructor: '김음악치료사', capacity: 25, enrolled: 22, category: '문화' },
   { id: '5', name: '물리치료 (하체)', day: 2, startHour: 9, endHour: 10, location: '1층 재활치료실', instructor: '정물리치료사', capacity: 8, enrolled: 8, category: '건강재활' },
   { id: '6', name: '미술치료', day: 2, startHour: 14, endHour: 16, location: '3층 프로그램실', instructor: '이미술치료사', capacity: 12, enrolled: 10, category: '문화' },
-  { id: '7', name: '치매예방 두뇌활동', day: 3, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: `${staff[3].name}`, capacity: 10, enrolled: 8, category: '인지' },
-  { id: '8', name: '원예활동', day: 3, startHour: 14, endHour: 15, location: '옥상 정원', instructor: `${staff[4].name}`, capacity: 15, enrolled: 12, category: '사회' },
-  { id: '9', name: '아침 체조', day: 4, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staff[4].name}`, capacity: 30, enrolled: 23, category: '운동' },
-  { id: '10', name: '영화 감상', day: 4, startHour: 14, endHour: 16, location: '1층 대강당', instructor: `${staff[3].name}`, capacity: 30, enrolled: 28, category: '문화' },
+  { id: '7', name: '치매예방 두뇌활동', day: 3, startHour: 10, endHour: 11, location: '3층 프로그램실', instructor: `${staffList[3]?.name ?? ''}`, capacity: 10, enrolled: 8, category: '인지' },
+  { id: '8', name: '원예활동', day: 3, startHour: 14, endHour: 15, location: '옥상 정원', instructor: `${staffList[4]?.name ?? ''}`, capacity: 15, enrolled: 12, category: '사회' },
+  { id: '9', name: '아침 체조', day: 4, startHour: 10, endHour: 11, location: '1층 대강당', instructor: `${staffList[4]?.name ?? ''}`, capacity: 30, enrolled: 23, category: '운동' },
+  { id: '10', name: '영화 감상', day: 4, startHour: 14, endHour: 16, location: '1층 대강당', instructor: `${staffList[3]?.name ?? ''}`, capacity: 30, enrolled: 28, category: '문화' },
 ];
 
 const dayNames = ['월', '화', '수', '목', '금'];
@@ -46,7 +47,11 @@ const emptyForm = {
 };
 
 export default function ProgramCalendarPage() {
-  const [programs, setPrograms] = useState<ProgramSlot[]>(initialPrograms);
+  const [staff] = useStaff();
+
+  const initialPrograms = useMemo(() => buildInitialPrograms(staff), [staff]);
+
+  const [programs, setPrograms] = useCollection<ProgramSlot>('programSlots', initialPrograms);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { residents, staff } from '../data/mockData';
+import { useResidents, useStaff } from '../context/AppStateContext';
 
 interface TodoItem {
   id: string;
@@ -24,10 +24,10 @@ const priorityLabel: Record<string, string> = {
   LOW: '참고',
 };
 
-function getTodosForRole(role: string): TodoItem[] {
-  const hospitalized = residents.filter(r => r.status === 'HOSPITALIZED');
-  const highRisk = residents.filter(r => r.healthScore < 60);
-  const dementia = residents.filter(r => r.diseases.includes('치매'));
+function getTodosForRole(role: string, residents: any[], staff: any[]): TodoItem[] {
+  const hospitalized = residents.filter((r: any) => r.status === 'HOSPITALIZED');
+  const highRisk = residents.filter((r: any) => r.healthScore < 60);
+  const dementia = residents.filter((r: any) => r.diseases.includes('치매'));
 
   switch (role) {
     case 'DIRECTOR':
@@ -92,7 +92,9 @@ interface TodoNotificationProps {
 }
 
 export default function TodoNotification({ role, name }: TodoNotificationProps) {
-  const [todos, setTodos] = useState<TodoItem[]>(() => getTodosForRole(role));
+  const [residents] = useResidents();
+  const [staff] = useStaff();
+  const [todos, setTodos] = useState<TodoItem[]>(() => getTodosForRole(role, residents, staff));
   const [isMinimized, setIsMinimized] = useState(false);
   const greeting = getRoleGreeting(role, name);
 

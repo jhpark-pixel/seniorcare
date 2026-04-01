@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { staff } from '../../data/mockData';
+import { useStaff } from '../../context/AppStateContext';
 
-const director = staff.find(s => s.role === 'DIRECTOR');
-
-const facilityInfo = {
+const defaultFacilityInfo = {
   name: '케어닥 케어홈 송추점',
   address: '경기도 시흥시 배곧신도시로 123, 케어닥빌딩',
-  ceo: director?.name ?? '박준혁',
+  ceo: '박준혁',
   bizNumber: '123-45-67890',
-  phone: director?.phone ?? '031-431-7700',
+  phone: '031-431-7700',
   fax: '031-431-7701',
-  email: director?.email ?? 'director@caredochome.co.kr',
+  email: 'director@caredochome.co.kr',
   capacity: '36',
   openDate: '2021-01-10',
 };
@@ -31,16 +29,18 @@ const codeCategories = [
   { category: '서비스 요청', codes: ['시설보수', '의료요청', '식사변경', '외출신청', '물품요청'] },
 ];
 
-const nurse1 = staff.find(s => s.role === 'NURSE')?.name ?? '김서연';
-
-const alertSettings = [
-  { name: '낙상 감지 알림', target: `${nurse1}, ${director?.name ?? '박준혁'}`, method: '앱 푸시 + SMS', enabled: true },
-  { name: '바이탈 이상 알림', target: `담당 ${nurse1}`, method: '앱 푸시', enabled: true },
-  { name: '미납 알림', target: director?.name ?? '박준혁', method: '이메일', enabled: true },
-  { name: '입퇴소 알림', target: '전체 직원', method: '앱 푸시', enabled: false },
-  { name: '프로그램 알림', target: '생활지도사', method: '앱 푸시', enabled: true },
-  { name: '야간 이상행동 알림', target: '야간 당직자', method: '앱 푸시 + SMS', enabled: true },
-];
+function buildAlertSettings(staffList: { role: string; name: string }[]) {
+  const nurse1 = staffList.find(s => s.role === 'NURSE')?.name ?? '김서연';
+  const directorName = staffList.find(s => s.role === 'DIRECTOR')?.name ?? '박준혁';
+  return [
+    { name: '낙상 감지 알림', target: `${nurse1}, ${directorName}`, method: '앱 푸시 + SMS', enabled: true },
+    { name: '바이탈 이상 알림', target: `담당 ${nurse1}`, method: '앱 푸시', enabled: true },
+    { name: '미납 알림', target: directorName, method: '이메일', enabled: true },
+    { name: '입퇴소 알림', target: '전체 직원', method: '앱 푸시', enabled: false },
+    { name: '프로그램 알림', target: '생활지도사', method: '앱 푸시', enabled: true },
+    { name: '야간 이상행동 알림', target: '야간 당직자', method: '앱 푸시 + SMS', enabled: true },
+  ];
+}
 
 const tabs = [
   { id: 'facility', label: '기본정보', path: '/erp/system-settings/facility' },
@@ -55,8 +55,17 @@ export default function SystemSettingsPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
+  const [staff] = useStaff();
+  const director = useMemo(() => staff.find(s => s.role === 'DIRECTOR'), [staff]);
+  const facilityInfo = useMemo(() => ({
+    ...defaultFacilityInfo,
+    ceo: director?.name ?? '박준혁',
+    phone: director?.phone ?? '031-431-7700',
+    email: director?.email ?? 'director@caredochome.co.kr',
+  }), [director]);
+
   const [form, setForm] = useState(facilityInfo);
-  const [alerts, setAlerts] = useState(alertSettings);
+  const [alerts, setAlerts] = useState(() => buildAlertSettings(staff));
   const [backupStatus, setBackupStatus] = useState<'idle' | 'running' | 'done'>('idle');
 
   const handleChange = (field: string, value: string) => {

@@ -1,35 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { residents } from '../../data/mockData';
-
-const allDiseases = residents.flatMap(r => r.diseases);
-const diseaseCounts: Record<string, number> = {};
-allDiseases.forEach(d => { diseaseCounts[d] = (diseaseCounts[d] || 0) + 1; });
+import { useResidents } from '../../context/AppStateContext';
 
 const diseaseGroups = [
   { name: '고혈압', aliases: ['고혈압'] },
   { name: '당뇨병', aliases: ['당뇨병', '당뇨'] },
   { name: '관절염', aliases: ['관절염'] },
   { name: '치매', aliases: ['치매'] },
-  { name: '기타', aliases: [] },
+  { name: '기타', aliases: [] as string[] },
 ];
 const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-purple-500', 'bg-gray-400'];
 const svgColors = ['#ef4444', '#f97316', '#eab308', '#a855f7', '#9ca3af'];
-
-const knownNames = new Set<string>();
-const diseaseData = diseaseGroups.map((g, i) => {
-  let count = 0;
-  if (g.aliases.length > 0) {
-    g.aliases.forEach(a => { count += diseaseCounts[a] || 0; knownNames.add(a); });
-  } else {
-    count = allDiseases.filter(d => !knownNames.has(d)).length;
-  }
-  const percent = Math.round((count / residents.length) * 100);
-  return { name: g.name, percent, count, color: colors[i], svgColor: svgColors[i] };
-});
 
 const fallMonthlyData = [
   { month: '2025.10', 건수: 2 },
@@ -47,18 +31,6 @@ const fallLocations = [
   { location: '기타', percent: 10, color: 'bg-gray-400' },
 ];
 
-const riskResidents = residents
-  .filter(r => r.healthScore < 60)
-  .sort((a, b) => a.healthScore - b.healthScore)
-  .map(r => ({
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    score: r.healthScore,
-    risk: r.healthScore < 50 ? '낙상 고위험' : r.cognitiveLevel !== 'NORMAL' ? '인지저하' : '복합질환',
-    disease: r.diseases.join(', '),
-    note: r.mobilityLevel >= 3 ? '이동 보조 필요' : r.cognitiveLevel === 'SEVERE' ? '야간 배회 주의' : '정기 모니터링',
-  }));
-
 const iotStats = {
   dailyAvg: 2.8,
   falsePositiveRate: 10,
@@ -75,15 +47,6 @@ const counselingData = [
   { month: '2026.03', 건수: 14 },
 ];
 
-const medicationData = residents
-  .filter(r => r.status !== 'DISCHARGED' && r.medications.filter(m => m.isActive).length > 0)
-  .map(r => ({
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    count: r.medications.filter(m => m.isActive).length,
-    meds: r.medications.filter(m => m.isActive).map(m => m.name).join(', '),
-  }));
-
 const tabs = [
   { id: 'disease', label: '질환 분포', path: '/erp/health-stats/disease' },
   { id: 'counseling', label: '상담 현황', path: '/erp/health-stats/counseling' },
@@ -97,6 +60,52 @@ export default function HealthStatsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [residents] = useResidents();
+
+  const diseaseData = useMemo(() => {
+    const allDiseases = residents.flatMap(r => r.diseases);
+    const diseaseCounts: Record<string, number> = {};
+    allDiseases.forEach(d => { diseaseCounts[d] = (diseaseCounts[d] || 0) + 1; });
+    const knownNames = new Set<string>();
+    return diseaseGroups.map((g, i) => {
+      let count = 0;
+      if (g.aliases.length > 0) {
+        g.aliases.forEach(a => { count += diseaseCounts[a] || 0; knownNames.add(a); });
+      } else {
+        count = allDiseases.filter(d => !knownNames.has(d)).length;
+      }
+      const percent = Math.round((count / residents.length) * 100);
+      return { name: g.name, percent, count, color: colors[i], svgColor: svgColors[i] };
+    });
+  }, [residents]);
+
+  const riskResidents = useMemo(() =>
+    residents
+      .filter(r => r.healthScore < 60)
+      .sort((a, b) => a.healthScore - b.healthScore)
+      .map(r => ({
+        name: r.name,
+        room: `${r.building} ${r.roomNumber}호`,
+        score: r.healthScore,
+        risk: r.healthScore < 50 ? '낙상 고위험' : r.cognitiveLevel !== 'NORMAL' ? '인지저하' : '복합질환',
+        disease: r.diseases.join(', '),
+        note: r.mobilityLevel >= 3 ? '이동 보조 필요' : r.cognitiveLevel === 'SEVERE' ? '야간 배회 주의' : '정기 모니터링',
+      })),
+    [residents],
+  );
+
+  const medicationData = useMemo(() =>
+    residents
+      .filter(r => r.status !== 'DISCHARGED' && r.medications.filter(m => m.isActive).length > 0)
+      .map(r => ({
+        name: r.name,
+        room: `${r.building} ${r.roomNumber}호`,
+        count: r.medications.filter(m => m.isActive).length,
+        meds: r.medications.filter(m => m.isActive).map(m => m.name).join(', '),
+      })),
+    [residents],
+  );
 
   return (
     <div className="space-y-6">

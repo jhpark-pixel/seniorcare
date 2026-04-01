@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, staff, generateId, daysAgo } from '../../data/mockData';
+import { generateId, daysAgo } from '../../data/mockData';
+import { useCollection, useResidents, useStaff } from '../../context/AppStateContext';
 
 interface HospitalVisit {
   id: string;
@@ -14,15 +15,15 @@ interface HospitalVisit {
   status: '예약' | '완료' | '취소';
 }
 
-const initialData: HospitalVisit[] = [
-  { id: '1', date: daysAgo(-1), name: '김영순', room: '1관 101호', hospital: '배곧서울병원', dept: '내과', companion: `간호사 ${staff[1].name}`, note: '혈압약 처방 변경 상담', status: '예약' },
-  { id: '2', date: daysAgo(-2), name: '송미경', room: '2관 205호', hospital: '시화병원', dept: '심장내과', companion: `간호사 ${staff[2].name}`, note: '심부전 외래 진료 및 약 조정', status: '예약' },
-  { id: '3', date: daysAgo(-5), name: '이복자', room: '1관 103호', hospital: '분당서울대병원', dept: '신경과', companion: `간호사 ${staff[1].name}`, note: '치매 정기 외래 (보호자 동행)', status: '예약' },
-  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', hospital: '배곧서울병원', dept: '신경과', companion: `생활지도사 ${staff[4].name}`, note: '뇌졸중 재활 경과 확인', status: '완료' },
-  { id: '5', date: daysAgo(5), name: '윤태식', room: '2관 207호', hospital: '시화병원', dept: '신경과', companion: `간호사 ${staff[2].name}`, note: 'INR 수치 확인 및 와파린 조절', status: '완료' },
-  { id: '6', date: daysAgo(6), name: '정기원', room: '1관 109호', hospital: '배곧서울병원', dept: '정신건강의학과', companion: `생활지도사 ${staff[3].name}`, note: '우울증 약 처방 및 상담', status: '완료' },
-  { id: '7', date: daysAgo(9), name: '박정호', room: '1관 105호', hospital: '배곧좋은치과', dept: '치과', companion: `생활지도사 ${staff[4].name}`, note: '틀니 수리 완료 수령', status: '완료' },
-  { id: '8', date: daysAgo(-3), name: '강옥희', room: '2관 209호', hospital: '배곧서울병원', dept: '정형외과', companion: `간호사 ${staff[2].name}`, note: '관절염 진료 및 약 처방', status: '예약' },
+const buildInitialData = (staffList: any[]): HospitalVisit[] => [
+  { id: '1', date: daysAgo(-1), name: '김영순', room: '1관 101호', hospital: '배곧서울병원', dept: '내과', companion: `간호사 ${staffList[1]?.name ?? ''}`, note: '혈압약 처방 변경 상담', status: '예약' },
+  { id: '2', date: daysAgo(-2), name: '송미경', room: '2관 205호', hospital: '시화병원', dept: '심장내과', companion: `간호사 ${staffList[2]?.name ?? ''}`, note: '심부전 외래 진료 및 약 조정', status: '예약' },
+  { id: '3', date: daysAgo(-5), name: '이복자', room: '1관 103호', hospital: '분당서울대병원', dept: '신경과', companion: `간호사 ${staffList[1]?.name ?? ''}`, note: '치매 정기 외래 (보호자 동행)', status: '예약' },
+  { id: '4', date: daysAgo(3), name: '최순남', room: '1관 107호', hospital: '배곧서울병원', dept: '신경과', companion: `생활지도사 ${staffList[4]?.name ?? ''}`, note: '뇌졸중 재활 경과 확인', status: '완료' },
+  { id: '5', date: daysAgo(5), name: '윤태식', room: '2관 207호', hospital: '시화병원', dept: '신경과', companion: `간호사 ${staffList[2]?.name ?? ''}`, note: 'INR 수치 확인 및 와파린 조절', status: '완료' },
+  { id: '6', date: daysAgo(6), name: '정기원', room: '1관 109호', hospital: '배곧서울병원', dept: '정신건강의학과', companion: `생활지도사 ${staffList[3]?.name ?? ''}`, note: '우울증 약 처방 및 상담', status: '완료' },
+  { id: '7', date: daysAgo(9), name: '박정호', room: '1관 105호', hospital: '배곧좋은치과', dept: '치과', companion: `생활지도사 ${staffList[4]?.name ?? ''}`, note: '틀니 수리 완료 수령', status: '완료' },
+  { id: '8', date: daysAgo(-3), name: '강옥희', room: '2관 209호', hospital: '배곧서울병원', dept: '정형외과', companion: `간호사 ${staffList[2]?.name ?? ''}`, note: '관절염 진료 및 약 처방', status: '예약' },
 ];
 
 const statusBadge = (status: string) => {
@@ -34,7 +35,6 @@ const statusBadge = (status: string) => {
   return map[status] || 'bg-gray-100 text-gray-600';
 };
 
-const residentOptions = residents.filter(r => r.status !== 'DISCHARGED');
 const emptyForm = { residentId: '', hospital: '', dept: '', date: '', companionId: '', note: '' };
 
 const tabs = [
@@ -48,7 +48,13 @@ export default function HospitalVisitPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<HospitalVisit[]>(initialData);
+  const [residents] = useResidents();
+  const [staff] = useStaff();
+
+  const initialData = useMemo(() => buildInitialData(staff), [staff]);
+  const residentOptions = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
+  const [data, setData] = useCollection<HospitalVisit>('hospitalVisits', initialData);
   const [formData, setFormData] = useState(emptyForm);
 
   const upcoming = data.filter(d => d.status === '예약');

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 interface LeaveRecord {
   id: string;
@@ -49,15 +50,6 @@ const initialData: LeaveRecord[] = [
   },
 ];
 
-const residentOptions = residents
-  .filter(r => r.status === 'ACTIVE')
-  .map(r => ({
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
-    phone: r.emergencyContact.phone,
-  }));
-
 const emptyForm = { name: '', room: '', reason: '', startDate: '', endDate: '', guardian: '', guardianPhone: '' };
 
 const tabs = [
@@ -69,7 +61,18 @@ export default function LeavePage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'register';
 
-  const [data, setData] = useState<LeaveRecord[]>(initialData);
+  const [residents] = useResidents();
+  const [data, setData] = useCollection<LeaveRecord>('leaves', initialData);
+
+  const residentOptions = useMemo(() => residents
+    .filter(r => r.status === 'ACTIVE')
+    .map(r => ({
+      name: r.name,
+      room: `${r.building} ${r.roomNumber}호`,
+      guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
+      phone: r.emergencyContact.phone,
+    })), [residents]);
+
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { generateId } from '../../data/mockData';
+import { useCollection } from '../../context/AppStateContext';
 
 const statusColor: Record<string, string> = {
   '대기': 'bg-yellow-100 text-yellow-800',
@@ -75,7 +76,7 @@ export default function CounselingPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'register';
 
-  const [data, setData] = useState<CounselingItem[]>(initialData);
+  const [data, setData] = useCollection<CounselingItem>('counselings', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');

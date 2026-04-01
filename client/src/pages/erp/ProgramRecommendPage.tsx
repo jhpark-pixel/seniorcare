@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { residents, activeResidents } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { useResidents } from '../../context/AppStateContext';
 
 interface Recommendation {
   name: string;
@@ -15,7 +15,7 @@ interface Enrollment {
 }
 
 // Resident-specific recommendations based on actual diseases/conditions
-function getRecommendations(residentId: string): Recommendation[] {
+function getRecommendations(residentId: string, residents: any[]): Recommendation[] {
   const res = residents.find(r => r.id === residentId);
   if (!res) return [];
 
@@ -53,7 +53,7 @@ function getRecommendations(residentId: string): Recommendation[] {
   return recs.sort((a, b) => b.score - a.score).slice(0, 5);
 }
 
-function getEnrollments(residentId: string): Enrollment[] {
+function getEnrollments(residentId: string, residents: any[]): Enrollment[] {
   const res = residents.find(r => r.id === residentId);
   if (!res) return [];
   // Simulate current enrollments based on cognitive/mobility level
@@ -71,12 +71,15 @@ function getEnrollments(residentId: string): Enrollment[] {
 }
 
 export default function ProgramRecommendPage() {
+  const [residents] = useResidents();
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
   const [selectedId, setSelectedId] = useState(activeResidents[0]?.id ?? '');
   const [enrolledPrograms, setEnrolledPrograms] = useState<Record<string, string[]>>({});
 
   const selectedResident = residents.find(r => r.id === selectedId);
-  const recommendations = getRecommendations(selectedId);
-  const currentEnrollments = getEnrollments(selectedId);
+  const recommendations = getRecommendations(selectedId, residents);
+  const currentEnrollments = getEnrollments(selectedId, residents);
   const enrolledForSelected = enrolledPrograms[selectedId] ?? [];
 
   const handleEnroll = (programName: string) => {

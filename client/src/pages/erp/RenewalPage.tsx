@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { residents, generateId } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { generateId } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 const intentColor: Record<string, string> = {
   '희망': 'bg-green-100 text-green-800',
@@ -18,42 +19,45 @@ interface RenewalItem {
   note: string;
 }
 
-// 실제 입주자 기준 계약 만료 데이터 (moveInDate + 4년 = 계약종료)
-const initialData: RenewalItem[] = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => {
-    const start = new Date(r.moveInDate);
-    // 계약기간 4년으로 가정
-    const end = new Date(start);
-    end.setFullYear(end.getFullYear() + 4);
-    const today = new Date('2026-04-01');
-    const diffMs = end.getTime() - today.getTime();
-    const remaining = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-
-    let intent = '미정';
-    if (remaining <= 30) intent = remaining <= 15 ? '거부' : '희망';
-    else if (remaining <= 90) intent = '희망';
-
-    let note = '';
-    if (r.name === '김영순') note = '동일 호실 희망';
-    else if (r.name === '이복자') note = '가족 상의 중';
-    else if (r.name === '한말순') note = '1인실 유지 희망';
-    else if (r.name === '정기원') note = '';
-
-    return {
-      id: r.id,
-      name: r.name,
-      room: `${r.building} ${r.roomNumber}호`,
-      start: r.moveInDate,
-      end: end.toISOString().slice(0, 10),
-      remaining,
-      intent,
-      note,
-    };
-  })
-  .sort((a, b) => a.remaining - b.remaining);
-
 export default function RenewalPage() {
+  const [residents] = useResidents();
+
+  const initialData = useMemo<RenewalItem[]>(() =>
+    residents
+      .filter(r => r.status !== 'DISCHARGED')
+      .map(r => {
+        const start = new Date(r.moveInDate);
+        const end = new Date(start);
+        end.setFullYear(end.getFullYear() + 4);
+        const today = new Date('2026-04-01');
+        const diffMs = end.getTime() - today.getTime();
+        const remaining = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+
+        let intent = '미정';
+        if (remaining <= 30) intent = remaining <= 15 ? '거부' : '희망';
+        else if (remaining <= 90) intent = '희망';
+
+        let note = '';
+        if (r.name === '김영순') note = '동일 호실 희망';
+        else if (r.name === '이복자') note = '가족 상의 중';
+        else if (r.name === '한말순') note = '1인실 유지 희망';
+        else if (r.name === '정기원') note = '';
+
+        return {
+          id: r.id,
+          name: r.name,
+          room: `${r.building} ${r.roomNumber}호`,
+          start: r.moveInDate,
+          end: end.toISOString().slice(0, 10),
+          remaining,
+          intent,
+          note,
+        };
+      })
+      .sort((a, b) => a.remaining - b.remaining),
+    [residents],
+  );
+
   const [data, setData] = useState<RenewalItem[]>(initialData);
   const [showModal, setShowModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);

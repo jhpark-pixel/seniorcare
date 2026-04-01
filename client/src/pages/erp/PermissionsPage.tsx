@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { staff } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { useStaff } from '../../context/AppStateContext';
 
 const roles = ['시설장', '간호사', '생활지도사'];
 const modules = ['입소자관리', '건강관리', '컨시어지', '커뮤니티', '식사관리', '시설관리', '경영통계', '경영관리'];
@@ -10,14 +10,14 @@ const initialPermissions: Record<string, Record<string, boolean>> = {
   '생활지도사': { '입소자관리': true, '건강관리': false, '컨시어지': true, '커뮤니티': true, '식사관리': true, '시설관리': false, '경영통계': false, '경영관리': false },
 };
 
-// Group real staff by role
-const staffByRole: Record<string, typeof staff> = {
-  '시설장': staff.filter(s => s.roleLabel === '시설장'),
-  '간호사': staff.filter(s => s.roleLabel === '간호사'),
-  '생활지도사': staff.filter(s => s.roleLabel === '생활지도사'),
-};
-
 export default function PermissionsPage() {
+  const [staff] = useStaff();
+
+  const staffByRole = useMemo(() => ({
+    '시설장': staff.filter(s => s.roleLabel === '시설장'),
+    '간호사': staff.filter(s => s.roleLabel === '간호사'),
+    '생활지도사': staff.filter(s => s.roleLabel === '생활지도사'),
+  }), [staff]);
   const [permissions, setPermissions] = useState(
     JSON.parse(JSON.stringify(initialPermissions)) as typeof initialPermissions
   );

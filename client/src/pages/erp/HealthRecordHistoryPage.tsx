@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import { residents } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { useResidents } from '../../context/AppStateContext';
 
-const residentList = residents.map(r => r.name);
-
-function genRecords(residentName: string) {
-  const resident = residents.find(r => r.name === residentName);
+function genRecords(residentName: string, residents: any[]) {
+  const resident = residents.find((r: any) => r.name === residentName);
   const recorders = ['김서연', '이하은'];
   const moods = ['좋음', '보통', '우울', '불안'];
   const meals = ['양호', '보통', '소량', '거부'];
   // seed-like deterministic values based on resident index for consistency
-  const baseIdx = residents.findIndex(r => r.name === residentName);
+  const baseIdx = residents.findIndex((r: any) => r.name === residentName);
   const bpBase = resident?.diseases.includes('고혈압') || resident?.diseases.includes('뇌졸중') ? 145 : 118;
   const sugarBase = resident?.diseases.includes('당뇨병') ? 150 : 95;
   const rows = [];
@@ -49,8 +47,11 @@ function genRecords(residentName: string) {
 const red = 'text-red-600 font-semibold';
 
 export default function HealthRecordHistoryPage() {
+  const [residents] = useResidents();
+  const residentList = useMemo(() => residents.map(r => r.name), [residents]);
+
   const [selected, setSelected] = useState(residentList[0]);
-  const records = genRecords(selected);
+  const records = genRecords(selected, residents);
 
   return (
     <div className="space-y-6">

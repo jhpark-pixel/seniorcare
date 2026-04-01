@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, staff } from '../../data/mockData';
+import { useCollection, useResidents, useStaff } from '../../context/AppStateContext';
 
 const today = '2026-03-30';
 
@@ -28,12 +28,7 @@ const initialData: HealthCounselingItem[] = [
   { id: '10', datetime: '2026-03-28 09:00', name: '송미경', room: '2관 205호', type: '외래', counselor: '간호사 이하은', summary: '입원 중 심부전 경과 보고 및 보호자 연락 사항 전달', status: '취소' },
 ];
 
-const residentOptions = residents.map(r => r.name);
 const typeOptions = ['일반건강', '투약', '정기검진', '운동', '외래'];
-const counselorOptions = [
-  ...staff.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
-  ...staff.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
-];
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -54,8 +49,6 @@ const typeBadge = (type: string) => {
   };
   return map[type] || 'bg-gray-100 text-gray-600';
 };
-
-const emptyForm = { name: residentOptions[0], type: '일반건강', datetime: '', counselor: counselorOptions[0], summary: '' };
 
 const tabs = [
   { id: 'register', label: '상담 예약 등록', path: '/erp/health-counseling/register' },
@@ -78,7 +71,17 @@ export default function HealthCounselingPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<HealthCounselingItem[]>(initialData);
+  const [residents] = useResidents();
+  const [staffList] = useStaff();
+
+  const residentOptions = useMemo(() => residents.map(r => r.name), [residents]);
+  const counselorOptions = useMemo(() => [
+    ...staffList.filter(s => s.role === 'NURSE').map(s => `간호사 ${s.name}`),
+    ...staffList.filter(s => s.role === 'SOCIAL_WORKER').map(s => `생활지도사 ${s.name}`),
+  ], [staffList]);
+  const emptyForm = useMemo(() => ({ name: residentOptions[0], type: '일반건강', datetime: '', counselor: counselorOptions[0], summary: '' }), [residentOptions, counselorOptions]);
+
+  const [data, setData] = useCollection<HealthCounselingItem>('healthCounselings', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');

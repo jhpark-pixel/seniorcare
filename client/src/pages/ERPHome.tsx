@@ -1,5 +1,5 @@
-import React from 'react';
-import { residents } from '../data/mockData';
+import React, { useMemo } from 'react';
+import { useResidents } from '../context/AppStateContext';
 
 interface WidgetProps {
   title: string;
@@ -47,8 +47,9 @@ function MiniTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
 }
 
 export default function ERPHome() {
-  const activeCount = residents.filter(r => r.status === 'ACTIVE').length;
-  const hospitalizedCount = residents.filter(r => r.status === 'HOSPITALIZED').length;
+  const [residents] = useResidents();
+  const activeCount = useMemo(() => residents.filter(r => r.status === 'ACTIVE').length, [residents]);
+  const hospitalizedCount = useMemo(() => residents.filter(r => r.status === 'HOSPITALIZED').length, [residents]);
 
   return (
     <div className="space-y-4">

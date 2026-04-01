@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { residents, getStatusColor } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { getStatusColor } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 type FilterType = '전체' | '위험군' | '주의군' | '양호';
 
@@ -38,29 +39,6 @@ function statusLabel(status: string): string {
   }
 }
 
-const residentRows: ResidentHealthRow[] = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => ({
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    score: r.healthScore,
-    tags: buildTags(r.diseases, r.mobilityLevel),
-    status: statusLabel(r.status),
-    diseases: r.diseases,
-  }));
-
-const totalCount = residentRows.length;
-const dangerCount = residentRows.filter(r => r.score < 60).length;
-const cautionCount = residentRows.filter(r => r.score >= 60 && r.score < 80).length;
-const goodCount = residentRows.filter(r => r.score >= 80).length;
-
-const summaryCards = [
-  { label: '총 입주자', value: totalCount, color: 'text-gray-900', bg: 'bg-blue-50' },
-  { label: '위험군', value: dangerCount, color: 'text-red-600', bg: 'bg-red-50' },
-  { label: '주의군', value: cautionCount, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { label: '양호', value: goodCount, color: 'text-green-600', bg: 'bg-green-50' },
-];
-
 function getScoreColor(score: number) {
   if (score >= 80) return 'text-green-600';
   if (score >= 60) return 'text-yellow-600';
@@ -74,6 +52,35 @@ function getScoreBg(score: number) {
 }
 
 export default function HealthDashboardPage() {
+  const [residents] = useResidents();
+
+  const residentRows = useMemo<ResidentHealthRow[]>(() =>
+    residents
+      .filter(r => r.status !== 'DISCHARGED')
+      .map(r => ({
+        name: r.name,
+        room: `${r.building} ${r.roomNumber}호`,
+        score: r.healthScore,
+        tags: buildTags(r.diseases, r.mobilityLevel),
+        status: statusLabel(r.status),
+        diseases: r.diseases,
+      })),
+    [residents],
+  );
+
+  const summaryCards = useMemo(() => {
+    const totalCount = residentRows.length;
+    const dangerCount = residentRows.filter(r => r.score < 60).length;
+    const cautionCount = residentRows.filter(r => r.score >= 60 && r.score < 80).length;
+    const goodCount = residentRows.filter(r => r.score >= 80).length;
+    return [
+      { label: '총 입주자', value: totalCount, color: 'text-gray-900', bg: 'bg-blue-50' },
+      { label: '위험군', value: dangerCount, color: 'text-red-600', bg: 'bg-red-50' },
+      { label: '주의군', value: cautionCount, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+      { label: '양호', value: goodCount, color: 'text-green-600', bg: 'bg-green-50' },
+    ];
+  }, [residentRows]);
+
   const [filter, setFilter] = useState<FilterType>('전체');
   const [search, setSearch] = useState('');
 

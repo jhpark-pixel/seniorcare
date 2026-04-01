@@ -1,24 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { residents, daysAgo } from '../../data/mockData';
-
-const totalResidents = residents.filter(r => r.status === 'ACTIVE').length;
-const specialDietCount = residents.filter(r => r.status !== 'DISCHARGED' && r.dietaryRestrictions.length > 0).length;
-
-const makeCount = (base: number) => Math.min(totalResidents, Math.max(totalResidents - 3, base));
-
-const dailyData = [
-  { date: daysAgo(6), label: `${daysAgo(6).slice(5).replace('-', '/')}(월)`, breakfast: makeCount(8), lunch: makeCount(9), dinner: makeCount(9) },
-  { date: daysAgo(5), label: `${daysAgo(5).slice(5).replace('-', '/')}(화)`, breakfast: makeCount(7), lunch: makeCount(9), dinner: makeCount(8) },
-  { date: daysAgo(4), label: `${daysAgo(4).slice(5).replace('-', '/')}(수)`, breakfast: makeCount(9), lunch: makeCount(9), dinner: makeCount(9) },
-  { date: daysAgo(3), label: `${daysAgo(3).slice(5).replace('-', '/')}(목)`, breakfast: makeCount(8), lunch: makeCount(9), dinner: makeCount(8) },
-  { date: daysAgo(2), label: `${daysAgo(2).slice(5).replace('-', '/')}(금)`, breakfast: makeCount(9), lunch: makeCount(9), dinner: makeCount(9) },
-  { date: daysAgo(1), label: `${daysAgo(1).slice(5).replace('-', '/')}(토)`, breakfast: makeCount(7), lunch: makeCount(8), dinner: makeCount(8) },
-  { date: daysAgo(0), label: `${daysAgo(0).slice(5).replace('-', '/')}(일)`, breakfast: makeCount(7), lunch: makeCount(8), dinner: makeCount(7) },
-];
-
-const todayData = dailyData[dailyData.length - 1];
+import { daysAgo } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 const monthlyData = [
   { month: '2025.10', mealCost: 3850 },
@@ -38,6 +22,25 @@ export default function MealStatsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [residents] = useResidents();
+
+  const totalResidents = useMemo(() => residents.filter(r => r.status === 'ACTIVE').length, [residents]);
+  const specialDietCount = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED' && r.dietaryRestrictions.length > 0).length, [residents]);
+
+  const makeCount = (base: number) => Math.min(totalResidents, Math.max(totalResidents - 3, base));
+
+  const dailyData = useMemo(() => [
+    { date: daysAgo(6), label: `${daysAgo(6).slice(5).replace('-', '/')}(월)`, breakfast: makeCount(8), lunch: makeCount(9), dinner: makeCount(9) },
+    { date: daysAgo(5), label: `${daysAgo(5).slice(5).replace('-', '/')}(화)`, breakfast: makeCount(7), lunch: makeCount(9), dinner: makeCount(8) },
+    { date: daysAgo(4), label: `${daysAgo(4).slice(5).replace('-', '/')}(수)`, breakfast: makeCount(9), lunch: makeCount(9), dinner: makeCount(9) },
+    { date: daysAgo(3), label: `${daysAgo(3).slice(5).replace('-', '/')}(목)`, breakfast: makeCount(8), lunch: makeCount(9), dinner: makeCount(8) },
+    { date: daysAgo(2), label: `${daysAgo(2).slice(5).replace('-', '/')}(금)`, breakfast: makeCount(9), lunch: makeCount(9), dinner: makeCount(9) },
+    { date: daysAgo(1), label: `${daysAgo(1).slice(5).replace('-', '/')}(토)`, breakfast: makeCount(7), lunch: makeCount(8), dinner: makeCount(8) },
+    { date: daysAgo(0), label: `${daysAgo(0).slice(5).replace('-', '/')}(일)`, breakfast: makeCount(7), lunch: makeCount(8), dinner: makeCount(7) },
+  ], [totalResidents]);
+
+  const todayData = dailyData[dailyData.length - 1];
 
   const [selectedDate, setSelectedDate] = useState(todayData.date);
   const selectedRow = dailyData.find(d => d.date === selectedDate) ?? todayData;

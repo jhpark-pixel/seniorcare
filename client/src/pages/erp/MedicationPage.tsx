@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 interface MedicationItem {
   id: string;
@@ -15,22 +15,6 @@ interface MedicationItem {
   status: string;
 }
 
-// Build initial medication data from shared mock residents
-const initialData: MedicationItem[] = residents.flatMap((r, ri) =>
-  r.medications.map((med, mi) => ({
-    id: `${ri + 1}-${mi + 1}`,
-    residentId: r.id,
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    drug: `${med.name} ${med.dosage}`,
-    dose: '1정',
-    times: med.schedule.split(','),
-    doctor: med.prescribedBy,
-    prescDate: '2026-01-01',
-    status: med.isActive ? '활성' : '중단',
-  }))
-);
-
 const allTimes = ['아침', '점심', '저녁', '취침전'];
 
 const timeBadge = (time: string) => {
@@ -44,9 +28,6 @@ const timeBadge = (time: string) => {
 };
 
 const statusFilters = ['전체', '활성', '중단'] as const;
-
-const residentOptions = residents.map(r => r.name);
-const emptyForm = { name: residentOptions[0], drug: '', dose: '', times: [] as string[], doctor: '' };
 
 const tabs = [
   { id: 'register', label: '처방약물 등록', path: '/erp/medication/register' },
@@ -69,34 +50,54 @@ interface HistoryLog {
 
 const nurses = ['간호사 김서연', '간호사 이하은'];
 
-const initialHistory: HistoryLog[] = HISTORY_DATES.flatMap(date =>
-  initialData
-    .filter(d => d.status === '활성')
-    .flatMap(d =>
-      d.times.map((t, ti) => ({
-        date,
-        name: d.name,
-        room: d.room,
-        drug: d.drug,
-        time: t,
-        given: date < '2026-03-30' ? true : ti % 3 !== 2,
-        nurse: nurses[ti % 2],
-      }))
-    )
-);
-
 export default function MedicationPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<MedicationItem[]>(initialData);
+  const [residents] = useResidents();
+
+  const initialData = useMemo<MedicationItem[]>(() => residents.flatMap((r, ri) =>
+    r.medications.map((med, mi) => ({
+      id: `${ri + 1}-${mi + 1}`,
+      residentId: r.id,
+      name: r.name,
+      room: `${r.building} ${r.roomNumber}호`,
+      drug: `${med.name} ${med.dosage}`,
+      dose: '1정',
+      times: med.schedule.split(','),
+      doctor: med.prescribedBy,
+      prescDate: '2026-01-01',
+      status: med.isActive ? '활성' : '중단',
+    }))
+  ), [residents]);
+
+  const initialHistory = useMemo<HistoryLog[]>(() => HISTORY_DATES.flatMap(date =>
+    initialData
+      .filter(d => d.status === '활성')
+      .flatMap(d =>
+        d.times.map((t, ti) => ({
+          date,
+          name: d.name,
+          room: d.room,
+          drug: d.drug,
+          time: t,
+          given: date < '2026-03-30' ? true : ti % 3 !== 2,
+          nurse: nurses[ti % 2],
+        }))
+      )
+  ), [initialData]);
+
+  const residentOptions = useMemo(() => residents.map(r => r.name), [residents]);
+  const emptyForm = useMemo(() => ({ name: residentOptions[0], drug: '', dose: '', times: [] as string[], doctor: '' }), [residentOptions]);
+
+  const [data, setData] = useCollection<MedicationItem>('medications', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [filter, setFilter] = useState<string>('전체');
   const [historyDate, setHistoryDate] = useState('2026-03-30');
   const [historyName, setHistoryName] = useState('');
-  const [history] = useState<HistoryLog[]>(initialHistory);
+  const [history] = useCollection<HistoryLog>('medicationHistory', initialHistory);
 
   const filtered = filter === '전체' ? data : data.filter(d => d.status === filter);
 

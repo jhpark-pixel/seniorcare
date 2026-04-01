@@ -1,32 +1,6 @@
-import React, { useState } from 'react';
-import { residents, activeResidents, generateId } from '../../data/mockData';
-
-// 실제 입주자 데이터 기반 요약
-const activeCount = residents.filter(r => r.status === 'ACTIVE').length;
-const hospitalizedCount = residents.filter(r => r.status === 'HOSPITALIZED').length;
-const outingCount = residents.filter(r => r.status === 'OUTING').length;
-const dischargedCount = residents.filter(r => r.status === 'DISCHARGED').length;
-const totalEver = residents.length;
-
-const summaryCards = [
-  { label: '총 입소자', value: totalEver, color: 'text-gray-900', bg: 'bg-blue-50' },
-  { label: '현재 입주중', value: activeCount, color: 'text-green-600', bg: 'bg-green-50' },
-  { label: '외출중', value: outingCount, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { label: '입원중', value: hospitalizedCount, color: 'text-orange-600', bg: 'bg-orange-50' },
-  { label: '퇴소', value: dischargedCount, color: 'text-red-600', bg: 'bg-red-50' },
-];
-
-// 최근 입소자 - 실제 입주자 moveInDate 기준 최근 5명
-const recentAdmissions = [...activeResidents]
-  .sort((a, b) => new Date(b.moveInDate).getTime() - new Date(a.moveInDate).getTime())
-  .slice(0, 5)
-  .map(r => ({
-    name: r.name,
-    room: `${r.building} ${r.roomNumber}호`,
-    date: r.moveInDate,
-    reason: r.diseases.length > 0 ? r.diseases.join(', ') + ' 관리' : '노인성 질환 관리',
-    guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
-  }));
+import React, { useState, useMemo } from 'react';
+import { generateId } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 // 최근 퇴소자 - 재계약 거부 또는 만료 예시 (송미경 외출/입원 포함)
 const recentDischarges = [
@@ -45,15 +19,47 @@ interface AdmissionRecord {
 }
 
 export default function AdmissionStatusPage() {
+  const [residents] = useResidents();
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
+  const summaryCards = useMemo(() => {
+    const activeCount = residents.filter(r => r.status === 'ACTIVE').length;
+    const hospitalizedCount = residents.filter(r => r.status === 'HOSPITALIZED').length;
+    const outingCount = residents.filter(r => r.status === 'OUTING').length;
+    const dischargedCount = residents.filter(r => r.status === 'DISCHARGED').length;
+    const totalEver = residents.length;
+    return [
+      { label: '총 입소자', value: totalEver, color: 'text-gray-900', bg: 'bg-blue-50' },
+      { label: '현재 입주중', value: activeCount, color: 'text-green-600', bg: 'bg-green-50' },
+      { label: '외출중', value: outingCount, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+      { label: '입원중', value: hospitalizedCount, color: 'text-orange-600', bg: 'bg-orange-50' },
+      { label: '퇴소', value: dischargedCount, color: 'text-red-600', bg: 'bg-red-50' },
+    ];
+  }, [residents]);
+
+  const recentAdmissions = useMemo(() =>
+    [...activeResidents]
+      .sort((a, b) => new Date(b.moveInDate).getTime() - new Date(a.moveInDate).getTime())
+      .slice(0, 5)
+      .map(r => ({
+        name: r.name,
+        room: `${r.building} ${r.roomNumber}호`,
+        date: r.moveInDate,
+        reason: r.diseases.length > 0 ? r.diseases.join(', ') + ' 관리' : '노인성 질환 관리',
+        guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
+      })),
+    [activeResidents],
+  );
+
   const [admissions, setAdmissions] = useState<AdmissionRecord[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', room: '', date: '', type: '입소' as '입소' | '퇴소', reason: '', guardian: '' });
 
-  const residentOptions = activeResidents.map(r => ({
+  const residentOptions = useMemo(() => activeResidents.map(r => ({
     name: r.name,
     room: `${r.building} ${r.roomNumber}호`,
     guardian: `${r.emergencyContact.name} (${r.emergencyContact.relationship})`,
-  }));
+  })), [activeResidents]);
 
   const handleResidentSelect = (name: string) => {
     const found = residentOptions.find(r => r.name === name);

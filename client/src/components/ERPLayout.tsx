@@ -12,9 +12,12 @@ function getTabFromPath(pathname: string): string {
   const first = segments[0];
   const tabIds = ['resident', 'health', 'concierge', 'community', 'meal', 'facility', 'stats', 'admin'];
   if (tabIds.includes(first)) return first;
-  if (first === 'residents' || first === 'health-records' || first === 'fall-events') return 'home';
-  if (first === 'programs' || first === 'guides') return 'home';
-  if (first === 'iot-devices' || first === 'daily-tasks') return 'home';
+  if (first === 'residents') return 'resident';
+  if (first === 'health-records') return 'health';
+  if (first === 'fall-events') return 'health';
+  if (first === 'programs' || first === 'guides') return 'community';
+  if (first === 'iot-devices') return 'facility';
+  if (first === 'daily-tasks') return 'home';
   if (first === 'management') return 'stats';
   if (first === 'admin-management') return 'admin';
   return 'home';
@@ -45,13 +48,21 @@ export default function ERPLayout() {
     }
   }, [showTodo]);
 
+  const defaultPaths: Record<string, string> = {
+    home: '/home',
+    resident: '/resident/counseling/register',
+    health: '/health/records/daily',
+    concierge: '/concierge/service/register',
+    community: '/community/program/manage',
+    meal: '/meal/plan/register',
+    facility: '/facility/room/status',
+    stats: '/stats/occupancy/overview',
+    admin: '/admin/staff/list',
+  };
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
-    if (tabId === 'home') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${tabId}`);
-    }
+    navigate(defaultPaths[tabId] || '/home');
   };
 
   const showSidebar = activeTab !== 'home';

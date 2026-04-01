@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { staff } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { useStaff } from '../../context/AppStateContext';
 
 const days = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -18,19 +18,30 @@ interface StaffSchedule {
   shifts: Shift[];
 }
 
-// Build schedule from real staff, with realistic shift patterns
-const staffSchedules: StaffSchedule[] = [
-  { id: staff[0].id, name: staff[0].name, role: staff[0].roleLabel, shifts: ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'] },
-  { id: staff[1].id, name: staff[1].name, role: staff[1].roleLabel, shifts: ['주간', '주간', '야간', '휴무', '주간', '주간', '휴무'] },
-  { id: staff[2].id, name: staff[2].name, role: staff[2].roleLabel, shifts: ['야간', '휴무', '주간', '주간', '주간', '휴무', '야간'] },
-  { id: staff[3].id, name: staff[3].name, role: staff[3].roleLabel, shifts: ['주간', '주간', '휴무', '주간', '주간', '휴무', '야간'] },
-  { id: staff[4].id, name: staff[4].name, role: staff[4].roleLabel, shifts: ['휴무', '주간', '주간', '야간', '휴무', '주간', '주간'] },
-];
-
 // 오늘은 월요일(index 0) 기준
 const todayIndex = 0;
 
+const shiftPatterns: Shift[][] = [
+  ['주간', '주간', '주간', '주간', '주간', '휴무', '휴무'],
+  ['주간', '주간', '야간', '휴무', '주간', '주간', '휴무'],
+  ['야간', '휴무', '주간', '주간', '주간', '휴무', '야간'],
+  ['주간', '주간', '휴무', '주간', '주간', '휴무', '야간'],
+  ['휴무', '주간', '주간', '야간', '휴무', '주간', '주간'],
+];
+
 export default function StaffManagementPage() {
+  const [staff] = useStaff();
+
+  const staffSchedules = useMemo<StaffSchedule[]>(() =>
+    staff.map((s, i) => ({
+      id: s.id,
+      name: s.name,
+      role: s.roleLabel,
+      shifts: shiftPatterns[i] ?? shiftPatterns[0],
+    })),
+    [staff],
+  );
+
   const [schedules, setSchedules] = useState<StaffSchedule[]>(staffSchedules);
 
   const todayWorkers = schedules.filter((s) => s.shifts[todayIndex] === '주간');

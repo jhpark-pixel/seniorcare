@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { staff } from '../../data/mockData';
+import { useStaff } from '../../context/AppStateContext';
 
 type ReportType = '월간' | '분기' | '연간' | '커스텀';
 type ReportStatus = '완료' | '생성중';
@@ -15,9 +15,6 @@ interface Report {
   status: ReportStatus;
 }
 
-const director = staff.find(s => s.role === 'DIRECTOR')?.name ?? '박준혁';
-const nurse1 = staff.find(s => s.role === 'NURSE')?.name ?? '김서연';
-
 const typeColor: Record<ReportType, string> = {
   '월간': 'bg-blue-100 text-blue-700',
   '분기': 'bg-purple-100 text-purple-700',
@@ -30,13 +27,15 @@ const statusColor: Record<ReportStatus, string> = {
   '생성중': 'bg-yellow-100 text-yellow-700',
 };
 
-const initialReports: Report[] = [
-  { id: '1', name: '2026년 3월 운영현황 보고서', type: '월간', period: '2026.03.01 ~ 2026.03.31', createdAt: '2026-03-30', creator: director, status: '생성중' },
-  { id: '2', name: '2026년 1분기 경영실적 보고서', type: '분기', period: '2026.01.01 ~ 2026.03.31', createdAt: '2026-03-28', creator: director, status: '완료' },
-  { id: '3', name: '2026년 2월 운영현황 보고서', type: '월간', period: '2026.02.01 ~ 2026.02.28', createdAt: '2026-03-01', creator: director, status: '완료' },
-  { id: '4', name: '2025년 연간 경영실적 보고서', type: '연간', period: '2025.01.01 ~ 2025.12.31', createdAt: '2026-01-15', creator: director, status: '완료' },
-  { id: '5', name: '낙상사고 분석 특별보고서', type: '커스텀', period: '2025.10.01 ~ 2026.03.15', createdAt: '2026-03-20', creator: nurse1, status: '완료' },
-];
+function buildInitialReports(directorName: string, nurseName: string): Report[] {
+  return [
+    { id: '1', name: '2026년 3월 운영현황 보고서', type: '월간', period: '2026.03.01 ~ 2026.03.31', createdAt: '2026-03-30', creator: directorName, status: '생성중' },
+    { id: '2', name: '2026년 1분기 경영실적 보고서', type: '분기', period: '2026.01.01 ~ 2026.03.31', createdAt: '2026-03-28', creator: directorName, status: '완료' },
+    { id: '3', name: '2026년 2월 운영현황 보고서', type: '월간', period: '2026.02.01 ~ 2026.02.28', createdAt: '2026-03-01', creator: directorName, status: '완료' },
+    { id: '4', name: '2025년 연간 경영실적 보고서', type: '연간', period: '2025.01.01 ~ 2025.12.31', createdAt: '2026-01-15', creator: directorName, status: '완료' },
+    { id: '5', name: '낙상사고 분석 특별보고서', type: '커스텀', period: '2025.10.01 ~ 2026.03.15', createdAt: '2026-03-20', creator: nurseName, status: '완료' },
+  ];
+}
 
 const tabs = [
   { id: 'monthly', label: '월간 보고서', path: '/erp/report/monthly' },
@@ -50,7 +49,11 @@ export default function ReportPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [reports, setReports] = useState<Report[]>(initialReports);
+  const [staff] = useStaff();
+  const director = useMemo(() => staff.find(s => s.role === 'DIRECTOR')?.name ?? '박준혁', [staff]);
+  const nurse1 = useMemo(() => staff.find(s => s.role === 'NURSE')?.name ?? '김서연', [staff]);
+
+  const [reports, setReports] = useState<Report[]>(() => buildInitialReports(director, nurse1));
   const [showNewModal, setShowNewModal] = useState(false);
   const [newForm, setNewForm] = useState({ name: '', type: '월간' as ReportType, period: '' });
 

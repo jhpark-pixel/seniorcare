@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { staff, residents } from '../../data/mockData';
+import { useStaff, useResidents } from '../../context/AppStateContext';
 
 const serviceRequestData = [
   { type: '시설보수', 건수: 18 },
@@ -22,13 +22,15 @@ const popularPrograms = [
   { rank: 5, name: '요가교실', category: '운동', participants: 5, capacity: 10, rate: 50.0 },
 ];
 
-const staffWorkload = staff.map((s, i) => ({
-  name: s.name,
-  role: s.roleLabel,
-  residents: [5, 4, 4, 3, 3][i] ?? 3,
-  counseling: [5, 4, 3, 3, 2][i] ?? 2,
-  services: [20, 18, 15, 14, 12][i] ?? 10,
-}));
+function buildStaffWorkload(staffList: { name: string; roleLabel: string }[]) {
+  return staffList.map((s, i) => ({
+    name: s.name,
+    role: s.roleLabel,
+    residents: [5, 4, 4, 3, 3][i] ?? 3,
+    counseling: [5, 4, 3, 3, 2][i] ?? 2,
+    services: [20, 18, 15, 14, 12][i] ?? 10,
+  }));
+}
 
 const complaintTypes = [
   { type: '식사', count: 4, percent: 30, avgTime: '1.2일' },
@@ -69,6 +71,10 @@ export default function OperationStatsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [staff] = useStaff();
+  const [residents] = useResidents();
+  const staffWorkload = useMemo(() => buildStaffWorkload(staff), [staff]);
 
   const totalComplaints = complaintTypes.reduce((s, c) => s + c.count, 0);
 

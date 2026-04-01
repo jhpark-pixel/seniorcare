@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { residents } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
-const residentList = residents.map(r => r.name);
-
-function getHealthData(residentName: string) {
-  const r = residents.find(res => res.name === residentName);
+function getHealthData(residentName: string, residents: any[]) {
+  const r = residents.find((res: any) => res.name === residentName);
   if (!r) return { score: 70, itemScores: [], riskTags: [], opinion: '' };
 
   const hasBP = r.diseases.some(d => d.includes('고혈압') || d.includes('뇌졸중'));
@@ -61,9 +59,9 @@ function getHealthData(residentName: string) {
   return { score: r.healthScore, itemScores, riskTags, opinion };
 }
 
-function genTrendData(residentName: string) {
-  const r = residents.find(res => res.name === residentName);
-  const baseIdx = residents.findIndex(res => res.name === residentName);
+function genTrendData(residentName: string, residents: any[]) {
+  const r = residents.find((res: any) => res.name === residentName);
+  const baseIdx = residents.findIndex((res: any) => res.name === residentName);
   const hasBP = r?.diseases.some(d => d.includes('고혈압') || d.includes('뇌졸중')) ?? false;
   const hasDiabetes = r?.diseases.some(d => d.includes('당뇨')) ?? false;
   const bpBase = hasBP ? 148 : 118;
@@ -97,15 +95,18 @@ function ScoreGauge({ score }: { score: number }) {
 }
 
 export default function PersonalHealthAnalysisPage() {
+  const [residents] = useResidents();
+  const residentList = useMemo(() => residents.map(r => r.name), [residents]);
+
   const [selected, setSelected] = useState(residentList[0]);
-  const { score, itemScores, riskTags, opinion: defaultOpinion } = getHealthData(selected);
-  const trendData = genTrendData(selected);
+  const { score, itemScores, riskTags, opinion: defaultOpinion } = getHealthData(selected, residents);
+  const trendData = genTrendData(selected, residents);
   const [opinion, setOpinion] = useState(defaultOpinion);
   const [savedOpinion, setSavedOpinion] = useState(false);
 
   const handleResidentChange = (name: string) => {
     setSelected(name);
-    const { opinion: newOpinion } = getHealthData(name);
+    const { opinion: newOpinion } = getHealthData(name, residents);
     setOpinion(newOpinion);
     setSavedOpinion(false);
   };

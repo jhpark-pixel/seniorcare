@@ -1,22 +1,29 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { residents } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
-const unpaidResidents = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .sort((a, b) => a.healthScore - b.healthScore)
-  .slice(0, 5);
+function buildUnpaidData(unpaidResidents: any[]) {
+  return [
+    { name: unpaidResidents[0]?.name ?? '한말순', room: `${unpaidResidents[0]?.building ?? '2관'} ${unpaidResidents[0]?.roomNumber ?? '201'}호`, amount: '320만원', period: '3개월', status: '독촉 완료' },
+    { name: unpaidResidents[1]?.name ?? '송미경', room: `${unpaidResidents[1]?.building ?? '2관'} ${unpaidResidents[1]?.roomNumber ?? '205'}호`, amount: '280만원', period: '2개월', status: '납부 약속' },
+    { name: unpaidResidents[2]?.name ?? '윤태식', room: `${unpaidResidents[2]?.building ?? '2관'} ${unpaidResidents[2]?.roomNumber ?? '207'}호`, amount: '250만원', period: '2개월', status: '가족 연락중' },
+    { name: unpaidResidents[3]?.name ?? '이복자', room: `${unpaidResidents[3]?.building ?? '1관'} ${unpaidResidents[3]?.roomNumber ?? '103'}호`, amount: '200만원', period: '1개월', status: '미연락' },
+    { name: unpaidResidents[4]?.name ?? '최순남', room: `${unpaidResidents[4]?.building ?? '1관'} ${unpaidResidents[4]?.roomNumber ?? '107'}호`, amount: '150만원', period: '1개월', status: '납부 예정' },
+  ];
+}
 
-const unpaidData = [
-  { name: unpaidResidents[0]?.name ?? '한말순', room: `${unpaidResidents[0]?.building ?? '2관'} ${unpaidResidents[0]?.roomNumber ?? '201'}호`, amount: '320만원', period: '3개월', status: '독촉 완료' },
-  { name: unpaidResidents[1]?.name ?? '송미경', room: `${unpaidResidents[1]?.building ?? '2관'} ${unpaidResidents[1]?.roomNumber ?? '205'}호`, amount: '280만원', period: '2개월', status: '납부 약속' },
-  { name: unpaidResidents[2]?.name ?? '윤태식', room: `${unpaidResidents[2]?.building ?? '2관'} ${unpaidResidents[2]?.roomNumber ?? '207'}호`, amount: '250만원', period: '2개월', status: '가족 연락중' },
-  { name: unpaidResidents[3]?.name ?? '이복자', room: `${unpaidResidents[3]?.building ?? '1관'} ${unpaidResidents[3]?.roomNumber ?? '103'}호`, amount: '200만원', period: '1개월', status: '미연락' },
-  { name: unpaidResidents[4]?.name ?? '최순남', room: `${unpaidResidents[4]?.building ?? '1관'} ${unpaidResidents[4]?.roomNumber ?? '107'}호`, amount: '150만원', period: '1개월', status: '납부 예정' },
-];
+function buildDepositData(unpaidResidents: any[]) {
+  return [
+    { name: unpaidResidents[0]?.name ?? '-', deposit: 5000, type: '1인실(A)' },
+    { name: unpaidResidents[1]?.name ?? '-', deposit: 4000, type: '1인실(B)' },
+    { name: unpaidResidents[2]?.name ?? '-', deposit: 3000, type: '2인실(A)' },
+    { name: unpaidResidents[3]?.name ?? '-', deposit: 2500, type: '2인실(B)' },
+    { name: unpaidResidents[4]?.name ?? '-', deposit: 8000, type: '특실' },
+  ];
+}
 
 const kpiCards = [
   { label: '월 매출', value: '2.38억', color: 'bg-blue-50 text-blue-700', icon: '💰', sub: '전월 대비 +3.2%' },
@@ -41,14 +48,6 @@ const revenueBreakdown = [
   { label: '서비스비', percent: 10, amount: '2,380만', color: 'bg-purple-500' },
 ];
 
-const depositData = [
-  { name: unpaidResidents[0]?.name ?? '-', deposit: 5000, type: '1인실(A)' },
-  { name: unpaidResidents[1]?.name ?? '-', deposit: 4000, type: '1인실(B)' },
-  { name: unpaidResidents[2]?.name ?? '-', deposit: 3000, type: '2인실(A)' },
-  { name: unpaidResidents[3]?.name ?? '-', deposit: 2500, type: '2인실(B)' },
-  { name: unpaidResidents[4]?.name ?? '-', deposit: 8000, type: '특실' },
-];
-
 const forecastData = [
   { month: '2026.04', 매출예측: 24100, 운영비예측: 16800 },
   { month: '2026.05', 매출예측: 24400, 운영비예측: 17000 },
@@ -68,6 +67,14 @@ export default function FinanceStatsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
+
+  const [residents] = useResidents();
+  const unpaidResidents = useMemo(() =>
+    residents.filter(r => r.status !== 'DISCHARGED').sort((a, b) => a.healthScore - b.healthScore).slice(0, 5),
+    [residents],
+  );
+  const unpaidData = useMemo(() => buildUnpaidData(unpaidResidents), [unpaidResidents]);
+  const depositData = useMemo(() => buildDepositData(unpaidResidents), [unpaidResidents]);
 
   return (
     <div className="space-y-6">

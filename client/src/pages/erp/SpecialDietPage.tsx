@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, activeResidents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 interface SpecialDiet {
   id: string;
@@ -13,27 +14,6 @@ interface SpecialDiet {
   note: string;
   status: '활성' | '종료';
 }
-
-const buildInitialDiets = (): SpecialDiet[] => {
-  const result: SpecialDiet[] = [];
-  residents.forEach(r => {
-    if (r.dietaryRestrictions.length === 0) return;
-    r.dietaryRestrictions.forEach((diet, idx) => {
-      result.push({
-        id: `init-${r.id}-${idx}`,
-        residentId: r.id,
-        residentName: r.name,
-        room: `${r.building} ${r.roomNumber}호`,
-        dietType: diet,
-        reason: r.diseases.slice(0, 2).join(', ') || '개인 요청',
-        startDate: r.moveInDate,
-        note: idx === 0 ? `${r.dietaryRestrictions.join(' + ')} 적용` : '',
-        status: r.status === 'DISCHARGED' ? '종료' : '활성',
-      });
-    });
-  });
-  return result;
-};
 
 const dietTypeColors: Record<string, string> = {
   '저염식': 'bg-blue-100 text-blue-800',
@@ -63,7 +43,31 @@ export default function SpecialDietPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [diets, setDiets] = useState<SpecialDiet[]>(buildInitialDiets());
+  const [residents] = useResidents();
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+
+  const initialDiets = useMemo<SpecialDiet[]>(() => {
+    const result: SpecialDiet[] = [];
+    residents.forEach(r => {
+      if (r.dietaryRestrictions.length === 0) return;
+      r.dietaryRestrictions.forEach((diet, idx) => {
+        result.push({
+          id: `init-${r.id}-${idx}`,
+          residentId: r.id,
+          residentName: r.name,
+          room: `${r.building} ${r.roomNumber}호`,
+          dietType: diet,
+          reason: r.diseases.slice(0, 2).join(', ') || '개인 요청',
+          startDate: r.moveInDate,
+          note: idx === 0 ? `${r.dietaryRestrictions.join(' + ')} 적용` : '',
+          status: r.status === 'DISCHARGED' ? '종료' : '활성',
+        });
+      });
+    });
+    return result;
+  }, [residents]);
+
+  const [diets, setDiets] = useState<SpecialDiet[]>(initialDiets);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [filterStatus, setFilterStatus] = useState<'전체' | '활성' | '종료'>('전체');

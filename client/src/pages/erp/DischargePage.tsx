@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { residents, activeResidents, generateId } from '../../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { generateId } from '../../data/mockData';
+import { useResidents } from '../../context/AppStateContext';
 
 const reasons = ['자의퇴소', '가족요청', '건강악화', '시설이전', '기타'];
 
@@ -54,12 +55,13 @@ const initialApplications: DischargeApplication[] = [
   },
 ];
 
-const residentOptions = activeResidents.map(r => ({
-  name: r.name,
-  room: `${r.building} ${r.roomNumber}호`,
-}));
-
 export default function DischargePage() {
+  const [residents] = useResidents();
+  const activeResidents = useMemo(() => residents.filter(r => r.status !== 'DISCHARGED'), [residents]);
+  const residentOptions = useMemo(() => activeResidents.map(r => ({
+    name: r.name,
+    room: `${r.building} ${r.roomNumber}호`,
+  })), [activeResidents]);
   const [applications, setApplications] = useState<DischargeApplication[]>(initialApplications);
   const [form, setForm] = useState({ resident: '', room: '', reason: '', date: '', settlement: '', note: '' });
 

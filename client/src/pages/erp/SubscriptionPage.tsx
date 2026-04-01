@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 const depositColor: Record<string, string> = {
   '미납': 'bg-red-100 text-red-800',
@@ -37,12 +38,7 @@ const initialData: SubscriptionItem[] = [
   { id: '8', date: '2026-03-10', name: '강준호', phone: '010-8888-9999', room: '2관 209호', wishDate: '2026-05-10', amount: 5000000, deposit: '미납', progress: '접수' },
 ];
 
-// 빈 호실 목록
-const vacantRooms = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => `${r.building} ${r.roomNumber}호`);
-
-const emptyForm = { name: '', phone: '', room: vacantRooms[0] || '1관 101호', wishDate: '', amount: '5000000' };
+const emptyFormBase = { name: '', phone: '', room: '1관 101호', wishDate: '', amount: '5000000' };
 
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
 
@@ -57,9 +53,17 @@ export default function SubscriptionPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'register';
 
-  const [data, setData] = useState<SubscriptionItem[]>(initialData);
+  const [residents] = useResidents();
+  const [data, setData] = useCollection<SubscriptionItem>('subscriptions', initialData);
+
+  const vacantRooms = useMemo(() => residents
+    .filter(r => r.status !== 'DISCHARGED')
+    .map(r => `${r.building} ${r.roomNumber}호`), [residents]);
+
+  const emptyForm = useMemo(() => ({ name: '', phone: '', room: vacantRooms[0] || '1관 101호', wishDate: '', amount: '5000000' }), [vacantRooms]);
+
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState(emptyFormBase);
   const [search, setSearch] = useState('');
   const [depositFilter, setDepositFilter] = useState('전체');
 

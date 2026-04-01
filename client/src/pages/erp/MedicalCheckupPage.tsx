@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 interface Checkup {
   id: string;
@@ -37,9 +37,6 @@ const typeBadge = (type: string) => {
   return map[type] || 'bg-gray-100 text-gray-600';
 };
 
-const residentOptions = residents.map(r => r.name);
-const emptyForm = { name: residentOptions[0], type: '일반', hospital: '', doctor: '', date: '', result: '' };
-
 const tabs = [
   { id: 'schedule', label: '검진일정 관리', path: '/erp/medical-checkup/schedule' },
   { id: 'result', label: '검진결과 입력', path: '/erp/medical-checkup/result' },
@@ -62,7 +59,12 @@ export default function MedicalCheckupPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [data, setData] = useState<Checkup[]>(initialData);
+  const [residents] = useResidents();
+
+  const residentOptions = useMemo(() => residents.map(r => r.name), [residents]);
+  const emptyForm = useMemo(() => ({ name: residentOptions[0], type: '일반', hospital: '', doctor: '', date: '', result: '' }), [residentOptions]);
+
+  const [data, setData] = useCollection<Checkup>('medicalCheckups', initialData);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);

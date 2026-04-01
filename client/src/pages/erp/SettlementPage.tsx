@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { residents, generateId } from '../../data/mockData';
+import { generateId } from '../../data/mockData';
+import { useCollection, useResidents } from '../../context/AppStateContext';
 
 interface SettlementRecord {
   id: string;
@@ -38,10 +39,6 @@ const initialData: SettlementRecord[] = [
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
 const emptyPayment = { amount: '', method: '계좌이체', date: '' };
 
-const residentOptions = residents
-  .filter(r => r.status !== 'DISCHARGED')
-  .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` }));
-
 // 입금 내역 (payment 탭용 - 납부 이력 기록)
 interface PaymentHistory {
   id: string;
@@ -76,8 +73,13 @@ export default function SettlementPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || 'deposit';
 
-  const [data, setData] = useState<SettlementRecord[]>(initialData);
-  const [history, setHistory] = useState<PaymentHistory[]>(initialHistory);
+  const [residents] = useResidents();
+  const [data, setData] = useCollection<SettlementRecord>('settlements', initialData);
+  const [history, setHistory] = useCollection<PaymentHistory>('paymentHistory', initialHistory);
+
+  const residentOptions = useMemo(() => residents
+    .filter(r => r.status !== 'DISCHARGED')
+    .map(r => ({ name: r.name, room: `${r.building} ${r.roomNumber}호` })), [residents]);
   const [showPayModal, setShowPayModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { staff, generateId, daysAgo } from '../../data/mockData';
+import { generateId, daysAgo } from '../../data/mockData';
+import { useCollection, useStaff } from '../../context/AppStateContext';
 
 interface Notice {
   id: string;
@@ -13,17 +14,17 @@ interface Notice {
   pinned: boolean;
 }
 
-const initialNotices: Notice[] = [
-  { id: '1', title: '2026년 4월 시설 운영 안내 및 면회 시간 변경 공지', category: '일반', content: '', author: staff[0].name, date: daysAgo(3), views: 142, pinned: true },
-  { id: '2', title: '봄맞이 야외 나들이 행사 참가 신청 안내', category: '행사', content: '', author: staff[3].name, date: daysAgo(4), views: 98, pinned: false },
-  { id: '3', title: '인플루엔자 예방접종 일정 안내 (4/5 ~ 4/7)', category: '건강', content: '', author: staff[1].name, date: daysAgo(5), views: 87, pinned: false },
-  { id: '4', title: '2관 엘리베이터 정기 점검 안내 (4/3)', category: '시설', content: '', author: staff[0].name, date: daysAgo(6), views: 65, pinned: false },
-  { id: '5', title: '4월 어르신 생신잔치 안내', category: '행사', content: '', author: staff[4].name, date: daysAgo(7), views: 73, pinned: false },
-  { id: '6', title: '낙상 예방 교육 실시 안내', category: '건강', content: '', author: staff[2].name, date: daysAgo(8), views: 56, pinned: false },
-  { id: '7', title: '주간 식단표 변경 안내 (3/31~4/6)', category: '일반', content: '', author: staff[0].name, date: daysAgo(9), views: 48, pinned: false },
-  { id: '8', title: '1관 3층 화장실 수리 완료 안내', category: '시설', content: '', author: staff[0].name, date: daysAgo(10), views: 34, pinned: false },
-  { id: '9', title: '치매 가족 상담 프로그램 운영 안내', category: '건강', content: '', author: staff[3].name, date: daysAgo(11), views: 41, pinned: false },
-  { id: '10', title: '시설 내 개인물품 보관 규정 안내', category: '일반', content: '', author: staff[0].name, date: daysAgo(12), views: 29, pinned: false },
+const buildInitialNotices = (staffList: any[]): Notice[] => [
+  { id: '1', title: '2026년 4월 시설 운영 안내 및 면회 시간 변경 공지', category: '일반', content: '', author: staffList[0]?.name ?? '', date: daysAgo(3), views: 142, pinned: true },
+  { id: '2', title: '봄맞이 야외 나들이 행사 참가 신청 안내', category: '행사', content: '', author: staffList[3]?.name ?? '', date: daysAgo(4), views: 98, pinned: false },
+  { id: '3', title: '인플루엔자 예방접종 일정 안내 (4/5 ~ 4/7)', category: '건강', content: '', author: staffList[1]?.name ?? '', date: daysAgo(5), views: 87, pinned: false },
+  { id: '4', title: '2관 엘리베이터 정기 점검 안내 (4/3)', category: '시설', content: '', author: staffList[0]?.name ?? '', date: daysAgo(6), views: 65, pinned: false },
+  { id: '5', title: '4월 어르신 생신잔치 안내', category: '행사', content: '', author: staffList[4]?.name ?? '', date: daysAgo(7), views: 73, pinned: false },
+  { id: '6', title: '낙상 예방 교육 실시 안내', category: '건강', content: '', author: staffList[2]?.name ?? '', date: daysAgo(8), views: 56, pinned: false },
+  { id: '7', title: '주간 식단표 변경 안내 (3/31~4/6)', category: '일반', content: '', author: staffList[0]?.name ?? '', date: daysAgo(9), views: 48, pinned: false },
+  { id: '8', title: '1관 3층 화장실 수리 완료 안내', category: '시설', content: '', author: staffList[0]?.name ?? '', date: daysAgo(10), views: 34, pinned: false },
+  { id: '9', title: '치매 가족 상담 프로그램 운영 안내', category: '건강', content: '', author: staffList[3]?.name ?? '', date: daysAgo(11), views: 41, pinned: false },
+  { id: '10', title: '시설 내 개인물품 보관 규정 안내', category: '일반', content: '', author: staffList[0]?.name ?? '', date: daysAgo(12), views: 29, pinned: false },
 ];
 
 const categoryColors: Record<string, string> = {
@@ -47,7 +48,11 @@ export default function NoticePage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [notices, setNotices] = useState<Notice[]>(initialNotices);
+  const [staff] = useStaff();
+
+  const initialNotices = useMemo(() => buildInitialNotices(staff), [staff]);
+
+  const [notices, setNotices] = useCollection<Notice>('notices', initialNotices);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState('');

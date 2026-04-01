@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useSocket } from './hooks/useSocket';
+import { AppStateProvider } from './context/AppStateContext';
 import ERPLayout from './components/ERPLayout';
 import Login from './pages/Login';
 import LegacyDashboard from './pages/Dashboard';
@@ -87,6 +88,7 @@ function App() {
   const socket = useSocket();
 
   return (
+    <AppStateProvider>
     <AuthContext.Provider value={auth}>
       <SocketContext.Provider value={socket}>
         <BrowserRouter>
@@ -99,6 +101,7 @@ function App() {
 
               {/* 입소자관리 */}
               <Route path="resident">
+                <Route index element={<Navigate to="/resident/counseling/register" replace />} />
                 <Route path="counseling/register" element={<CounselingPage />} />
                 <Route path="counseling/schedule" element={<CounselingPage />} />
                 <Route path="counseling/history" element={<CounselingPage />} />
@@ -130,6 +133,7 @@ function App() {
 
               {/* 건강관리 */}
               <Route path="health">
+                <Route index element={<Navigate to="/health/records/daily" replace />} />
                 <Route path="records/daily" element={<HealthRecords />} />
                 <Route path="records/history" element={<HealthRecordHistoryPage />} />
                 <Route path="records/batch" element={<HealthRecordBatchPage />} />
@@ -152,6 +156,7 @@ function App() {
 
               {/* 컨시어지 */}
               <Route path="concierge">
+                <Route index element={<Navigate to="/concierge/service/register" replace />} />
                 <Route path="service/register" element={<ServiceRequestPage />} />
                 <Route path="service/status" element={<ServiceRequestPage />} />
                 <Route path="service/types" element={<ServiceRequestPage />} />
@@ -165,6 +170,7 @@ function App() {
 
               {/* 커뮤니티 */}
               <Route path="community">
+                <Route index element={<Navigate to="/community/program/manage" replace />} />
                 <Route path="program/manage" element={<Programs />} />
                 <Route path="program/calendar" element={<ProgramCalendarPage />} />
                 <Route path="program/attendance" element={<ProgramAttendancePage />} />
@@ -177,6 +183,7 @@ function App() {
 
               {/* 식사관리 */}
               <Route path="meal">
+                <Route index element={<Navigate to="/meal/plan/register" replace />} />
                 <Route path="plan/register" element={<MealPlanPage />} />
                 <Route path="plan/view" element={<MealPlanPage />} />
                 <Route path="plan/ai" element={<MealPlanPage />} />
@@ -189,6 +196,7 @@ function App() {
 
               {/* 시설관리 */}
               <Route path="facility">
+                <Route index element={<Navigate to="/facility/room/status" replace />} />
                 <Route path="room/status" element={<RoomStatusPage />} />
                 <Route path="room/assign" element={<RoomStatusPage />} />
                 <Route path="room/inspection" element={<RoomStatusPage />} />
@@ -202,6 +210,7 @@ function App() {
 
               {/* 경영통계 */}
               <Route path="stats">
+                <Route index element={<Navigate to="/stats/occupancy/overview" replace />} />
                 <Route path="occupancy/overview" element={<ManagementStats />} />
                 <Route path="occupancy/trend" element={<OccupancyStatsPage />} />
                 <Route path="occupancy/pipeline" element={<OccupancyStatsPage />} />
@@ -235,6 +244,7 @@ function App() {
 
               {/* 경영관리자 */}
               <Route path="admin">
+                <Route index element={<Navigate to="/admin/staff/list" replace />} />
                 <Route path="staff/list" element={<AdminManagement />} />
                 <Route path="staff/schedule" element={<StaffManagementPage />} />
                 <Route path="staff/permissions" element={<PermissionsPage />} />
@@ -254,6 +264,7 @@ function App() {
         </BrowserRouter>
       </SocketContext.Provider>
     </AuthContext.Provider>
+    </AppStateProvider>
   );
 }
 

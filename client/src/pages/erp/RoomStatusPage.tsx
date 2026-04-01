@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { rooms as mockRooms, MockRoom } from '../../data/mockData';
+import { type MockRoom } from '../../data/mockData';
+import { useRooms, useCollection } from '../../context/AppStateContext';
 
 type RoomStatus = '사용중' | '빈방' | '수리중';
 
@@ -58,11 +59,11 @@ export default function RoomStatusPage() {
   const navigate = useNavigate();
   const segment = location.pathname.split('/').pop() || '';
 
-  const [rooms, setRooms] = useState<RoomState[]>(mockRooms.map(r => ({ ...r })));
+  const [rooms, setRooms] = useRooms();
   const [selectedRoom, setSelectedRoom] = useState<RoomState | null>(null);
   const [newStatus, setNewStatus] = useState<RoomStatus>('사용중');
   const [assignForm, setAssignForm] = useState<AssignForm>({ roomId: '', residentName: '' });
-  const [inspections] = useState<InspectionRecord[]>(initialInspections);
+  const [inspections] = useCollection<InspectionRecord>('inspections', initialInspections);
 
   const building1 = rooms.filter(r => r.building === '1관');
   const building2 = rooms.filter(r => r.building === '2관');
