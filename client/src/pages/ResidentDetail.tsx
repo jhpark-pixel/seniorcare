@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { residentsApi, reportsApi } from '../services/api';
 import { Resident } from '../types';
+import { useAppState } from '../context/AppStateContext';
 
 const statusLabel: Record<string, string> = { ACTIVE: '재실', OUT: '외출', HOSPITALIZED: '입원', DISCHARGED: '퇴소' };
 const genderLabel: Record<string, string> = { MALE: '남', FEMALE: '여' };
@@ -14,6 +15,7 @@ export default function ResidentDetail() {
   const [resident, setResident] = useState<Resident | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const { store } = useAppState();
 
   useEffect(() => {
     if (id) loadResident();
@@ -49,8 +51,28 @@ export default function ResidentDetail() {
     혈당: r.bloodSugarFasting,
   })) || [];
 
+  // 공유 AppState에서 재정 데이터 조회 (이름으로 매칭)
+  const residentName = resident.name;
+  const contract = useMemo(() => {
+    const list = (store.contracts ?? []) as { id: string; contractNo: string; name: string; room: string; type: string; startDate: string; endDate: string; monthly: number; deposit: number; depositStatus: string; status: string }[];
+    return list.find(c => c.name === residentName) ?? null;
+  }, [store.contracts, residentName]);
+
+  const billings = useMemo(() => {
+    const list = (store.billings ?? []) as { id: string; month: string; name: string; room: string; admin: number; meal: number; utility: number; service: number; paid: number; status: string }[];
+    return list.filter(b => b.name === residentName);
+  }, [store.billings, residentName]);
+
+  const settlement = useMemo(() => {
+    const list = (store.settlements ?? []) as { id: string; name: string; room: string; totalDeposit: number; paid: number; balance: number; method: string; lastPaidDate: string; status: string }[];
+    return list.find(s => s.name === residentName) ?? null;
+  }, [store.settlements, residentName]);
+
+  const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
+
   const tabs = [
     { id: 'overview', label: '기본 정보' },
+    { id: 'finance', label: '재정 현황' },
     { id: 'health', label: '건강 기록' },
     { id: 'medications', label: '약물 관리' },
     { id: 'programs', label: '프로그램' },
@@ -87,11 +109,22 @@ export default function ResidentDetail() {
                 {resident.height && <span>키: <strong className="text-gray-800">{resident.height}cm</strong></span>}
                 {resident.weight && <span>체중: <strong className="text-gray-800">{resident.weight}kg</strong></span>}
               </div>
-              {resident.monthlyFee && (
+              {(contract || settlement || resident.monthlyFee) && (
                 <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                  <span>월 생활비: <strong className="text-gray-800">{resident.monthlyFee?.toLocaleString('ko-KR')}원</strong></span>
-                  <span>보증금: <strong className="text-gray-800">{resident.deposit?.toLocaleString('ko-KR')}원</strong></span>
-                  <span>보증금 납부: <strong className={resident.depositPaid ? 'text-green-600' : 'text-red-500'}>{resident.depositPaid ? '완료' : '미납'}</strong></span>
+                  <span>월 생활비: <strong className="text-gray-800">{fmt(contract?.monthly ?? resident.monthlyFee ?? 0)}</strong></span>
+                  <span>보증금: <strong className="text-gray-800">{fmt(settlement?.totalDeposit ?? contract?.deposit ?? resident.deposit ?? 0)}</strong></span>
+                  <span>보증금 납부: <strong className={
+                    (settlement?.status === '완납' || contract?.depositStatus === '완납' || resident.depositPaid) ? 'text-green-600' : 'text-red-500'
+                  }>{settlement?.status ?? contract?.depositStatus ?? (resident.depositPaid ? '완납' : '미납')}</strong></span>
+                  {billings.length > 0 && (() => {
+                    const latest = billings[0];
+                    return (
+                      <span>최근 청구({latest.month}): <strong className={
+                        latest.status === '완납' ? 'text-green-600' :
+                        latest.status === '미납' ? 'text-red-500' : 'text-orange-500'
+                      }>{latest.status}</strong></span>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -257,6 +290,169 @@ export default function ResidentDetail() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'finance' && (
+        <div className="space-y-6">
+          {/* 요약 카드 */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="card text-center">
+              <p className="text-sm text-gray-500">월 생활비</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {contract ? fmt(contract.monthly) : resident.monthlyFee ? fmt(resident.monthlyFee) : '-'}
+              </p>
+            </div>
+            <div className="card text-center">
+              <p className="text-sm text-gray-500">보증금</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {settlement ? fmt(settlement.totalDeposit) : contract ? fmt(contract.deposit) : resident.deposit ? fmt(resident.deposit) : '-'}
+              </p>
+            </div>
+            <div className="card text-center">
+              <p className="text-sm text-gray-500">보증금 납부 상태</p>
+              <p className={`text-2xl font-bold mt-1 ${
+                (settlement?.status === '완납' || contract?.depositStatus === '완납') ? 'text-green-600' :
+                (settlement?.status === '분할납부중' || contract?.depositStatus === '분할납부중') ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {settlement?.status ?? contract?.depositStatus ?? (resident.depositPaid ? '완납' : '미납')}
+              </p>
+            </div>
+          </div>
+
+          {/* 계약 정보 */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">계약 정보</h3>
+            {contract ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">계약번호</p>
+                    <p className="text-sm font-medium text-blue-600 font-mono">{contract.contractNo}</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">계약상태</p>
+                    <p className="text-sm font-medium">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                        contract.status === '계약중' ? 'bg-green-100 text-green-800' :
+                        contract.status === '만료예정' || contract.status === '갱신대기' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>{contract.status}</span>
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">계약 시작일</p>
+                    <p className="text-sm font-medium text-gray-900">{contract.startDate}</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">계약 종료일</p>
+                    <p className="text-sm font-medium text-gray-900">{contract.endDate}</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">호실 유형</p>
+                    <p className="text-sm font-medium text-gray-900">{contract.room} ({contract.type})</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">기준 생활비 (월)</p>
+                    <p className="text-sm font-bold text-gray-900">{fmt(contract.monthly)}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">등록된 계약 정보가 없습니다.</p>
+            )}
+          </div>
+
+          {/* 보증금 정산 */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">보증금 정산 현황</h3>
+            {settlement ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-3 bg-gray-50 rounded-lg text-center">
+                    <p className="text-xs text-gray-500">보증금 총액</p>
+                    <p className="text-sm font-bold text-gray-900">{fmt(settlement.totalDeposit)}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg text-center">
+                    <p className="text-xs text-green-600">납부 완료</p>
+                    <p className="text-sm font-bold text-green-700">{fmt(settlement.paid)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg text-center" style={{ backgroundColor: settlement.balance > 0 ? '#FEF2F2' : '#F0FDF4' }}>
+                    <p className="text-xs" style={{ color: settlement.balance > 0 ? '#DC2626' : '#16A34A' }}>미납 잔액</p>
+                    <p className="text-sm font-bold" style={{ color: settlement.balance > 0 ? '#DC2626' : '#16A34A' }}>{fmt(settlement.balance)}</p>
+                  </div>
+                </div>
+                {/* 납부율 바 */}
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>납부 진행률</span>
+                    <span>{settlement.totalDeposit > 0 ? Math.round(settlement.paid / settlement.totalDeposit * 100) : 0}%</span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className={`h-2.5 rounded-full ${settlement.paid >= settlement.totalDeposit ? 'bg-green-500' : settlement.paid > 0 ? 'bg-yellow-500' : 'bg-red-400'}`}
+                      style={{ width: `${settlement.totalDeposit > 0 ? Math.min(100, Math.round(settlement.paid / settlement.totalDeposit * 100)) : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4 text-xs text-gray-500">
+                  <span>납부방법: <strong className="text-gray-700">{settlement.method}</strong></span>
+                  <span>최종납부일: <strong className="text-gray-700">{settlement.lastPaidDate}</strong></span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">등록된 보증금 정산 정보가 없습니다.</p>
+            )}
+          </div>
+
+          {/* 월 청구 현황 */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">월 청구 내역</h3>
+            {billings.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">청구월</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">관리비</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">식사비</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">수도광열비</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">서비스비</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">합계</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-600">납부액</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-600">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {billings.map(b => {
+                      const total = b.admin + b.meal + b.utility + b.service;
+                      return (
+                        <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-3 py-2 text-gray-700 font-medium">{b.month}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{fmt(b.admin)}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{fmt(b.meal)}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{fmt(b.utility)}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{fmt(b.service)}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-gray-900">{fmt(total)}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{fmt(b.paid)}</td>
+                          <td className="px-3 py-2">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                              b.status === '완납' ? 'bg-green-100 text-green-800' :
+                              b.status === '미납' ? 'bg-red-100 text-red-800' :
+                              b.status === '일부납' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>{b.status}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">등록된 청구 내역이 없습니다.</p>
             )}
           </div>
         </div>
