@@ -6,7 +6,7 @@ import NotificationCenter from './NotificationCenter';
 const pageTitles: Record<string, string> = {
   '/dashboard': '대시보드',
   '/residents': '입주자 관리',
-  '/residents/new': '입주자 등록',
+  '/resident/admission/register': '입주자 등록',
   '/health-records': '건강 기록',
   '/fall-events': '낙상 알림',
   '/programs': '프로그램 관리',
@@ -21,8 +21,8 @@ export default function Header() {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.match(/^\/residents\/[^/]+\/edit$/)) return '입주자 정보 수정';
-    if (path.match(/^\/residents\/[^/]+$/)) return '입주자 상세';
+    if (path.match(/^\/resident\/admission\/[^/]+\/edit$/)) return '입주자 정보 수정';
+    if (path.match(/^\/resident\/admission\/[^/]+$/)) return '입주자 상세';
     return pageTitles[path] || '시니어 케어';
   };
 

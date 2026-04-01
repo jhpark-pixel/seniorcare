@@ -74,10 +74,10 @@ export default function ERPLayout() {
 
         {/* To-Do 플로팅 버튼 */}
         {admin && (
-          <div ref={todoRef} className="fixed bottom-6 left-6 z-50">
+          <div ref={todoRef} className="fixed bottom-6 right-6 z-50">
             {/* 팝업 */}
             {showTodo && (
-              <div className="absolute bottom-14 left-0 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl shadow-2xl border border-gray-200 animate-in">
+              <div className="absolute bottom-14 right-0 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl shadow-2xl border border-gray-200 animate-in">
                 <TodoNotification role={admin.role} name={admin.name} />
               </div>
             )}
