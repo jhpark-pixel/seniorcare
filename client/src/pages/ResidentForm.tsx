@@ -54,10 +54,10 @@ export default function ResidentForm() {
         await residentsApi.update(id!, data);
       } else {
         const res = await residentsApi.create(data);
-        navigate(`/residents/${res.data.id}`);
+        navigate(`/resident/admission/${res.data.id}`);
         return;
       }
-      navigate(`/residents/${id}`);
+      navigate(`/resident/admission/${id}`);
     } catch (err: any) {
       alert(err.response?.data?.message || '저장에 실패했습니다.');
     } finally {

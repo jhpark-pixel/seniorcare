@@ -68,7 +68,7 @@ export default function ResidentList() {
             <option value="DISCHARGED">퇴소</option>
           </select>
         </div>
-        <button onClick={() => navigate('/residents/new')} className="btn-primary flex items-center gap-2">
+        <button onClick={() => navigate('/resident/admission/register')} className="btn-primary flex items-center gap-2">
           <span>+</span> 입주자 등록
         </button>
       </div>
@@ -87,7 +87,7 @@ export default function ResidentList() {
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
             <p className="text-4xl mb-3">👥</p>
             <p>입주자가 없습니다.</p>
-            <button onClick={() => navigate('/residents/new')} className="mt-3 text-blue-600 text-sm hover:underline">
+            <button onClick={() => navigate('/resident/admission/register')} className="mt-3 text-blue-600 text-sm hover:underline">
               새 입주자 등록 →
             </button>
           </div>
@@ -112,7 +112,7 @@ export default function ResidentList() {
                 <tr
                   key={r.id}
                   className="hover:bg-blue-50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/residents/${r.id}`)}
+                  onClick={() => navigate(`/resident/admission/${r.id}`)}
                 >
                   <td className="table-cell font-medium">{r.roomNumber}호</td>
                   <td className="table-cell font-semibold text-blue-700">{r.name}</td>
@@ -174,13 +174,13 @@ export default function ResidentList() {
                   <td className="table-cell">
                     <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                       <button
-                        onClick={() => navigate(`/residents/${r.id}`)}
+                        onClick={() => navigate(`/resident/admission/${r.id}`)}
                         className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
                       >
                         상세
                       </button>
                       <button
-                        onClick={() => navigate(`/residents/${r.id}/edit`)}
+                        onClick={() => navigate(`/resident/admission/${r.id}/edit`)}
                         className="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-50"
                       >
                         수정

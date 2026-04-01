@@ -100,7 +100,7 @@ export default function ResidentDetail() {
             <button onClick={handleDownloadReport} className="btn-secondary text-sm flex items-center gap-1">
               📄 건강 리포트
             </button>
-            <button onClick={() => navigate(`/residents/${id}/edit`)} className="btn-primary text-sm">
+            <button onClick={() => navigate(`/resident/admission/${id}/edit`)} className="btn-primary text-sm">
               ✏️ 정보 수정
             </button>
           </div>

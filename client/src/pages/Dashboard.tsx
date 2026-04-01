@@ -196,7 +196,7 @@ export default function Dashboard() {
               {healthAlerts.map(alert => (
                 <div
                   key={alert.id}
-                  onClick={() => navigate(`/residents/${alert.id}`)}
+                  onClick={() => navigate(`/resident/admission/${alert.id}`)}
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-gray-100"
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
