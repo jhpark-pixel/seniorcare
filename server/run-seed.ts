@@ -7,6 +7,23 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('케어닥 케어홈 송추점 시드 데이터 생성 시작...');
 
+  // 기존 데이터 정리 (순서 중요: 외래키 의존성)
+  console.log('기존 데이터 정리 중...');
+  await prisma.healthGuide.deleteMany();
+  await prisma.fallResponse.deleteMany();
+  await prisma.fallEvent.deleteMany();
+  await prisma.healthRecord.deleteMany();
+  await prisma.iotDevice.deleteMany();
+  await prisma.dailyTask.deleteMany();
+  await prisma.programEnrollment.deleteMany();
+  await prisma.medication.deleteMany();
+  await prisma.residentDisease.deleteMany();
+  await prisma.allergy.deleteMany();
+  await prisma.dietaryRestriction.deleteMany();
+  await prisma.emergencyContact.deleteMany();
+  await prisma.resident.deleteMany();
+  console.log('기존 데이터 정리 완료');
+
   const hashedPassword = await bcrypt.hash('caredoc2024!', 10);
 
   const director = await prisma.admin.upsert({

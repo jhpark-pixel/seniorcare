@@ -27,4 +27,4 @@ WORKDIR /app
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "node scripts/prepare-prod.js && cd server && npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]
+CMD ["sh", "-c", "node scripts/prepare-prod.js && cd server && npx prisma db push --skip-generate --accept-data-loss && npx ts-node --transpile-only run-seed.ts && node dist/index.js"]
