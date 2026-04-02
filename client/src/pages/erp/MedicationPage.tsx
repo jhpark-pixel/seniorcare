@@ -30,9 +30,9 @@ const timeBadge = (time: string) => {
 const statusFilters = ['전체', '활성', '중단'] as const;
 
 const tabs = [
-  { id: 'register', label: '처방약물 등록', path: '/erp/medication/register' },
-  { id: 'schedule', label: '투약스케줄 관리', path: '/erp/medication/schedule' },
-  { id: 'history', label: '투약이력 조회', path: '/erp/medication/history' },
+  { id: 'register', label: '처방약물 등록', path: '/health/medication/register' },
+  { id: 'schedule', label: '투약스케줄 관리', path: '/health/medication/schedule' },
+  { id: 'history', label: '투약이력 조회', path: '/health/medication/history' },
 ];
 
 // Mock history log — one entry per active medication per "day"

@@ -48,12 +48,12 @@ const counselingData = [
 ];
 
 const tabs = [
-  { id: 'disease', label: '질환 분포', path: '/erp/health-stats/disease' },
-  { id: 'counseling', label: '상담 현황', path: '/erp/health-stats/counseling' },
-  { id: 'fall', label: '낙상 통계', path: '/erp/health-stats/fall' },
-  { id: 'risk', label: '위험군 관리', path: '/erp/health-stats/risk' },
-  { id: 'medication', label: '투약 현황', path: '/erp/health-stats/medication' },
-  { id: 'iot', label: 'IoT 알림', path: '/erp/health-stats/iot' },
+  { id: 'disease', label: '질환 분포', path: '/stats/health/disease' },
+  { id: 'counseling', label: '상담 현황', path: '/stats/health/counseling' },
+  { id: 'fall', label: '낙상 통계', path: '/stats/health/fall' },
+  { id: 'risk', label: '위험군 관리', path: '/stats/health/risk' },
+  { id: 'medication', label: '투약 현황', path: '/stats/health/medication' },
+  { id: 'iot', label: 'IoT 알림', path: '/stats/health/iot' },
 ];
 
 export default function HealthStatsPage() {

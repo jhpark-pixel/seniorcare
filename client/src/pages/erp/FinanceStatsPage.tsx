@@ -55,12 +55,12 @@ const forecastData = [
 ];
 
 const tabs = [
-  { id: 'revenue', label: '매출 현황', path: '/erp/finance-stats/revenue' },
-  { id: 'breakdown', label: '항목별 분석', path: '/erp/finance-stats/breakdown' },
-  { id: 'unpaid', label: '미납 현황', path: '/erp/finance-stats/unpaid' },
-  { id: 'deposit', label: '보증금 현황', path: '/erp/finance-stats/deposit' },
-  { id: 'collection', label: '수납 현황', path: '/erp/finance-stats/collection' },
-  { id: 'forecast', label: '수익 예측', path: '/erp/finance-stats/forecast' },
+  { id: 'revenue', label: '매출 현황', path: '/stats/finance/revenue' },
+  { id: 'breakdown', label: '항목별 분석', path: '/stats/finance/breakdown' },
+  { id: 'unpaid', label: '미납 현황', path: '/stats/finance/unpaid' },
+  { id: 'deposit', label: '보증금 현황', path: '/stats/finance/deposit' },
+  { id: 'collection', label: '수납 현황', path: '/stats/finance/collection' },
+  { id: 'forecast', label: '수익 예측', path: '/stats/finance/forecast' },
 ];
 
 export default function FinanceStatsPage() {

@@ -38,10 +38,10 @@ function buildInitialReports(directorName: string, nurseName: string): Report[] 
 }
 
 const tabs = [
-  { id: 'monthly', label: '월간 보고서', path: '/erp/report/monthly' },
-  { id: 'quarterly', label: '분기 보고서', path: '/erp/report/quarterly' },
-  { id: 'annual', label: '연간 보고서', path: '/erp/report/annual' },
-  { id: 'custom', label: '커스텀 보고서', path: '/erp/report/custom' },
+  { id: 'monthly', label: '월간 보고서', path: '/stats/report/monthly' },
+  { id: 'quarterly', label: '분기 보고서', path: '/stats/report/quarterly' },
+  { id: 'annual', label: '연간 보고서', path: '/stats/report/annual' },
+  { id: 'custom', label: '커스텀 보고서', path: '/stats/report/custom' },
 ];
 
 export default function ReportPage() {

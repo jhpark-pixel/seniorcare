@@ -251,6 +251,14 @@ export default function ERPSidebar({ activeTab }: ERPSidebarProps) {
     setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
+  // Auto-expand group containing active path
+  React.useEffect(() => {
+    const activeGroup = groups.find(g => g.items.some(item => location.pathname === item.path));
+    if (activeGroup && !expandedGroups[activeGroup.title]) {
+      setExpandedGroups(prev => ({ ...prev, [activeGroup.title]: true }));
+    }
+  }, [location.pathname, groups]);
+
   return (
     <aside className="w-60 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="py-2">

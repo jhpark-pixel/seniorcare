@@ -43,11 +43,11 @@ function buildAlertSettings(staffList: { role: string; name: string }[]) {
 }
 
 const tabs = [
-  { id: 'facility', label: '기본정보', path: '/erp/system-settings/facility' },
-  { id: 'codes', label: '코드관리', path: '/erp/system-settings/codes' },
-  { id: 'fees', label: '요금설정', path: '/erp/system-settings/fees' },
-  { id: 'alerts', label: '알림설정', path: '/erp/system-settings/alerts' },
-  { id: 'backup', label: '데이터 백업/복원', path: '/erp/system-settings/backup' },
+  { id: 'facility', label: '기본정보', path: '/admin/settings/facility' },
+  { id: 'codes', label: '코드관리', path: '/admin/settings/codes' },
+  { id: 'fees', label: '요금설정', path: '/admin/settings/fees' },
+  { id: 'alerts', label: '알림설정', path: '/admin/settings/alerts' },
+  { id: 'backup', label: '데이터 백업/복원', path: '/admin/settings/backup' },
 ];
 
 export default function SystemSettingsPage() {

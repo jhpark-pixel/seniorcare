@@ -63,9 +63,9 @@ const deviceStatusStyle = (status: string) => {
 };
 
 const tabs = [
-  { id: 'register', label: '대상자 등록', path: '/erp/intensive-care/register' },
-  { id: 'status', label: '대상자 현황', path: '/erp/intensive-care/status' },
-  { id: 'device', label: '디바이스 관리', path: '/erp/intensive-care/device' },
+  { id: 'register', label: '대상자 등록', path: '/health/intensive/register' },
+  { id: 'status', label: '대상자 현황', path: '/health/intensive/status' },
+  { id: 'device', label: '디바이스 관리', path: '/health/intensive/device' },
 ];
 
 export default function IntensiveCarePage() {

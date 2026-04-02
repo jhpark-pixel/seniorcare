@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useStaff } from '../../context/AppStateContext';
+import React, { useMemo } from 'react';
+import { useStaff, useCollection } from '../../context/AppStateContext';
 
 const roles = ['시설장', '간호사', '생활지도사'];
 const modules = ['입소자관리', '건강관리', '컨시어지', '커뮤니티', '식사관리', '시설관리', '경영통계', '경영관리'];
@@ -18,21 +18,20 @@ export default function PermissionsPage() {
     '간호사': staff.filter(s => s.roleLabel === '간호사'),
     '생활지도사': staff.filter(s => s.roleLabel === '생활지도사'),
   }), [staff]);
-  const [permissions, setPermissions] = useState(
-    JSON.parse(JSON.stringify(initialPermissions)) as typeof initialPermissions
-  );
+  const [permStore, setPermStore] = useCollection<Record<string, Record<string, boolean>>>('permissions', [JSON.parse(JSON.stringify(initialPermissions))]);
+  const permissions = permStore[0] ?? initialPermissions;
 
   const toggle = (role: string, module: string) => {
     if (role === '시설장') return;
-    setPermissions((prev) => {
-      const next = JSON.parse(JSON.stringify(prev));
+    setPermStore((prev) => {
+      const next = JSON.parse(JSON.stringify(prev[0]));
       next[role][module] = !next[role][module];
-      return next;
+      return [next];
     });
   };
 
   const handleSave = () => {
-    alert('권한 설정이 저장되었습니다.');
+    // permissions are auto-persisted to central store
   };
 
   return (

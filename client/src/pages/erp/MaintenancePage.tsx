@@ -47,9 +47,9 @@ const statusColors: Record<string, string> = {
 const emptyForm = { location: '', description: '', priority: '보통' as MaintenanceRequest['priority'] };
 
 const tabs = [
-  { id: 'register', label: '보수요청 등록', path: '/erp/maintenance/register' },
-  { id: 'status', label: '보수진행 현황', path: '/erp/maintenance/status' },
-  { id: 'history', label: '보수이력 조회', path: '/erp/maintenance/history' },
+  { id: 'register', label: '보수요청 등록', path: '/facility/maintenance/register' },
+  { id: 'status', label: '보수진행 현황', path: '/facility/maintenance/status' },
+  { id: 'history', label: '보수이력 조회', path: '/facility/maintenance/history' },
 ];
 
 export default function MaintenancePage() {

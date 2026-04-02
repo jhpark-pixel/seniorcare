@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useResidents, useStaff } from '../context/AppStateContext';
+import { useResidents, useStaff, useCollection } from '../context/AppStateContext';
 
 interface TodoItem {
   id: string;
@@ -94,7 +94,7 @@ interface TodoNotificationProps {
 export default function TodoNotification({ role, name }: TodoNotificationProps) {
   const [residents] = useResidents();
   const [staff] = useStaff();
-  const [todos, setTodos] = useState<TodoItem[]>(() => getTodosForRole(role, residents, staff));
+  const [todos, setTodos] = useCollection<TodoItem>(`todos_${role}`, getTodosForRole(role, residents, staff));
   const [isMinimized, setIsMinimized] = useState(false);
   const greeting = getRoleGreeting(role, name);
 

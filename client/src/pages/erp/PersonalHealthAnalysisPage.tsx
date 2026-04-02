@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useResidents } from '../../context/AppStateContext';
+import { useResidents, useCollection } from '../../context/AppStateContext';
 
 function getHealthData(residentName: string, residents: any[]) {
   const r = residents.find((res: any) => res.name === residentName);
@@ -103,17 +103,27 @@ export default function PersonalHealthAnalysisPage() {
   const trendData = genTrendData(selected, residents);
   const [opinion, setOpinion] = useState(defaultOpinion);
   const [savedOpinion, setSavedOpinion] = useState(false);
+  const [savedOpinions, setSavedOpinions] = useCollection<{ residentName: string; opinion: string }>('healthOpinions', []);
 
   const handleResidentChange = (name: string) => {
     setSelected(name);
-    const { opinion: newOpinion } = getHealthData(name, residents);
-    setOpinion(newOpinion);
-    setSavedOpinion(false);
+    const saved = savedOpinions.find(o => o.residentName === name);
+    if (saved) {
+      setOpinion(saved.opinion);
+      setSavedOpinion(true);
+    } else {
+      const { opinion: newOpinion } = getHealthData(name, residents);
+      setOpinion(newOpinion);
+      setSavedOpinion(false);
+    }
   };
 
   const handleSaveOpinion = () => {
+    setSavedOpinions(prev => {
+      const filtered = prev.filter(o => o.residentName !== selected);
+      return [...filtered, { residentName: selected, opinion }];
+    });
     setSavedOpinion(true);
-    alert('소견이 저장되었습니다.');
   };
 
   return (

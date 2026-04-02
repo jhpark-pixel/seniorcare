@@ -51,9 +51,9 @@ const typeBadge = (type: string) => {
 };
 
 const tabs = [
-  { id: 'register', label: '상담 예약 등록', path: '/erp/health-counseling/register' },
-  { id: 'schedule', label: '예약 현황', path: '/erp/health-counseling/schedule' },
-  { id: 'history', label: '상담 내역 조회', path: '/erp/health-counseling/history' },
+  { id: 'register', label: '상담 예약 등록', path: '/health/counseling/register' },
+  { id: 'schedule', label: '예약 현황', path: '/health/counseling/schedule' },
+  { id: 'history', label: '상담 내역 조회', path: '/health/counseling/history' },
 ];
 
 // Days of week labels for schedule view

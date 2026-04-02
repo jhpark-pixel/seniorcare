@@ -6,10 +6,10 @@ import {
 import { useRooms, useResidents } from '../../context/AppStateContext';
 
 const tabs = [
-  { id: 'overview', label: '거주자 종합현황', path: '/erp/occupancy-stats/overview' },
-  { id: 'trend', label: '입퇴소 추이', path: '/erp/occupancy-stats/trend' },
-  { id: 'pipeline', label: '계약/청약 현황', path: '/erp/occupancy-stats/pipeline' },
-  { id: 'demographics', label: '인구통계', path: '/erp/occupancy-stats/demographics' },
+  { id: 'overview', label: '거주자 종합현황', path: '/stats/occupancy/overview' },
+  { id: 'trend', label: '입퇴소 추이', path: '/stats/occupancy/trend' },
+  { id: 'pipeline', label: '계약/청약 현황', path: '/stats/occupancy/pipeline' },
+  { id: 'demographics', label: '인구통계', path: '/stats/occupancy/demographics' },
 ];
 
 export default function OccupancyStatsPage() {

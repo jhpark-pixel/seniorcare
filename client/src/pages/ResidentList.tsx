@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { residentsApi } from '../services/api';
-import { Resident } from '../types';
+import { useResidents } from '../context/AppStateContext';
+import { type MockResident } from '../data/mockData';
 
 const statusLabel: Record<string, string> = {
   ACTIVE: '재실', OUT: '외출', HOSPITALIZED: '입원', DISCHARGED: '퇴소',
@@ -10,9 +10,6 @@ const statusColor: Record<string, string> = {
   ACTIVE: 'badge-green', OUT: 'badge-yellow', HOSPITALIZED: 'badge-red', DISCHARGED: 'badge-gray',
 };
 const genderLabel: Record<string, string> = { MALE: '남', FEMALE: '여' };
-const cognitiveLabel: Record<string, string> = {
-  NORMAL: '정상', MILD: '경증', MODERATE: '중등도', SEVERE: '중증',
-};
 
 function getAge(birthDate: string) {
   return new Date().getFullYear() - new Date(birthDate).getFullYear();
@@ -20,29 +17,21 @@ function getAge(birthDate: string) {
 
 export default function ResidentList() {
   const navigate = useNavigate();
-  const [residents, setResidents] = useState<Resident[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [allResidents] = useResidents();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  useEffect(() => {
-    loadResidents();
-  }, [search, statusFilter, page]);
+  const filtered = allResidents.filter(r => {
+    const matchSearch = !search || r.name.includes(search) || r.roomNumber.includes(search);
+    const matchStatus = !statusFilter || r.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
-  const loadResidents = async () => {
-    setLoading(true);
-    try {
-      const res = await residentsApi.list({ search, status: statusFilter || undefined, page, limit });
-      setResidents(res.data.data);
-      setTotal(res.data.total);
-    } catch {}
-    setLoading(false);
-  };
-
+  const total = filtered.length;
   const totalPages = Math.ceil(total / limit);
+  const residents = filtered.slice((page - 1) * limit, page * limit);
 
   return (
     <div className="space-y-4">
@@ -79,11 +68,7 @@ export default function ResidentList() {
           <h3 className="font-semibold text-gray-900">입주자 목록</h3>
           <span className="text-sm text-gray-500">총 {total}명</span>
         </div>
-        {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
-            <p>불러오는 중...</p>
-          </div>
-        ) : residents.length === 0 ? (
+        {residents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
             <p className="text-4xl mb-3">👥</p>
             <p>입주자가 없습니다.</p>
@@ -103,12 +88,11 @@ export default function ResidentList() {
                 <th className="table-header">인지 수준</th>
                 <th className="table-header">건강 점수</th>
                 <th className="table-header">질환</th>
-                <th className="table-header">낙상 미처리</th>
                 <th className="table-header">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {residents.map(r => (
+              {residents.map((r: MockResident) => (
                 <tr
                   key={r.id}
                   className="hover:bg-blue-50 cursor-pointer transition-colors"
@@ -134,7 +118,7 @@ export default function ResidentList() {
                       r.cognitiveLevel === 'MODERATE' ? 'bg-orange-100 text-orange-800' :
                       'badge-red'
                     }`}>
-                      {cognitiveLabel[r.cognitiveLevel]}
+                      {r.cognitiveLabelKo}
                     </span>
                   </td>
                   <td className="table-cell">
@@ -156,20 +140,13 @@ export default function ResidentList() {
                   </td>
                   <td className="table-cell">
                     <div className="flex flex-wrap gap-1">
-                      {r.diseases?.slice(0, 2).map(d => (
-                        <span key={d.id} className="badge badge-blue">{d.disease.name}</span>
+                      {r.diseases.slice(0, 2).map(d => (
+                        <span key={d} className="badge badge-blue">{d}</span>
                       ))}
-                      {(r.diseases?.length || 0) > 2 && (
-                        <span className="badge badge-gray">+{(r.diseases?.length || 0) - 2}</span>
+                      {r.diseases.length > 2 && (
+                        <span className="badge badge-gray">+{r.diseases.length - 2}</span>
                       )}
                     </div>
-                  </td>
-                  <td className="table-cell">
-                    {(r.unhandledFallCount || 0) > 0 ? (
-                      <span className="badge badge-red">🚨 {r.unhandledFallCount}건</span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">없음</span>
-                    )}
                   </td>
                   <td className="table-cell">
                     <div className="flex gap-1" onClick={e => e.stopPropagation()}>

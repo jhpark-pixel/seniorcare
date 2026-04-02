@@ -38,9 +38,9 @@ const typeBadge = (type: string) => {
 };
 
 const tabs = [
-  { id: 'schedule', label: '검진일정 관리', path: '/erp/medical-checkup/schedule' },
-  { id: 'result', label: '검진결과 입력', path: '/erp/medical-checkup/result' },
-  { id: 'history', label: '검진이력 조회', path: '/erp/medical-checkup/history' },
+  { id: 'schedule', label: '검진일정 관리', path: '/health/checkup/schedule' },
+  { id: 'result', label: '검진결과 입력', path: '/health/checkup/result' },
+  { id: 'history', label: '검진이력 조회', path: '/health/checkup/history' },
 ];
 
 // Month calendar helpers

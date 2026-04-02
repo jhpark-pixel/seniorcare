@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useResidents } from '../context/AppStateContext';
 
 interface WidgetProps {
@@ -6,9 +7,11 @@ interface WidgetProps {
   icon: string;
   children: React.ReactNode;
   className?: string;
+  linkTo?: string;
 }
 
-function Widget({ title, icon, children, className = '' }: WidgetProps) {
+function Widget({ title, icon, children, className = '', linkTo }: WidgetProps) {
+  const navigate = useNavigate();
   return (
     <div className={`bg-white rounded-lg shadow border border-gray-200 ${className}`}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -16,7 +19,14 @@ function Widget({ title, icon, children, className = '' }: WidgetProps) {
           <span>{icon}</span>
           <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
         </div>
-        <button className="text-xs text-[#F0835A] hover:underline font-medium">더보기</button>
+        {linkTo && (
+          <button
+            onClick={() => navigate(linkTo)}
+            className="text-xs text-[#F0835A] hover:underline font-medium"
+          >
+            더보기
+          </button>
+        )}
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -54,7 +64,7 @@ export default function ERPHome() {
   return (
     <div className="space-y-4">
       {/* Row 1: Full width emergency widget */}
-      <Widget title="응급 및 안전 사고 발생 (주간)" icon="🚨" className="col-span-2">
+      <Widget title="응급 및 안전 사고 발생 (주간)" icon="🚨" className="col-span-2" linkTo="/stats/health/fall">
         <MiniTable
           headers={['일시', '입소자', '호실', '유형', '심각도', '상태']}
           rows={[
@@ -68,7 +78,7 @@ export default function ERPHome() {
 
       <div className="grid grid-cols-2 gap-4">
         {/* Widget 2: 집중케어대상자 현황 */}
-        <Widget title="집중케어대상자 현황" icon="🩺">
+        <Widget title="집중케어대상자 현황" icon="🩺" linkTo="/health/intensive/status">
           <MiniTable
             headers={['입소자', '호실', '케어등급', '담당자', '특이사항']}
             rows={[
@@ -81,7 +91,7 @@ export default function ERPHome() {
         </Widget>
 
         {/* Widget 3: 집중케어 디바이스 관리 */}
-        <Widget title="집중케어 디바이스 관리" icon="📡">
+        <Widget title="집중케어 디바이스 관리" icon="📡" linkTo="/health/intensive/device">
           <MiniTable
             headers={['장치코드', '입소자', '위치', '배터리', '상태']}
             rows={[
@@ -94,7 +104,7 @@ export default function ERPHome() {
         </Widget>
 
         {/* Widget 4: 건강 상담 예약 현황 */}
-        <Widget title="건강 상담 예약 현황" icon="🏥">
+        <Widget title="건강 상담 예약 현황" icon="🏥" linkTo="/health/counseling/schedule">
           <MiniTable
             headers={['날짜', '시간', '입소자', '상담유형', '담당자']}
             rows={[
@@ -107,7 +117,7 @@ export default function ERPHome() {
         </Widget>
 
         {/* Widget 5: 서비스 신청 현황 */}
-        <Widget title="서비스 신청 현황" icon="🛎️">
+        <Widget title="서비스 신청 현황" icon="🛎️" linkTo="/concierge/service/status">
           <MiniTable
             headers={['신청일', '입소자', '서비스유형', '상태', '처리일']}
             rows={[
@@ -120,7 +130,7 @@ export default function ERPHome() {
         </Widget>
 
         {/* Widget 6: 거주자 현황 */}
-        <Widget title="거주자 현황" icon="🏠">
+        <Widget title="거주자 현황" icon="🏠" linkTo="/resident/admission/list">
           <div className="space-y-3">
             <div className="grid grid-cols-4 gap-3 text-center">
               <div className="bg-blue-50 rounded p-2">
@@ -152,7 +162,7 @@ export default function ERPHome() {
         </Widget>
 
         {/* Widget 7: 월간 행사 계획 */}
-        <Widget title="월간 행사 계획 (4월)" icon="🎉">
+        <Widget title="월간 행사 계획 (4월)" icon="🎉" linkTo="/community/event/status">
           <MiniTable
             headers={['일정', '행사명', '장소', '대상', '담당자']}
             rows={[

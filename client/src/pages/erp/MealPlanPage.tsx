@@ -39,9 +39,9 @@ const alertTypeColors: Record<string, string> = {
 type MealType = 'breakfast' | 'lunch' | 'dinner';
 
 const tabs = [
-  { id: 'register', label: '주간식단 등록', path: '/erp/meal-plan/register' },
-  { id: 'view', label: '식단표 조회', path: '/erp/meal-plan/view' },
-  { id: 'ai', label: 'AI 맞춤식단', path: '/erp/meal-plan/ai' },
+  { id: 'register', label: '주간식단 등록', path: '/meal/plan/register' },
+  { id: 'view', label: '식단표 조회', path: '/meal/plan/view' },
+  { id: 'ai', label: 'AI 맞춤식단', path: '/meal/plan/ai' },
 ];
 
 export default function MealPlanPage() {

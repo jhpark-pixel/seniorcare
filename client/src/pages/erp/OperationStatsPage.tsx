@@ -60,11 +60,11 @@ const leaveData = [
 ];
 
 const tabs = [
-  { id: 'service', label: '서비스 요청', path: '/erp/operation-stats/service' },
-  { id: 'program', label: '프로그램 참여', path: '/erp/operation-stats/program' },
-  { id: 'staff', label: '직원 업무량', path: '/erp/operation-stats/staff' },
-  { id: 'complaint', label: '민원 통계', path: '/erp/operation-stats/complaint' },
-  { id: 'leave', label: '외출/외박', path: '/erp/operation-stats/leave' },
+  { id: 'service', label: '서비스 요청', path: '/stats/operation/service' },
+  { id: 'program', label: '프로그램 참여', path: '/stats/operation/program' },
+  { id: 'staff', label: '직원 업무량', path: '/stats/operation/staff' },
+  { id: 'complaint', label: '민원 통계', path: '/stats/operation/complaint' },
+  { id: 'leave', label: '외출/외박', path: '/stats/operation/leave' },
 ];
 
 export default function OperationStatsPage() {

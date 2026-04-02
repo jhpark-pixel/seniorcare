@@ -14,8 +14,8 @@ const monthlyData = [
 ];
 
 const tabs = [
-  { id: 'daily', label: '일별 식수인원', path: '/erp/meal-stats/daily' },
-  { id: 'monthly', label: '월별 식사비 산출', path: '/erp/meal-stats/monthly' },
+  { id: 'daily', label: '일별 식수인원', path: '/meal/stats/daily' },
+  { id: 'monthly', label: '월별 식사비 산출', path: '/meal/stats/monthly' },
 ];
 
 export default function MealStatsPage() {

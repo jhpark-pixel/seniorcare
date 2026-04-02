@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useResidents, useStaff } from '../../context/AppStateContext';
+import { useResidents, useStaff, useCollection } from '../../context/AppStateContext';
 
 const fields = ['혈압(수축)', '혈압(이완)', '혈당', '심박', '체온', '체중', '수면(h)', '수분(ml)', '식사량', '기분'];
 
@@ -38,6 +38,7 @@ export default function HealthRecordBatchPage() {
     }))
   );
   const [saved, setSaved] = useState(false);
+  const [, setBatchRecords] = useCollection<any>('healthBatchRecords', []);
 
   const handleChange = (rowIdx: number, colIdx: number, value: string) => {
     setData((prev) => {
@@ -50,8 +51,9 @@ export default function HealthRecordBatchPage() {
 
   const handleSave = () => {
     const filled = data.filter((d) => d.values.some((v) => v !== ''));
+    const record = { date: recordDate, recorder, entries: filled, savedAt: new Date().toISOString() };
+    setBatchRecords(prev => [record, ...prev]);
     setSaved(true);
-    alert(`${filled.length}명의 건강기록이 일괄 저장되었습니다. (기록일: ${recordDate}, 기록자: ${recorder})`);
   };
 
   const handleClear = () => {

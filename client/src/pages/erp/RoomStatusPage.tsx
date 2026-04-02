@@ -49,9 +49,9 @@ const inspectionColors: Record<string, string> = {
 };
 
 const tabs = [
-  { id: 'status', label: '동/호실 현황', path: '/erp/room-status/status' },
-  { id: 'assign', label: '호실배정 관리', path: '/erp/room-status/assign' },
-  { id: 'inspection', label: '호실점검 이력', path: '/erp/room-status/inspection' },
+  { id: 'status', label: '동/호실 현황', path: '/facility/room/status' },
+  { id: 'assign', label: '호실배정 관리', path: '/facility/room/assign' },
+  { id: 'inspection', label: '호실점검 이력', path: '/facility/room/inspection' },
 ];
 
 export default function RoomStatusPage() {

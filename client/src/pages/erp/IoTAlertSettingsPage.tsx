@@ -1,14 +1,46 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useCollection } from '../../context/AppStateContext';
+
+interface IoTAlertSettings {
+  id: string;
+  fallSensitivity: number;
+  targets: { nurse: boolean; director: boolean; guardian: boolean };
+  batteryThreshold: number;
+  commTimeout: number;
+  fallAlert: boolean;
+  batteryAlert: boolean;
+  commAlert: boolean;
+  nightAlert: boolean;
+}
+
+const initialSettings: IoTAlertSettings[] = [{
+  id: 'default',
+  fallSensitivity: 1,
+  targets: { nurse: true, director: true, guardian: false },
+  batteryThreshold: 20,
+  commTimeout: 30,
+  fallAlert: true,
+  batteryAlert: true,
+  commAlert: true,
+  nightAlert: false,
+}];
 
 export default function IoTAlertSettingsPage() {
-  const [fallSensitivity, setFallSensitivity] = useState(1); // 0=낮음, 1=보통, 2=높음
-  const [targets, setTargets] = useState({ nurse: true, director: true, guardian: false });
-  const [batteryThreshold, setBatteryThreshold] = useState(20);
-  const [commTimeout, setCommTimeout] = useState(30);
-  const [fallAlert, setFallAlert] = useState(true);
-  const [batteryAlert, setBatteryAlert] = useState(true);
-  const [commAlert, setCommAlert] = useState(true);
-  const [nightAlert, setNightAlert] = useState(false);
+  const [settingsArr, setSettingsArr] = useCollection<IoTAlertSettings>('iotAlertSettings', initialSettings);
+  const settings = settingsArr[0];
+
+  const updateSetting = (key: string, value: any) => {
+    setSettingsArr(prev => [{ ...prev[0], [key]: value }]);
+  };
+
+  const fallSensitivity = settings.fallSensitivity;
+  const targets = settings.targets;
+  const batteryThreshold = settings.batteryThreshold;
+  const commTimeout = settings.commTimeout;
+  const fallAlert = settings.fallAlert;
+  const batteryAlert = settings.batteryAlert;
+  const commAlert = settings.commAlert;
+  const nightAlert = settings.nightAlert;
 
   const sensitivityLabels = ['낮음', '보통', '높음'];
 
@@ -37,10 +69,10 @@ export default function IoTAlertSettingsPage() {
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">알림 활성화</h2>
           <div className="space-y-4">
-            <Toggle checked={fallAlert} onChange={setFallAlert} label="낙상 감지 알림" />
-            <Toggle checked={batteryAlert} onChange={setBatteryAlert} label="배터리 부족 알림" />
-            <Toggle checked={commAlert} onChange={setCommAlert} label="통신 끊김 알림" />
-            <Toggle checked={nightAlert} onChange={setNightAlert} label="야간 활동 감지 알림" />
+            <Toggle checked={fallAlert} onChange={v => updateSetting('fallAlert', v)} label="낙상 감지 알림" />
+            <Toggle checked={batteryAlert} onChange={v => updateSetting('batteryAlert', v)} label="배터리 부족 알림" />
+            <Toggle checked={commAlert} onChange={v => updateSetting('commAlert', v)} label="통신 끊김 알림" />
+            <Toggle checked={nightAlert} onChange={v => updateSetting('nightAlert', v)} label="야간 활동 감지 알림" />
           </div>
         </div>
 
@@ -53,7 +85,7 @@ export default function IoTAlertSettingsPage() {
               min={0}
               max={2}
               value={fallSensitivity}
-              onChange={(e) => setFallSensitivity(Number(e.target.value))}
+              onChange={(e) => updateSetting('fallSensitivity', Number(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
             />
             <div className="flex justify-between text-sm">
@@ -82,7 +114,7 @@ export default function IoTAlertSettingsPage() {
                 <input
                   type="checkbox"
                   checked={targets[t.key]}
-                  onChange={(e) => setTargets({ ...targets, [t.key]: e.target.checked })}
+                  onChange={(e) => updateSetting('targets', { ...targets, [t.key]: e.target.checked })}
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700">{t.label}</span>
@@ -101,7 +133,7 @@ export default function IoTAlertSettingsPage() {
                 <input
                   type="number"
                   value={batteryThreshold}
-                  onChange={(e) => setBatteryThreshold(Number(e.target.value))}
+                  onChange={(e) => updateSetting('batteryThreshold', Number(e.target.value))}
                   min={5}
                   max={50}
                   className="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
@@ -115,7 +147,7 @@ export default function IoTAlertSettingsPage() {
                 <input
                   type="number"
                   value={commTimeout}
-                  onChange={(e) => setCommTimeout(Number(e.target.value))}
+                  onChange={(e) => updateSetting('commTimeout', Number(e.target.value))}
                   min={1}
                   max={120}
                   className="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
@@ -129,7 +161,7 @@ export default function IoTAlertSettingsPage() {
 
       <div className="flex justify-end">
         <button
-          onClick={() => alert('설정이 저장되었습니다.')}
+          onClick={() => {/* settings auto-persisted to central store */}}
           className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
         >
           설정 저장
