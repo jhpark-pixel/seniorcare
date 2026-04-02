@@ -35,11 +35,11 @@ interface InspectionRecord {
 }
 
 const initialInspections: InspectionRecord[] = [
-  { id: '1', roomId: '', room: '1관 101호', date: '2026-03-25', inspector: '김서연', result: '이상없음', note: '정기 점검' },
-  { id: '2', roomId: '', room: '1관 107호', date: '2026-03-28', inspector: '이하은', result: '수리필요', note: '온수 배관 누수 발견' },
-  { id: '3', roomId: '', room: '2관 203호', date: '2026-03-27', inspector: '김서연', result: '경미한결함', note: '에어컨 필터 교체 필요' },
-  { id: '4', roomId: '', room: '2관 210호', date: '2026-03-20', inspector: '이하은', result: '이상없음', note: '정기 점검' },
-  { id: '5', roomId: '', room: '1관 105호', date: '2026-03-22', inspector: '김서연', result: '경미한결함', note: '창문 잠금장치 헐거움' },
+  { id: '1', roomId: '', room: '2층 201호', date: '2026-03-25', inspector: '김서연', result: '이상없음', note: '정기 점검' },
+  { id: '2', roomId: '', room: '3층 307호', date: '2026-03-28', inspector: '이하은', result: '수리필요', note: '온수 배관 누수 발견' },
+  { id: '3', roomId: '', room: '2층 203호', date: '2026-03-27', inspector: '김서연', result: '경미한결함', note: '에어컨 필터 교체 필요' },
+  { id: '4', roomId: '', room: '4층 410호', date: '2026-03-20', inspector: '이하은', result: '이상없음', note: '정기 점검' },
+  { id: '5', roomId: '', room: '3층 305호', date: '2026-03-22', inspector: '김서연', result: '경미한결함', note: '창문 잠금장치 헐거움' },
 ];
 
 const inspectionColors: Record<string, string> = {
@@ -65,8 +65,9 @@ export default function RoomStatusPage() {
   const [assignForm, setAssignForm] = useState<AssignForm>({ roomId: '', residentName: '' });
   const [inspections] = useCollection<InspectionRecord>('inspections', initialInspections);
 
-  const building1 = rooms.filter(r => r.building === '1관');
-  const building2 = rooms.filter(r => r.building === '2관');
+  const floor2 = rooms.filter(r => r.floor === 2);
+  const floor3 = rooms.filter(r => r.floor === 3);
+  const floor4 = rooms.filter(r => r.floor === 4);
   const total = rooms.length;
   const counts = countByStatus(rooms);
 
@@ -167,8 +168,9 @@ export default function RoomStatusPage() {
             </div>
           </div>
           <div className="space-y-6">
-            <RoomGrid title="1관 (본관)" roomList={building1} />
-            <RoomGrid title="2관 (별관)" roomList={building2} />
+            <RoomGrid title="2층 (12실)" roomList={floor2} />
+            <RoomGrid title="3층 (9실)" roomList={floor3} />
+            <RoomGrid title="4층 (12실)" roomList={floor4} />
           </div>
         </div>
       )}
