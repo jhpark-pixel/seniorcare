@@ -73,7 +73,8 @@ const tabs = [
 interface PersonInfo {
   name: string;
   gender: string;
-  ssn: string;
+  ssnFront: string;
+  ssnBack: string;
   phone: string;
   zipCode: string;
   address: string;
@@ -140,7 +141,8 @@ function generateContractNo(existing: ContractFormData[]): string {
 const emptyPerson = (): PersonInfo => ({
   name: '',
   gender: '',
-  ssn: '',
+  ssnFront: '',
+  ssnBack: '',
   phone: '',
   zipCode: '',
   address: '',
@@ -263,11 +265,42 @@ interface PersonFormProps {
   relationshipOptions?: string[];
 }
 
+function openDaumPostcode(onComplete: (zipCode: string, address: string) => void) {
+  const script = document.getElementById('daum-postcode-script') as HTMLScriptElement | null;
+  const run = () => {
+    (window as any).daum.Postcode({
+      oncomplete: (d: any) => { onComplete(d.zonecode, d.roadAddress || d.jibunAddress); },
+    }).open();
+  };
+  if (script && (window as any).daum?.Postcode) { run(); return; }
+  const s = document.createElement('script');
+  s.id = 'daum-postcode-script';
+  s.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+  s.onload = run;
+  document.head.appendChild(s);
+}
+
 function PersonForm({ data, onChange, showGender = false, showRelationship = false, relationshipOptions = [] }: PersonFormProps) {
   const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#F0835A] focus:border-[#F0835A]';
   const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
+  const ssnId = useRef(`ssn-${Math.random().toString(36).slice(2)}`).current;
 
   const set = (field: keyof PersonInfo, val: string) => onChange({ ...data, [field]: val });
+
+  const handleSsnFront = (v: string) => {
+    const digits = v.replace(/[^0-9]/g, '').slice(0, 6);
+    set('ssnFront', digits);
+  };
+  const handleSsnBack = (v: string) => {
+    const digits = v.replace(/[^0-9]/g, '').slice(0, 7);
+    set('ssnBack', digits);
+  };
+
+  const handleSearchAddress = () => {
+    openDaumPostcode((zipCode, address) => {
+      onChange({ ...data, zipCode, address });
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -285,7 +318,7 @@ function PersonForm({ data, onChange, showGender = false, showRelationship = fal
                 <label key={g} className="flex items-center gap-1 text-sm cursor-pointer">
                   <input
                     type="radio"
-                    name={`gender-${Math.random()}`}
+                    name={`gender-${ssnId}`}
                     value={g}
                     checked={data.gender === g}
                     onChange={() => set('gender', g)}
@@ -299,7 +332,25 @@ function PersonForm({ data, onChange, showGender = false, showRelationship = fal
         )}
         <div>
           <label className={labelCls}>주민등록번호</label>
-          <input type="text" value={data.ssn} onChange={e => set('ssn', e.target.value)} placeholder="000000-0000000" className={inputCls} />
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={data.ssnFront}
+              onChange={e => handleSsnFront(e.target.value)}
+              placeholder="000000"
+              maxLength={6}
+              className="w-[calc(50%-12px)] border border-gray-300 rounded-md px-3 py-2 text-sm text-center tracking-wider focus:outline-none focus:ring-1 focus:ring-[#F0835A] focus:border-[#F0835A]"
+            />
+            <span className="text-gray-400 font-bold">-</span>
+            <input
+              type="password"
+              value={data.ssnBack}
+              onChange={e => handleSsnBack(e.target.value)}
+              placeholder="0000000"
+              maxLength={7}
+              className="w-[calc(50%-12px)] border border-gray-300 rounded-md px-3 py-2 text-sm text-center tracking-wider focus:outline-none focus:ring-1 focus:ring-[#F0835A] focus:border-[#F0835A]"
+            />
+          </div>
         </div>
         <div>
           <label className={labelCls}>연락처</label>
@@ -310,14 +361,18 @@ function PersonForm({ data, onChange, showGender = false, showRelationship = fal
       <div className="flex items-end gap-2">
         <div className="w-32">
           <label className={labelCls}>우편번호</label>
-          <input type="text" value={data.zipCode} onChange={e => set('zipCode', e.target.value)} className={inputCls} />
+          <input type="text" value={data.zipCode} readOnly className={`${inputCls} bg-gray-50`} />
         </div>
-        <button type="button" className="mb-0.5 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 whitespace-nowrap">
+        <button
+          type="button"
+          onClick={handleSearchAddress}
+          className="mb-0.5 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 whitespace-nowrap"
+        >
           🔍 검색
         </button>
         <div className="flex-1">
           <label className={labelCls}>주소</label>
-          <input type="text" value={data.address} onChange={e => set('address', e.target.value)} readOnly className={`${inputCls} bg-gray-50`} />
+          <input type="text" value={data.address} readOnly className={`${inputCls} bg-gray-50`} />
         </div>
       </div>
       {/* Row 3 */}
@@ -502,18 +557,18 @@ export default function ContractPage() {
   };
 
   const copyContractorTo = (section: 'primaryResident' | 'guardian' | 'guarantor') => {
-    const { name, ssn, phone, zipCode, address, addressDetail } = regForm.contractor;
+    const { name, ssnFront, ssnBack, phone, zipCode, address, addressDetail } = regForm.contractor;
     setRegForm(prev => ({
       ...prev,
-      [section]: { ...prev[section], name, ssn, phone, zipCode, address, addressDetail },
+      [section]: { ...prev[section], name, ssnFront, ssnBack, phone, zipCode, address, addressDetail },
     }));
   };
 
   const copyGuardianTo = (section: 'guarantor') => {
-    const { name, gender, ssn, phone, zipCode, address, addressDetail, relationship } = regForm.guardian;
+    const { name, gender, ssnFront, ssnBack, phone, zipCode, address, addressDetail, relationship } = regForm.guardian;
     setRegForm(prev => ({
       ...prev,
-      [section]: { ...prev[section], name, gender, ssn, phone, zipCode, address, addressDetail, relationship },
+      [section]: { ...prev[section], name, gender, ssnFront, ssnBack, phone, zipCode, address, addressDetail, relationship },
     }));
   };
 
